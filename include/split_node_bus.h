@@ -42,6 +42,8 @@ extern "C" {
 #define SPLIT_MSG_GNSS_TELEMETRY    (0x30U) /* CORE -> HMI: PVT & skymask satellite stats */
 #define SPLIT_MSG_DIRTY_LINE        (0x40U) /* CORE -> HMI: Framebuffer dirty scanline */
 #define SPLIT_MSG_HEARTBEAT         (0x50U) /* BIDIRECTIONAL: Uptime, supply voltage & alerts */
+#define SPLIT_MSG_LORA_BFT_BEACON   (0x60U) /* BIDIRECTIONAL: Blue Force Tracking P2P telemetry beacon */
+#define SPLIT_MSG_LORA_TACTICAL_MSG (0x61U) /* BIDIRECTIONAL: AES-encrypted tactical text / distress packet */
 
 /* -------------------------------------------------------------------------- */
 /* Typed Message Payloads                                                     */
@@ -98,6 +100,20 @@ typedef struct {
     int16_t  temp_deci_c;  /**< Internal temperature in 0.1 deg C */
     uint8_t  alert_flags;  /**< Bit 0: Sub-Zero Cold, Bit 1: Voltage Sag, Bit 2: Retries High */
 } split_msg_heartbeat_t;
+
+/**
+ * @brief MsgID 0x60: Blue Force Tracking (BFT) Beacon (18 Bytes)
+ */
+typedef struct {
+    uint16_t node_id;      /**< Tactical callsign/ID (0x0001..0xFFFF) */
+    int32_t  lat_1e7;      /**< Latitude in 1e7 degrees */
+    int32_t  lon_1e7;      /**< Longitude in 1e7 degrees */
+    int16_t  alt_m;        /**< Altitude in meters */
+    uint16_t heading_cd;   /**< Heading in centi-degrees (0..35999) */
+    uint8_t  battery_pct;  /**< State of Charge (0..100) */
+    uint8_t  status_flags; /**< Bit 0: SOS/Distress, Bit 1: Stationary, Bit 2: Low-Power */
+    uint16_t seq_num;      /**< Rolling sequence counter (Anti-Replay) */
+} split_msg_bft_beacon_t;
 
 /**
  * @brief Generic Decoded CAN-FD Frame

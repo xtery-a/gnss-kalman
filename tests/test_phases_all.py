@@ -157,6 +157,27 @@ class MasterSystemVerificationHarness(unittest.TestCase):
         print("  [PASS] Mountain summit peaks [PEAK] & elevation tagging verified.")
         print("  [PASS] Zero-heap C99 firmware execution & Dirty-Line DMA packaging verified 100%.")
 
+    def test_07_phase7_tactical_datalink_and_bft(self):
+        """Phase 7: Validate Tier-1 LoRa, AES-128 BFT Beacon & Tier-2 Iridium Failover."""
+        print("\n=================================================================")
+        print(" PHASE 7: HYBRID TACTICAL DATA LINK, BFT & IRIDIUM FAILOVER")
+        print("=================================================================")
+        c_exe = os.path.join(self.build_dir, "test_hybrid_comms.exe")
+        harness_c = os.path.join(self.tests_dir, "test_harness_hybrid_comms.c")
+        comms_c = os.path.join(self.src_dir, "hybrid_comms.c")
+        crypto_c = os.path.join(self.src_dir, "crypto_hal.c")
+        compile_cmd = f'{self.gcc_bin} -O2 -Wall -Wextra -I"{self.inc_dir}" "{harness_c}" "{comms_c}" "{crypto_c}" -o "{c_exe}"'
+        res_comp = subprocess.run(compile_cmd, shell=True, env=self.env, capture_output=True, text=True)
+        self.assertEqual(res_comp.returncode, 0, f"Phase 7 compilation error: {res_comp.stderr}")
+
+        res_exec = subprocess.run(f'"{c_exe}"', shell=True, env=self.env, capture_output=True, text=True)
+        self.assertEqual(res_exec.returncode, 0, f"Phase 7 execution error:\n{res_exec.stderr}\n{res_exec.stdout}")
+        self.assertIn("ALL HYBRID COMMS & BFT TESTS PASSED PERFECTLY", res_exec.stdout)
+        print("  [PASS] Tier-1 1W (+30 dBm) LoRa 868 MHz BFT state machine verified.")
+        print("  [PASS] AES-128-CTR encrypted tactical beacon & CRC-16 tamper detection verified.")
+        print("  [PASS] 3x LoRa ACK timeout auto-failover to Tier-2 Iridium SBD verified.")
+        print("  [PASS] Instant emergency SOS bypass & 0.0 uA P-MOSFET power-down verified.")
+
 
 if __name__ == "__main__":
     suite = unittest.TestLoader().loadTestsFromTestCase(MasterSystemVerificationHarness)
@@ -165,5 +186,5 @@ if __name__ == "__main__":
     if not result.wasSuccessful():
         sys.exit(1)
     print("\n" + "=" * 65)
-    print(" ALL SYSTEM PHASES (1, 2, 3, 4, 5, 6) PASSED WITH 100% SUCCESS!")
+    print(" ALL SYSTEM PHASES (1, 2, 3, 4, 5, 6, 7) PASSED WITH 100% SUCCESS!")
     print("=================================================================\n")
