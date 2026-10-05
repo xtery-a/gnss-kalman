@@ -1,6 +1,11 @@
 # 🛰️ Tactical Multi-GNSS Terminal & Embedded Kalman Engine
 ### Extreme-Condition Navigation, Tactical Data Link & Handheld Terminal
 
+[![CI](https://github.com/xtery-a/gnss-kalman/actions/workflows/ci.yml/badge.svg)](https://github.com/xtery-a/gnss-kalman/actions/workflows/ci.yml)
+[![Standard: C99](https://img.shields.io/badge/Firmware-ANSI%20C99%20Bare--Metal-blue.svg)](https://en.wikipedia.org/wiki/C99)
+[![Target: ARM Cortex-M33](https://img.shields.io/badge/Target-ARM%20Cortex--M33%20%2F%20M4-red.svg)](https://www.arm.com/products/silicon-ip-cpu/cortex-m/cortex-m33)
+[![License: MIT](https://img.shields.io/badge/License-MIT-green.svg)](LICENSE)
+
 > ⚠️ **Project Status:** *Active Research & Development (WIP / Work in Progress)*  
 > Open-source tactical navigation and situational awareness research combining an ANSI C99 bare-metal zero-heap firmware core, multi-band GNSS engine, bidirectional tactical data link (1W LoRa + Iridium SBD failover), two-stage RF power electronics, and a ruggedized handheld tactical terminal inspired by Garmin GPSMAP 67i architecture.
 
@@ -161,6 +166,12 @@ gnss-kalman/
 │   ├── crypto_hal.h      # AES-128-CTR Cipher Engine Interface
 │   └── nlos_filter.h     # Skymask LUT & Knife-Edge Diffraction Declarations
 │
+├── cmake/                # CMake Toolchain Modules
+│   └── toolchain-arm-cortex-m33.cmake # Bare-Metal ARM Cortex-M33 / M4 Cross-Toolchain
+│
+├── .github/workflows/    # Continuous Integration (CI/CD) Pipelines
+│   └── ci.yml            # Multi-Platform GitHub Actions Matrix (Ubuntu & Windows)
+│
 ├── web/                  # Handheld Tactical Terminals & Hardware Bridges
 │   ├── tactical_terminal.html # Garmin GPSMAP 67i Tactical Handheld UI
 │   ├── gnss_tracker.html      # Live Multi-Constellation GNSS Map & Telemetry
@@ -185,12 +196,16 @@ gnss-kalman/
 │   ├── test_cgpx.py           # CGPX Lossless Compression & C99 Engine Tests
 │   ├── test_topo.py           # Topographic DEM, Hillshade & Contour Tests
 │   ├── test_map_stability.py  # Map Engine Stability & Loop Test
-│   └── test_harness_*.c       # Native MinGW GCC Bare-Metal Test Runners
+│   └── test_harness_*.c       # Native Bare-Metal C Test Harnesses (8 Harnesses)
 │
 ├── tools/                # Python DEM, 3D Hillshade & Geospatial CLI Tools
 ├── data/                 # Sample Alpine Routes (GPX/CGPX) & 30m DEM GeoTIFF
 ├── docs/                 # Engineering Specifications, V&V Reports & BOM Sheets
 ├── assets/               # Output Graphics, Topographic Matrices & Schematics
+├── CMakeLists.txt        # Professional CMake Build Configuration (Static Lib & CTest)
+├── Makefile              # Cross-Platform Makefile (all, lib, tests, test, clean)
+├── requirements.txt      # Python Dependencies (pyserial, numpy, pillow, cryptography)
+├── .clang-format         # Embedded C99 LLVM Formatting Standard
 ├── .gitignore            # Build binary and cache filters
 ├── LICENSE               # MIT License
 └── README.md             # Project Master Documentation
@@ -200,16 +215,42 @@ gnss-kalman/
 
 ## 🚀 Quick Start
 
-### 1. Prerequisites
-* Python 3.10+
-* Required libraries: `pyserial`, `numpy`, `pillow`, `cryptography`
-* Optional: MinGW GCC (for C99 bare-metal test suite execution)
-
+### 1. Python Environment Setup
 ```bash
-pip install pyserial numpy pillow cryptography
+pip install -r requirements.txt
 ```
 
-### 2. Launching Live Tactical Terminal
+### 2. Building C99 Firmware & Running Test Harnesses
+
+#### Option A: Using CMake & CTest (Recommended)
+```bash
+# Configure and build static library & all 8 bare-metal harnesses
+cmake -B build -S . -DCMAKE_BUILD_TYPE=Release
+cmake --build build --config Release
+
+# Execute automated CTest verification suite
+ctest --test-dir build --output-on-failure
+```
+
+#### Option B: Using Standalone Makefile
+```bash
+# Build static library (libgnss_tactical.a) and test binaries
+make all
+
+# Run complete bare-metal C test harnesses and Python V&V suite
+make test
+
+# Clean all build artifacts
+make clean
+```
+
+#### Option C: ARM Cortex-M33 Bare-Metal Cross-Compilation
+```bash
+cmake -B build -S . -DCMAKE_TOOLCHAIN_FILE=cmake/toolchain-arm-cortex-m33.cmake
+cmake --build build
+```
+
+### 3. Launching Live Tactical Terminal
 Connect your u-blox M10Q or Quectel GNSS module via USB and start the bridge:
 
 ```bash
@@ -220,7 +261,7 @@ python web/open_weather_lab.py
 * **Tactical Terminal:** `http://127.0.0.1:8080/tactical_terminal.html`
 * **Live Telemetry Tracker:** `http://127.0.0.1:8080/gnss_tracker.html`
 
-### 3. Running Verification & Validation (V&V) Harness
+### 4. Running Verification & Validation (V&V) Harness
 Run the full 7-phase automated firmware and algorithm test suite:
 
 ```bash
