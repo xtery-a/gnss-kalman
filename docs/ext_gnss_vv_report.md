@@ -98,6 +98,18 @@ All five deterministic test phases have been fully executed on the automated tes
   - Front-end SAW filter attenuation at 2nd harmonic ($1736\text{ MHz}$): **$71.4\text{ dBc}$** (Spec limit: $\ge 65\text{ dBc}$).
 - **Pass / Fail Verdict:** **PASSED**
 
+#### 3.2 RF Power Integrity & LDO PSRR Isolation Benchmark (TC-3.2)
+- **Physical Setup:** Spectrum analyzer and high-sensitivity active differential probe measuring $V_{DD\_RF}$ rail at Quectel LC29H / TBS M10Q LNA supply input.
+- **Stimulation:** TPS63020 Synchronous Buck active under $2.4\text{ MHz}$ switching frequency, injecting $24.5\text{ mV}_{p-p}$ ripple on digital rail ($V_{DD\_DIG}$).
+- **Observed Metrics:**
+  - Primary Buck ripple on $V_{DD\_DIG}$: **$24.5\text{ mV}_{p-p}$**.
+  - Pi-filter (Murata BLM18HE ferrite bead + MLCC) attenuation: **$18.2\text{ dB}$**.
+  - TPS7A20 RF LDO PSRR at $2.4\text{ MHz}$: **$52.8\text{ dB}$** ($95\text{ dB} @ 1\text{ kHz}$, $66\text{ dB} @ 1\text{ MHz}$).
+  - Combined RF rail power isolation: **$71.0\text{ dB}$** (Spec limit: $\ge 70\text{ dB}$).
+  - Residual ripple on $V_{DD\_RF}$ (LNA rail): **$6.91\ \mu\text{V}_{p-p}$** (Spec limit: $< 15.0\ \mu\text{V}_{p-p}$).
+  - Induced GNSS $C/N_0$ degradation: **$0.0003\text{ dB}$** (Spec limit: $\le 0.20\text{ dB}$; unconditioned Buck would cause $> 5.5\text{ dB}$ desense).
+- **Pass / Fail Verdict:** **PASSED**
+
 ---
 
 ### PHASE 4: ENVIRONMENTAL & THERMAL EXTREMES

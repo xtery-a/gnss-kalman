@@ -692,6 +692,24 @@ parts.append("""
         <td>2.7V-12V Giriş, 5.0V @ 2.5A Çıkış, 10A Switch</td>
         <td><span class="tag-vendor">Özdisan / DigiKey</span></td>
       </tr>
+      <tr>
+        <td><strong>U_LDO_RF</strong></td>
+        <td>Ultra-Yüksek PSRR, Ultra-Düşük Gürültülü RF LDO Regülatör (3.0V / 300mA)</td>
+        <td><span class="tag-mpn">TPS7A2030PDBVR</span> (TI)</td>
+        <td>SOT-23-5</td>
+        <td><span class="tag-temp">-40°C ... +125°C</span></td>
+        <td>95dB PSRR @ 1kHz, 6.5 uVrms Gürültü, GNSS LNA ve LoRa PLL Beslemesi</td>
+        <td><span class="tag-vendor">Özdisan / TI TR</span></td>
+      </tr>
+      <tr>
+        <td><strong>FB_RF</strong></td>
+        <td>RF Güç İzolasyon Yüksek Empedanslı Ferrit Boncuk (Pi-Filtre)</td>
+        <td><span class="tag-mpn">BLM18HE152SN1D</span> (Murata)</td>
+        <td>0603 SMD</td>
+        <td><span class="tag-temp">-55°C ... +125°C</span></td>
+        <td>1500 &Omega; @ 100MHz, DCR = 0.5 &Omega;, 500mA</td>
+        <td><span class="tag-vendor">Mouser / DigiKey</span></td>
+      </tr>
     </tbody>
   </table>
 </div>
@@ -841,6 +859,24 @@ PTC BATARYA ISITICI MOSFET SÜRÜCÜ DEVRESİ:
                                            [S]
                                             |
                                            GND
+
+HİBRİT İKİ KADEMELİ RF GÜÇ REGÜLASYON DEVRESİ (GNSS LNA İZOLASYONU):
+  VBATT / C_SUPCAP (3.0V - 4.2V)
+        |
+        v
+  [TPS63020DSJR BUCK-BOOST] ------> VDD_DIG (3.3V Dijital Ray, 24.5 mVp-p Ripple)
+                                         |
+                                      [10uF X7R]
+                                         |
+                                      [BLM18HE152SN1D Ferrit Boncuk (1500R @ 100MHz)]
+                                         |
+                                      [10uF X7R]  (Pi-Filtre, 18.2 dB Zayıflatma)
+                                         |
+                                         v
+                                  [TPS7A2030PDBVR ULTRA-HIGH PSRR LDO] (52.8 dB @ 2.4MHz)
+                                         |
+                                         +-------> VDD_RF (3.0V, < 7.0 uVp-p Ripple!)
+                                                   Quectel LC29H / M10Q LNA & LoRa PLL
   </div>
 </div>
 """)

@@ -103,6 +103,37 @@ Sistem pasif bir alıcı olmanın ötesinde, taktik sahada tim unsurlarının ko
 
 ---
 
+## ⚡ Güç Elektroniği: Hibrit İki Kademeli RF Güç Mimarisi (Buck + Ultra-High PSRR LDO)
+
+Taktik seyrüsefer terminallerinde yüksek verimli anahtarlamalı regülatörler (Buck Converter) $1.8 - 2.5\text{ MHz}$ bandında anahtarlama dalgalanması ($20 - 30\text{ mV}_{p-p}$ ripple) üretir. Bu dalgalanma doğrudan $-167\text{ dBm}$ hassasiyetli GNSS LNA'sına ve LoRa PLL katına sızarsa, $C/N_0$ sinyal-gürültü oranını 5–8 dB düşürerek alıcı sağırlığına (Receiver Desensitization) neden olur.
+
+Bu fiziksel kısıtı aşmak için iki kademeli hibrit güç regülasyonu kurgulanmıştır:
+
+```
+ [ 21700 / 5.0F SÜPERKAPASİTÖR ] (3.0V - 4.2V)
+             |
+             v
+ [ KADEME 1: SENKRON BUCK-BOOST ] (TI TPS63020 / %96 Verim @ 2.4 MHz)
+             |
+             +----------------------------> VDD_DIG (3.3V Dijital Ray: MCU, MIP, CAN-FD)
+             |                              (Ripple: ~24.5 mVp-p)
+             v
+ [ Pi-FİLTRE ] (Murata BLM18HE152SN1D Ferrit Boncuk + 2x 10 uF MLCC)
+             | (18.2 dB Yüksek Frekans Zayıflatması)
+             v
+ [ KADEME 2: ULTRA-HIGH PSRR LDO ] (TI TPS7A2030PDBVR: 95dB PSRR @ 1kHz, 52.8dB @ 2.4MHz)
+             |
+             v
+       VDD_RF (3.0V Temiz Analog/RF Rayı)
+       - Kalan Dalgalanma: < 7.0 uVp-p (71 dB toplam izolasyon)
+       - GNSS LNA Desense Kaybı: Delta C/N0 < 0.001 dB (Desense Sıfırlandı)
+       - Quectel LC29H / TBS M10Q LNA & LoRa TCXO/PLL Beslemesi
+```
+
+* **Sonuç:** Dijital alt sistemler $\%96$ verimle batarya ömrünü maksimize ederken, RF alıcı katı $71\text{ dB}$ güç izolasyonu sayesinde kanyon içi zayıf uydu sinyallerini kilitlenme kaybı olmadan izler.
+
+---
+
 ## 📂 Repository Architecture (Dizin Mimarisi)
 
 ```
@@ -142,6 +173,7 @@ gnss-kalman/
 ├── tests/                # Doğrulama Test Süitleri (C Bare-Metal & Python)
 │   ├── test_phases_all.py     # Master Sistem Doğrulama Süiti (Faz 1 - 7)
 │   ├── test_hybrid_comms.py   # LoRa BFT & Iridium Failover Doğrulama Testi
+│   ├── test_rf_power_psrr.py  # Hibrit RF Güç Mimarisi & LDO PSRR Doğrulama Testi
 │   ├── test_cgpx.py           # Sıkıştırma, Şifreleme & C99 Motor Testleri
 │   ├── test_topo.py           # Topografik Arazi & Sayısal Yükseklik Testleri
 │   ├── test_map_stability.py  # Harita Kararlılık & Döngü Testi

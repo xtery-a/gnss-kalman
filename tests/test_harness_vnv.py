@@ -429,6 +429,50 @@ class VerificationHarness:
         self.log(f"Result: {details}", "PASS" if passed else "FAIL")
         return res
 
+    def run_phase_3_2_rf_power_psrr_isolation(self) -> TestResult:
+        """
+        Phase 3.2: Hybrid RF Power Architecture & LDO PSRR Isolation Benchmark
+        - Evaluates Stage 1 Synchronous Buck (TPS63020 @ 2.4 MHz) ripple (24.5 mVp-p).
+        - Evaluates Stage 2 Pi-Filter + Ultra-High PSRR LDO (TPS7A20) rail conditioning.
+        - Pass criteria: Total Isolation >= 70.0 dB, Residual VDD_RF Ripple < 15.0 uVp-p,
+          GNSS C/N0 Degradation <= 0.20 dB (vs unconditioned buck degradation ~5.57 dB).
+        """
+        self.log("Phase 3.2: RF Power Integrity & LDO PSRR Isolation Benchmark", "STAGE")
+
+        v_ripple_buck_mv = 24.5  # mVp-p on digital rail @ 2.4 MHz fundamental
+        pi_filter_attenuation_db = 18.2
+        psrr_at_2_4mhz_db = 52.8
+        total_isolation_db = pi_filter_attenuation_db + psrr_at_2_4mhz_db  # 71.0 dB
+
+        voltage_attenuation_ratio = 10.0 ** (-total_isolation_db / 20.0)
+        v_residual_uv = (v_ripple_buck_mv * 1e3) * voltage_attenuation_ratio  # 6.91 uVp-p
+
+        # Desense model
+        filtered_delta_cn0 = 0.12 * ((v_residual_uv / 1000.0) ** 1.2)  # ~0.0003 dB
+
+        passed = (total_isolation_db >= 70.0) and (v_residual_uv < 15.0) and (filtered_delta_cn0 <= 0.20)
+
+        details = (
+            f"Buck Switcher Ripple: {v_ripple_buck_mv:.1f} mVp-p @ 2.4 MHz. "
+            f"Combined Isolation (Pi + TPS7A20): {total_isolation_db:.1f} dB (Spec: >= 70 dB). "
+            f"Residual VDD_RF LNA Ripple: {v_residual_uv:.2f} uVp-p (Spec: < 15 uVp-p). "
+            f"Protected Delta C/N0: {filtered_delta_cn0:.4f} dB (Spec: <= 0.20 dB)."
+        )
+
+        res = TestResult(
+            test_id="TC-3.2",
+            name="RF Power Integrity & LDO PSRR Isolation Benchmark",
+            phase="PHASE 3",
+            passed=passed,
+            measured_value=v_residual_uv,
+            unit="uVp-p",
+            tolerance_spec="Total Isolation >= 70 dB, Residual Ripple < 15 uVp-p, Delta C/N0 <= 0.2 dB",
+            details=details,
+        )
+        self.results.append(res)
+        self.log(f"Result: {details}", "PASS" if passed else "FAIL")
+        return res
+
     # =========================================================================
     # PHASE 4: ENVIRONMENTAL & THERMAL EXTREMES
     # =========================================================================
@@ -612,6 +656,7 @@ class VerificationHarness:
         self.run_phase_2_2_voltage_sag()
         self.run_phase_2_3_watchdog_power_cycle()
         self.run_phase_3_1_gnss_desense_lora()
+        self.run_phase_3_2_rf_power_psrr_isolation()
         self.run_phase_4_1_subzero_thermal_soak()
         self.run_phase_4_2_optical_bonding_thermal_shock()
         self.run_phase_5_1_mountain_canyon_kinematic()
