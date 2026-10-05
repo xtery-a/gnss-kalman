@@ -26,7 +26,7 @@ class MasterSystemVerificationHarness(unittest.TestCase):
         cls.gcc_bin = r"C:\msys64\mingw64\bin\gcc.exe"
         if not os.path.exists(cls.gcc_bin):
             cls.gcc_bin = "gcc.exe"
-        cls.root_dir = os.path.dirname(os.path.abspath(__file__))
+        cls.root_dir = os.path.abspath(os.path.join(os.path.dirname(__file__), ".."))
         cls.build_dir = os.path.join(cls.root_dir, "build")
         cls.inc_dir = os.path.join(cls.root_dir, "include")
         cls.src_dir = os.path.join(cls.root_dir, "src")
@@ -38,7 +38,8 @@ class MasterSystemVerificationHarness(unittest.TestCase):
         print("\n=================================================================")
         print(" PHASE 1: CGPX LOSSLESS COMPRESSION & ZERO-HEAP C99 ENGINE")
         print("=================================================================")
-        res = subprocess.run([sys.executable, "test_cgpx.py"], env=self.env, capture_output=True, text=True)
+        test_cgpx_path = os.path.join(self.tests_dir, "test_cgpx.py")
+        res = subprocess.run([sys.executable, test_cgpx_path], env=self.env, capture_output=True, text=True)
         self.assertEqual(res.returncode, 0, f"Phase 1 test_cgpx.py failed:\n{res.stderr}\n{res.stdout}")
         self.assertIn("OK", res.stderr + res.stdout)
         print("  [PASS] 9/9 Phase 1 unit tests passed.")
@@ -146,7 +147,8 @@ class MasterSystemVerificationHarness(unittest.TestCase):
         print("\n=================================================================")
         print(" PHASE 6: TOPOGRAPHIC TERRAIN ENGINE & ZERO-HEAP MIP RENDERER")
         print("=================================================================")
-        res_py = subprocess.run([sys.executable, "test_topo.py"], env=self.env, capture_output=True, text=True)
+        test_topo_path = os.path.join(self.tests_dir, "test_topo.py")
+        res_py = subprocess.run([sys.executable, test_topo_path], env=self.env, capture_output=True, text=True)
         self.assertEqual(res_py.returncode, 0, f"Phase 6 test_topo.py failed:\n{res_py.stderr}\n{res_py.stdout}")
         self.assertIn("PHASE 6 VERIFICATION COMPLETE: ALL CHECKS PASSED 100%", res_py.stdout)
         print("  [PASS] DEM elevation grid & corridor buffer margin generation verified.")

@@ -22,7 +22,7 @@ import subprocess
 import sys
 import unittest
 
-ROOT_DIR = os.path.dirname(os.path.abspath(__file__))
+ROOT_DIR = os.path.abspath(os.path.join(os.path.dirname(__file__), ".."))
 TOOLS_DIR = os.path.join(ROOT_DIR, "tools")
 DATA_DIR = os.path.join(ROOT_DIR, "data")
 BUILD_DIR = os.path.join(ROOT_DIR, "build")
