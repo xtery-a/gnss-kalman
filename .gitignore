@@ -32,6 +32,14 @@ web/logs/
 *.log
 diagnose_map.*
 
+# Credentials & environment files
+.env
+.env.*
+*.key
+*.pem
+*.credentials
+secrets/
+
 # Editor & OS artifacts
 .vscode/
 .idea/
