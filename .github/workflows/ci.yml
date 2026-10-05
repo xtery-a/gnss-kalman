@@ -81,15 +81,15 @@ jobs:
         with:
           msystem: UCRT64
           update: false
-          install: mingw-w64-ucrt-x86_64-gcc mingw-w64-ucrt-x86_64-make
+          install: mingw-w64-ucrt-x86_64-gcc mingw-w64-ucrt-x86_64-make make
           path-type: inherit
 
       - name: Build & Run Complete C Test Suite (Windows)
         if: runner.os == 'Windows'
         shell: msys2 {0}
         run: |
-          make CC=gcc all
-          make CC=gcc test
+          mingw32-make CC=gcc all
+          mingw32-make CC=gcc test
 
       - name: Run Python V&V Verification Suite (Windows)
         if: runner.os == 'Windows'
