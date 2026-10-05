@@ -1,0 +1,3661 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>MET-SURV // TBS M10Q Canlı GNSS & Harita Takip Terminali</title>
+  
+  <!-- Leaflet CSS & JS -->
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+  
+  <!-- Google Fonts: Inter & JetBrains Mono -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&family=JetBrains+Mono:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+
+  <style>
+    :root {
+      --bg-dark: #070a11;
+      --bg-panel: rgba(11, 15, 25, 0.88);
+      --bg-card: rgba(18, 24, 38, 0.85);
+      --border-panel: rgba(56, 189, 248, 0.18);
+      --border-light: rgba(255, 255, 255, 0.08);
+      
+      --accent-cyan: #38bdf8;
+      --accent-emerald: #10b981;
+      --accent-amber: #f59e0b;
+      --accent-rose: #f43f5e;
+      --accent-purple: #a855f7;
+      --accent-blue: #3b82f6;
+
+      --text-main: #f8fafc;
+      --text-muted: #94a3b8;
+      --text-dim: #64748b;
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+      -webkit-font-smoothing: antialiased;
+    }
+
+    body {
+      font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+      background: var(--bg-dark);
+      color: var(--text-main);
+      overflow: hidden;
+      height: 100vh;
+      width: 100vw;
+      user-select: none;
+    }
+
+    .mono {
+      font-family: 'JetBrains Mono', monospace;
+    }
+
+    /* Full-viewport map */
+    #map {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      z-index: 1;
+      background: #020408;
+    }
+
+    /* Custom Leaflet Controls Adjustment */
+    .leaflet-top.leaflet-left {
+      top: 68px;
+      left: 16px;
+    }
+    .leaflet-bar {
+      border: 1px solid var(--border-panel) !important;
+      border-radius: 8px !important;
+      overflow: hidden;
+      box-shadow: 0 8px 24px rgba(0,0,0,0.6) !important;
+    }
+    .leaflet-bar a {
+      background-color: var(--bg-panel) !important;
+      color: var(--accent-cyan) !important;
+      border-bottom: 1px solid var(--border-light) !important;
+    }
+    .leaflet-bar a:hover {
+      background-color: rgba(56, 189, 248, 0.2) !important;
+      color: #ffffff !important;
+    }
+
+    /* Top Command Header */
+    .top-header {
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      height: 56px;
+      background: rgba(7, 10, 17, 0.92);
+      backdrop-filter: blur(12px);
+      -webkit-backdrop-filter: blur(12px);
+      border-bottom: 1px solid var(--border-panel);
+      z-index: 1000;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 0 16px;
+      gap: 12px;
+      box-shadow: 0 4px 20px rgba(0,0,0,0.5);
+    }
+
+    .brand-section {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+
+    .brand-icon {
+      width: 34px;
+      height: 34px;
+      border-radius: 8px;
+      background: linear-gradient(135deg, #0284c7, #10b981);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 18px;
+      box-shadow: 0 0 16px rgba(56, 189, 248, 0.4);
+    }
+
+    .brand-title {
+      font-size: 14px;
+      font-weight: 800;
+      letter-spacing: 0.6px;
+      color: #ffffff;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .brand-subtitle {
+      font-size: 10.5px;
+      color: var(--text-muted);
+      letter-spacing: 0.2px;
+    }
+
+    /* Status Pills */
+    .status-group {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      overflow-x: auto;
+    }
+
+    .status-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      padding: 4px 10px;
+      border-radius: 20px;
+      font-size: 11px;
+      font-weight: 600;
+      font-family: 'JetBrains Mono', monospace;
+      border: 1px solid transparent;
+      white-space: nowrap;
+    }
+
+    .badge-live {
+      background: rgba(16, 185, 129, 0.15);
+      border-color: rgba(16, 185, 129, 0.4);
+      color: #34d399;
+    }
+    .badge-pulse {
+      width: 7px;
+      height: 7px;
+      border-radius: 50%;
+      background: #10b981;
+      box-shadow: 0 0 8px #10b981;
+      animation: pulse 1.4s infinite;
+    }
+    @keyframes pulse {
+      0%, 100% { opacity: 1; transform: scale(1); }
+      50% { opacity: 0.4; transform: scale(0.8); }
+    }
+
+    .badge-fix-3d {
+      background: rgba(56, 189, 248, 0.15);
+      border-color: rgba(56, 189, 248, 0.4);
+      color: #38bdf8;
+    }
+    .badge-fix-searching {
+      background: rgba(245, 158, 11, 0.15);
+      border-color: rgba(245, 158, 11, 0.4);
+      color: #fbbf24;
+    }
+    .badge-fix-none {
+      background: rgba(244, 63, 94, 0.15);
+      border-color: rgba(244, 63, 94, 0.4);
+      color: #f43f5e;
+    }
+
+    /* Header Action Buttons */
+    .header-actions {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .btn-tactical {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      padding: 6px 12px;
+      background: rgba(30, 41, 59, 0.8);
+      border: 1px solid var(--border-light);
+      border-radius: 6px;
+      color: var(--text-main);
+      font-size: 11.5px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.18s ease;
+      text-decoration: none;
+      white-space: nowrap;
+    }
+    .btn-tactical:hover {
+      background: rgba(56, 189, 248, 0.18);
+      border-color: var(--accent-cyan);
+      color: #ffffff;
+      box-shadow: 0 0 12px rgba(56, 189, 248, 0.25);
+    }
+    .btn-tactical.active {
+      background: rgba(16, 185, 129, 0.2);
+      border-color: var(--accent-emerald);
+      color: #34d399;
+    }
+
+    /* Tactical HUD Overlays */
+    .hud-overlay {
+      position: absolute;
+      z-index: 900;
+      pointer-events: none; /* Let map be clickable except on panels */
+    }
+
+    .hud-panel {
+      pointer-events: auto;
+      background: var(--bg-panel);
+      backdrop-filter: blur(14px);
+      -webkit-backdrop-filter: blur(14px);
+      border: 1px solid var(--border-panel);
+      border-radius: 12px;
+      box-shadow: 0 12px 36px rgba(0,0,0,0.65);
+      color: var(--text-main);
+      overflow: hidden;
+      display: flex;
+      flex-direction: column;
+      transition: transform 0.25s ease, opacity 0.25s ease;
+    }
+
+    /* Left Dynamics & Navigation HUD */
+    .hud-left {
+      top: 68px;
+      left: 16px;
+      width: 360px;
+      max-height: calc(100vh - 120px);
+      overflow-y: auto;
+      gap: 12px;
+      padding: 14px;
+    }
+    .hud-left::-webkit-scrollbar,
+    .hud-right::-webkit-scrollbar {
+      width: 4px;
+    }
+    .hud-left::-webkit-scrollbar-thumb,
+    .hud-right::-webkit-scrollbar-thumb {
+      background: rgba(56, 189, 248, 0.3);
+      border-radius: 2px;
+    }
+
+    /* Right Constellation & Satellite HUD */
+    .hud-right {
+      top: 68px;
+      right: 16px;
+      width: 360px;
+      max-height: calc(100vh - 120px);
+      overflow-y: auto;
+      gap: 12px;
+      padding: 14px;
+    }
+
+    /* Section Card */
+    .tele-card {
+      background: var(--bg-card);
+      border: 1px solid var(--border-light);
+      border-radius: 8px;
+      padding: 10px 12px;
+    }
+
+    .card-title {
+      font-size: 10px;
+      font-weight: 800;
+      text-transform: uppercase;
+      letter-spacing: 0.8px;
+      color: var(--text-dim);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 6px;
+      border-bottom: 1px solid rgba(255,255,255,0.04);
+      padding-bottom: 4px;
+    }
+
+    /* Big Metric Display */
+    .metric-row {
+      display: flex;
+      align-items: baseline;
+      justify-content: space-between;
+      margin-top: 4px;
+    }
+    .metric-hero {
+      font-size: 26px;
+      font-weight: 800;
+      color: #ffffff;
+      letter-spacing: -0.5px;
+      line-height: 1;
+    }
+    .metric-unit {
+      font-size: 11px;
+      color: var(--text-muted);
+      font-weight: 500;
+      margin-left: 4px;
+    }
+
+    .grid-2col {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 8px;
+    }
+    .grid-3col {
+      display: grid;
+      grid-template-columns: 1fr 1fr 1fr;
+      gap: 6px;
+    }
+    .grid-4col {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 4px;
+    }
+
+    .sub-stat {
+      background: rgba(0, 0, 0, 0.25);
+      border: 1px solid rgba(255, 255, 255, 0.04);
+      border-radius: 6px;
+      padding: 6px 8px;
+    }
+    .sub-stat-lbl {
+      font-size: 9px;
+      font-weight: 700;
+      color: var(--text-dim);
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+    .sub-stat-val {
+      font-size: 13px;
+      font-weight: 700;
+      color: #ffffff;
+      margin-top: 2px;
+    }
+
+    /* Compass Rose / Tape */
+    .compass-container {
+      position: relative;
+      height: 48px;
+      background: #050810;
+      border-radius: 6px;
+      border: 1px solid rgba(56, 189, 248, 0.2);
+      overflow: hidden;
+      margin-top: 6px;
+    }
+    .compass-needle {
+      position: absolute;
+      top: 0;
+      bottom: 0;
+      left: 50%;
+      width: 2px;
+      background: #f43f5e;
+      box-shadow: 0 0 6px #f43f5e;
+      z-index: 10;
+      transform: translateX(-50%);
+    }
+    .compass-needle::after {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: 50%;
+      transform: translateX(-50%);
+      width: 0;
+      height: 0;
+      border-left: 5px solid transparent;
+      border-right: 5px solid transparent;
+      border-top: 6px solid #f43f5e;
+    }
+    .compass-tape {
+      display: flex;
+      align-items: center;
+      height: 100%;
+      position: absolute;
+      top: 0;
+      left: 50%;
+      transition: transform 0.2s cubic-bezier(0.1, 0.9, 0.2, 1);
+      will-change: transform;
+    }
+    .compass-mark {
+      width: 40px;
+      text-align: center;
+      font-size: 10px;
+      font-weight: 700;
+      color: var(--text-muted);
+      flex-shrink: 0;
+    }
+    .compass-mark.cardinal {
+      color: var(--accent-cyan);
+      font-weight: 800;
+      font-size: 11px;
+    }
+    .compass-mark.north {
+      color: #f43f5e;
+      font-weight: 900;
+    }
+
+    /* Canvas Polar Radar */
+    #skyviewCanvas {
+      width: 100%;
+      height: 220px;
+      display: block;
+      background: #040711;
+      border-radius: 6px;
+      border: 1px solid rgba(56, 189, 248, 0.15);
+      margin-top: 6px;
+    }
+
+    /* Signal Bar Chart Container */
+    .snr-bars-wrapper {
+      max-height: 140px;
+      overflow-y: auto;
+      margin-top: 6px;
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+      padding-right: 2px;
+    }
+    .snr-bar-row {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      font-size: 10px;
+      font-family: 'JetBrains Mono', monospace;
+    }
+    .snr-sat-id {
+      width: 46px;
+      color: #ffffff;
+      font-weight: 700;
+      flex-shrink: 0;
+    }
+    .snr-track {
+      flex: 1;
+      height: 8px;
+      background: rgba(255, 255, 255, 0.06);
+      border-radius: 4px;
+      overflow: hidden;
+      position: relative;
+    }
+    .snr-fill {
+      height: 100%;
+      border-radius: 4px;
+      transition: width 0.3s ease;
+    }
+    .snr-val {
+      width: 32px;
+      text-align: right;
+      color: var(--text-muted);
+      font-weight: 600;
+      flex-shrink: 0;
+    }
+
+    /* Bottom Raw NMEA Drawer */
+    .bottom-drawer {
+      position: absolute;
+      bottom: 0;
+      left: 0;
+      right: 0;
+      background: rgba(7, 10, 17, 0.95);
+      backdrop-filter: blur(12px);
+      -webkit-backdrop-filter: blur(12px);
+      border-top: 1px solid var(--border-panel);
+      z-index: 1000;
+      box-shadow: 0 -4px 20px rgba(0,0,0,0.6);
+      transition: transform 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+    }
+    .bottom-drawer.collapsed {
+      transform: translateY(calc(100% - 32px));
+    }
+    .drawer-handle {
+      height: 32px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 0 16px;
+      cursor: pointer;
+      background: rgba(15, 23, 42, 0.85);
+      border-bottom: 1px solid rgba(255,255,255,0.05);
+    }
+    .drawer-handle:hover {
+      background: rgba(30, 41, 59, 0.95);
+    }
+    .drawer-title {
+      font-size: 11px;
+      font-weight: 700;
+      color: var(--text-muted);
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .drawer-controls {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+    .filter-btn {
+      background: transparent;
+      border: 1px solid rgba(255,255,255,0.1);
+      color: var(--text-muted);
+      font-size: 9.5px;
+      font-family: 'JetBrains Mono', monospace;
+      padding: 2px 6px;
+      border-radius: 4px;
+      cursor: pointer;
+    }
+    .filter-btn.active {
+      background: rgba(56, 189, 248, 0.2);
+      border-color: var(--accent-cyan);
+      color: var(--accent-cyan);
+    }
+    .drawer-body {
+      height: 130px;
+      padding: 8px 16px;
+      overflow-y: auto;
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 11px;
+      line-height: 1.5;
+      background: #020408;
+    }
+    .log-line {
+      white-space: nowrap;
+      color: #94a3b8;
+    }
+    .log-line.gga { color: #38bdf8; }
+    .log-line.rmc { color: #34d399; }
+    .log-line.gsa { color: #a855f7; }
+    .log-line.gsv { color: #f59e0b; }
+    .log-line.vtg { color: #ec4899; }
+
+    /* Map Layer & Measurement Widgets */
+    .map-fab-group {
+      position: absolute;
+      top: 68px;
+      left: 60px;
+      z-index: 850;
+      display: flex;
+      gap: 6px;
+    }
+    .map-fab {
+      background: var(--bg-panel);
+      backdrop-filter: blur(10px);
+      border: 1px solid var(--border-panel);
+      border-radius: 6px;
+      padding: 6px 10px;
+      font-size: 11px;
+      font-weight: 600;
+      color: var(--text-main);
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      box-shadow: 0 4px 14px rgba(0,0,0,0.4);
+      transition: all 0.15s ease;
+    }
+    .map-fab:hover {
+      background: rgba(56, 189, 248, 0.2);
+      border-color: var(--accent-cyan);
+    }
+
+    /* Target Measurement Infobox (when map clicked) */
+    #targetInfoBox {
+      position: absolute;
+      bottom: 46px;
+      left: 50%;
+      transform: translateX(-50%);
+      z-index: 850;
+      background: var(--bg-panel);
+      backdrop-filter: blur(12px);
+      border: 1px solid var(--accent-amber);
+      border-radius: 8px;
+      padding: 8px 14px;
+      font-size: 11.5px;
+      display: none;
+      align-items: center;
+      gap: 12px;
+      box-shadow: 0 8px 24px rgba(0,0,0,0.7);
+    }
+
+    /* Custom Leaflet Marker Heading Arrow */
+    .gps-marker-container {
+      position: relative;
+      width: 32px;
+      height: 32px;
+    }
+    .gps-marker-dot {
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      width: 14px;
+      height: 14px;
+      background: #10b981;
+      border: 2px solid #ffffff;
+      border-radius: 50%;
+      transform: translate(-50%, -50%);
+      box-shadow: 0 0 12px #10b981;
+    }
+    .gps-marker-arrow {
+      position: absolute;
+      top: -4px;
+      left: 50%;
+      width: 0;
+      height: 0;
+      border-left: 6px solid transparent;
+      border-right: 6px solid transparent;
+      border-bottom: 12px solid #38bdf8;
+      transform-origin: center 20px;
+      transform: translateX(-50%);
+      filter: drop-shadow(0 0 4px rgba(56, 189, 248, 0.8));
+    }
+    .gps-pulse-ring {
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      width: 28px;
+      height: 28px;
+      border-radius: 50%;
+      border: 2px solid #10b981;
+      transform: translate(-50%, -50%);
+      animation: ripple 1.8s infinite cubic-bezier(0, 0.2, 0.8, 1);
+    }
+    @keyframes ripple {
+      0% { width: 14px; height: 14px; opacity: 1; }
+      100% { width: 44px; height: 44px; opacity: 0; }
+    }
+
+    /* Dynamic Profile Selector Dropdown */
+    .profile-dropdown-menu {
+      position: absolute;
+      top: calc(100% + 6px);
+      left: 0;
+      width: 290px;
+      background: #090e1a;
+      border: 1px solid var(--border-panel);
+      border-radius: 8px;
+      box-shadow: 0 16px 36px rgba(0,0,0,0.92);
+      z-index: 2500;
+      overflow: hidden;
+      animation: fadeIn 0.15s ease-out;
+    }
+    .profile-item {
+      padding: 9px 12px;
+      cursor: pointer;
+      border-bottom: 1px solid rgba(255,255,255,0.05);
+      transition: background 0.15s;
+    }
+    .profile-item:hover {
+      background: rgba(168, 85, 247, 0.15);
+    }
+    .profile-item.active {
+      background: rgba(168, 85, 247, 0.22);
+      border-left: 3px solid #a855f7;
+    }
+    .profile-item b {
+      display: block;
+      font-size: 11.5px;
+      color: #ffffff;
+    }
+    .profile-item small {
+      display: block;
+      font-size: 9.5px;
+      color: var(--text-muted);
+      margin-top: 2px;
+      line-height: 1.3;
+    }
+
+    /* GNSS Accuracy & Benchmark Studio Modal */
+    .accuracy-modal-overlay {
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background: rgba(2, 4, 8, 0.82);
+      backdrop-filter: blur(10px);
+      -webkit-backdrop-filter: blur(10px);
+      z-index: 1200;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 16px;
+    }
+    .accuracy-modal-box {
+      width: 980px;
+      max-width: 96vw;
+      max-height: 92vh;
+      background: #090d18;
+      border: 1px solid var(--border-panel);
+      border-radius: 12px;
+      box-shadow: 0 24px 70px rgba(0, 0, 0, 0.95);
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+    }
+    .acc-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 12px 18px;
+      background: rgba(15, 23, 42, 0.9);
+      border-bottom: 1px solid var(--border-light);
+    }
+    .acc-icon {
+      width: 34px;
+      height: 34px;
+      border-radius: 8px;
+      background: linear-gradient(135deg, #10b981, #0284c7);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 18px;
+    }
+    .acc-close-btn {
+      background: transparent;
+      border: none;
+      color: #94a3b8;
+      font-size: 22px;
+      cursor: pointer;
+      padding: 4px 8px;
+      line-height: 1;
+    }
+    .acc-close-btn:hover { color: #ffffff; }
+    .acc-toolbar {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 8px 18px;
+      background: #0c1120;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+      gap: 10px;
+      flex-wrap: wrap;
+    }
+    .acc-anchor-bar {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 6px 18px;
+      background: rgba(56, 189, 248, 0.08);
+      border-bottom: 1px solid rgba(56, 189, 248, 0.18);
+      font-size: 11px;
+    }
+    .acc-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 14px;
+      padding: 14px 18px;
+      overflow-y: auto;
+      max-height: calc(92vh - 140px);
+    }
+    .acc-btn {
+      background: rgba(30, 41, 59, 0.85);
+      border: 1px solid var(--border-light);
+      border-radius: 4px;
+      color: var(--text-main);
+      font-size: 11px;
+      font-weight: 600;
+      padding: 4px 10px;
+      cursor: pointer;
+      transition: all 0.15s ease;
+    }
+    .acc-btn:hover { background: rgba(56, 189, 248, 0.2); border-color: var(--accent-cyan); color: #fff; }
+    .acc-btn-pause { border-color: #f59e0b; color: #fbbf24; }
+    .acc-btn-reset { border-color: #ef4444; color: #f87171; }
+    .acc-btn-save { background: rgba(16, 185, 129, 0.2); border-color: #10b981; color: #34d399; font-weight: 700; }
+    .acc-select {
+      background: #050811;
+      border: 1px solid var(--border-panel);
+      color: #fff;
+      border-radius: 4px;
+      padding: 4px 8px;
+      font-size: 11px;
+      outline: none;
+    }
+    .acc-select-mini {
+      background: #050811;
+      border: 1px solid var(--border-light);
+      color: #cbd5e1;
+      border-radius: 4px;
+      padding: 2px 6px;
+      font-size: 9.5px;
+    }
+    .acc-pill-live {
+      font-size: 9.5px;
+      font-weight: 700;
+      padding: 2px 8px;
+      border-radius: 10px;
+      background: rgba(16, 185, 129, 0.2);
+      color: #34d399;
+      border: 1px solid rgba(16, 185, 129, 0.4);
+    }
+    .acc-pill-grade {
+      font-size: 10px;
+      font-weight: 800;
+      padding: 2px 8px;
+      border-radius: 4px;
+      background: rgba(56, 189, 248, 0.2);
+      color: var(--accent-cyan);
+    }
+    .acc-table-wrapper {
+      max-height: 180px;
+      overflow-y: auto;
+      margin-top: 6px;
+    }
+    .acc-table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 10px;
+      font-family: 'JetBrains Mono', monospace;
+    }
+    .acc-table th {
+      background: rgba(0, 0, 0, 0.4);
+      color: var(--text-dim);
+      text-align: left;
+      padding: 6px 8px;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+      font-size: 9px;
+      text-transform: uppercase;
+    }
+    .acc-table td {
+      padding: 6px 8px;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.04);
+      color: var(--text-main);
+    }
+    .acc-table tr:hover { background: rgba(56, 189, 248, 0.06); }
+    @media (max-width: 850px) {
+      .acc-grid { grid-template-columns: 1fr; }
+    }
+  </style>
+</head>
+<body>
+
+  <!-- Fullscreen Map Canvas -->
+  <div id="map"></div>
+
+  <!-- Top Tactical Command Bar -->
+  <header class="top-header">
+    <div class="brand-section">
+      <div class="brand-icon">🛰️</div>
+      <div>
+        <div class="brand-title">
+          MET-SURV // TBS M10Q GNSS TERMINALİ
+          <span style="font-size:10px; font-weight:600; color:var(--accent-cyan); background:rgba(56,189,248,0.15); border:1px solid rgba(56,189,248,0.3); padding:1px 6px; border-radius:4px;">MAX-M10S</span>
+        </div>
+        <div class="brand-subtitle">u-blox 10th Gen Multi-Constellation Live Tactical Positioning</div>
+      </div>
+    </div>
+
+    <!-- Live Telemetry Status Pills -->
+    <div class="status-group">
+      <div id="hwStatusPill" class="status-badge badge-live">
+        <span class="badge-pulse"></span>
+        <span id="hwPortText">DONANIM BAĞLI (COM4)</span>
+      </div>
+      <div id="fixStatusPill" class="status-badge badge-fix-searching">
+        <span id="fixStatusText">KİLİT ARANIYOR (0/4 Uydu)</span>
+      </div>
+      <div class="status-badge" style="background:rgba(255,255,255,0.05); color:#cbd5e1; border-color:var(--border-light);">
+        <span>PAKET HIZI: <b id="hzRateText" style="color:var(--accent-cyan);">1.0 Hz</b></span>
+      </div>
+      <div id="filterStatusPill" class="status-badge" style="background:rgba(59,130,246,0.15); color:#93c5fd; border-color:rgba(59,130,246,0.4);" title="Kinematik Kalman Filtresi ve ZVU Statik Yüzme Bastırması">
+        <span id="filterStatusText">🛡️ KALMAN & ZVU AKTİF</span>
+      </div>
+    </div>
+
+    <!-- Actions -->
+    <div class="header-actions">
+      <!-- Direct Switch to Field Handheld Terminal -->
+      <a href="tactical_terminal.html" class="btn-tactical" style="text-decoration:none; background:rgba(16,185,129,0.25); border-color:#10b981; color:#6ee7b7; font-weight:800;" title="Saha Operasyonel El Terminali Arayüzüne Geç">
+        <span>📱</span> <span>Saha El Terminali</span>
+      </a>
+
+      <!-- Dynamic Profile Selector (Automated with Manual Override) -->
+      <div style="position:relative; display:inline-block;">
+        <button id="btnProfileSelect" class="btn-tactical" onclick="toggleProfileDropdown()" style="background:rgba(168,85,247,0.22); border-color:#a855f7; color:#d8b4fe; font-weight:700;" title="Kullanım profili (Statik, Dağcılık, Araç, İHA) - Otomatik veya Manuel">
+          <span id="profileIcon">🤖</span> <span id="profileText">Profil: OTO (🪟 Statik)</span> ▾
+        </button>
+        <div id="profileDropdown" class="profile-dropdown-menu" style="display:none;">
+          <div class="profile-item active" id="profItemAuto" onclick="setProfileManual('AUTO')">
+            <b>🤖 Otomatik Adaptasyon (Önerilen)</b>
+            <small>Hız ve ivmeye göre statik, yaya veya araç moduna otomatik geçer</small>
+          </div>
+          <div class="profile-item" id="profItemStat" onclick="setProfileManual('STATIONARY')">
+            <b>🪟 Statik / Benchmark</b>
+            <small>Pencere ve masa testleri için agresif statik yüzme bastırma</small>
+          </div>
+          <div class="profile-item" id="profItemPed" onclick="setProfileManual('PEDESTRIAN')">
+            <b>🚶 Yaya / Dağcılık</b>
+            <small>Taktik yürüyüş, dağ rotası ve dengeli kinematik takip</small>
+          </div>
+          <div class="profile-item" id="profItemAutoVeh" onclick="setProfileManual('AUTOMOTIVE')">
+            <b>🚗 Araç / Karayolu</b>
+            <small>Yüksek hız, viraj dönüşleri ve ani fren/gaz manevraları</small>
+          </div>
+          <div class="profile-item" id="profItemAir" onclick="setProfileManual('AIRBORNE')">
+            <b>🛸 İHA / Serbest 3D</b>
+            <small>Serbest 3D uçuş ve merkezkaç ivmeli dönüşler</small>
+          </div>
+        </div>
+      </div>
+
+      <button id="btnFilterToggle" class="btn-tactical" onclick="toggleGnssFilter()" style="background:rgba(59,130,246,0.22); border-color:#3b82f6; color:#60a5fa; font-weight:700;">
+        <span>🛡️</span> <span id="filterToggleText">Filtre: Kalman + ZVU</span>
+      </button>
+      <button id="btnFollow" class="btn-tactical active" onclick="toggleFollowMap()">
+        <span>🎯</span> <span id="btnFollowText">Takibi Kilitle: AÇIK</span>
+      </button>
+      <button class="btn-tactical" onclick="fitTrackBounds()">
+        <span>🔍</span> İzi Sığdır
+      </button>
+      <button class="btn-tactical" onclick="clearTrack()">
+        <span>🧹</span> İzi Temizle
+      </button>
+      <button class="btn-tactical" onclick="copyCoordinates()">
+        <span>📋</span> Konum Kopyala
+      </button>
+      <button class="btn-tactical" onclick="exportGpx()">
+        <span>💾</span> GPX Aktar
+      </button>
+      <button id="btnAccuracyLab" class="btn-tactical" onclick="toggleAccuracyPanel()" style="background:rgba(16,185,129,0.22); border-color:#10b981; color:#34d399; font-weight:700;">
+        <span>🎯</span> Doğruluk & Kıyaslama
+      </button>
+      <a href="/tactical_survival_meteorology.html" class="btn-tactical" style="background:rgba(56,189,248,0.15); border-color:var(--accent-cyan); color:#ffffff;">
+        <span>📊</span> Meteoroloji Raporu
+      </a>
+    </div>
+  </header>
+
+  <!-- Map Quick Action Bar (Map Style & Tools) -->
+  <div class="map-fab-group">
+    <button class="map-fab" onclick="setBaseLayer('sat')">🛰️ Uydu Görünümü</button>
+    <button class="map-fab" onclick="setBaseLayer('dark')">🌙 Taktik Gece</button>
+    <button class="map-fab" onclick="setBaseLayer('topo')">⛰️ Topo / Arazi</button>
+    <button class="map-fab" onclick="setBaseLayer('street')">🗺️ Sokak / Şehir</button>
+  </div>
+
+  <!-- Target Distance & Bearing Measure Box -->
+  <div id="targetInfoBox">
+    <span style="color:var(--accent-amber); font-weight:700;">🎯 HEDEF ÖLÇÜMÜ:</span>
+    <span>Mesafe: <b id="targetDist" class="mono" style="color:#ffffff;">0.00 km</b></span>
+    <span>Rulman: <b id="targetBrg" class="mono" style="color:var(--accent-cyan);">000° (K)</b></span>
+    <button onclick="clearTargetMeasure()" style="background:transparent; border:none; color:#ef4444; cursor:pointer; font-weight:700;">✕ Kapat</button>
+  </div>
+
+  <!-- LEFT HUD: Navigation, Position, Dynamics & Trip Computer -->
+  <aside class="hud-overlay hud-panel hud-left">
+    
+    <!-- 1. Coordinate Formats Card -->
+    <div class="tele-card">
+      <div class="card-title">
+        <span>📍 WGS84 KOORDİNAT & MEVKİ</span>
+        <span id="coordDatum" class="mono" style="color:var(--accent-emerald);">DATUM: WGS84</span>
+      </div>
+      <div style="margin-top:6px;">
+        <div style="font-size:10px; color:var(--text-dim); text-transform:uppercase;">ONDALIK DERECE (DD)</div>
+        <div class="metric-row">
+          <div class="mono" style="font-size:18px; font-weight:800; color:var(--accent-cyan);">
+            <span id="valLatDD">--.------°</span> <span id="valLatDir">N</span>, 
+            <span id="valLonDD">--.------°</span> <span id="valLonDir">E</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="grid-2col" style="margin-top:8px; border-top:1px solid rgba(255,255,255,0.06); padding-top:6px;">
+        <div>
+          <div style="font-size:9.5px; color:var(--text-dim);">DMS (DERECE-DAK-SAN)</div>
+          <div id="valDMS" class="mono" style="font-size:11px; font-weight:600; color:#ffffff; margin-top:2px;">--° --' --"</div>
+        </div>
+        <div>
+          <div style="font-size:9.5px; color:var(--text-dim);">DDM (NMEA FORMATI)</div>
+          <div id="valDDM" class="mono" style="font-size:11px; font-weight:600; color:#cbd5e1; margin-top:2px;">--° --.----'</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- 2. Flight & Surface Dynamics -->
+    <div class="tele-card">
+      <div class="card-title">
+        <span>⚡ SEYİR DİNAMİKLERİ & HIZ</span>
+        <span class="mono" style="color:var(--accent-cyan);">VTG / RMC</span>
+      </div>
+      <div class="metric-row">
+        <div>
+          <span id="valSpeedKmh" class="metric-hero mono">0.0</span>
+          <span class="metric-unit">km/h</span>
+        </div>
+        <div class="mono" style="text-align:right;">
+          <div style="font-size:13px; font-weight:700; color:#34d399;"><span id="valSpeedKnots">0.0</span> <span style="font-size:10px; color:var(--text-muted);">kt</span></div>
+          <div style="font-size:11px; color:var(--text-muted);"><span id="valSpeedMs">0.0</span> m/s</div>
+        </div>
+      </div>
+
+      <div class="grid-2col" style="margin-top:8px;">
+        <div class="sub-stat">
+          <div class="sub-stat-lbl">AZAMİ HIZ (MAX)</div>
+          <div class="sub-stat-val mono" style="color:var(--accent-amber);"><span id="valMaxSpeed">0.0</span> <span style="font-size:10px;">km/h</span></div>
+        </div>
+        <div class="sub-stat">
+          <div class="sub-stat-lbl">ORTALAMA HIZ</div>
+          <div class="sub-stat-val mono" style="color:#ffffff;"><span id="valAvgSpeed">0.0</span> <span style="font-size:10px;">km/h</span></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- 3. Altitude, Geoid & Vertical Dynamics -->
+    <div class="tele-card">
+      <div class="card-title">
+        <span>🏔️ İRTİFA & DİKEY PROFİL (MSL/GEOID)</span>
+        <span class="mono" style="color:var(--accent-emerald);">GGA DİKEY</span>
+      </div>
+      <div class="metric-row">
+        <div>
+          <span id="valAltMsl" class="metric-hero mono" style="color:var(--accent-emerald);">---</span>
+          <span class="metric-unit">m (MSL)</span>
+        </div>
+        <div class="mono" style="text-align:right;">
+          <div style="font-size:13px; font-weight:700; color:#38bdf8;"><span id="valAltFt">---</span> <span style="font-size:10px; color:var(--text-muted);">ft</span></div>
+          <div style="font-size:10.5px; color:var(--text-muted);">VSI: <b id="valVsi" style="color:#ffffff;">0.0</b> m/s</div>
+        </div>
+      </div>
+
+      <div class="grid-3col" style="margin-top:8px;">
+        <div class="sub-stat">
+          <div class="sub-stat-lbl">JEOİT FARKI (N)</div>
+          <div class="sub-stat-val mono"><span id="valGeoid">--</span> m</div>
+        </div>
+        <div class="sub-stat">
+          <div class="sub-stat-lbl">WGS84 ELİPSOİD</div>
+          <div class="sub-stat-val mono" style="color:var(--accent-cyan);"><span id="valEllipsoid">--</span> m</div>
+        </div>
+        <div class="sub-stat">
+          <div class="sub-stat-lbl">MİN / MAK İRTİFA</div>
+          <div class="sub-stat-val mono" style="font-size:11px;"><span id="valMinAlt">--</span> / <span id="valMaxAlt">--</span></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- 4. Heading Compass Tape & Heading Dynamics -->
+    <div class="tele-card">
+      <div class="card-title">
+        <span>🧭 PUSULA & İSTİKAMET DERECESİ</span>
+        <span class="mono" style="color:#ffffff;"><span id="valHeadingDeg">---</span>° <span id="valHeadingCard">--</span></span>
+      </div>
+      
+      <!-- Scrolling Compass Ribbon -->
+      <div class="compass-container">
+        <div class="compass-needle"></div>
+        <div id="compassTape" class="compass-tape mono">
+          <!-- Populated by JS -->
+        </div>
+      </div>
+
+      <div class="grid-2col" style="margin-top:8px;">
+        <div class="sub-stat">
+          <div class="sub-stat-lbl">GERÇEK ROTA (TRUE °T)</div>
+          <div class="sub-stat-val mono" style="color:var(--accent-cyan);"><span id="valTrackTrue">---.-</span>°</div>
+        </div>
+        <div class="sub-stat">
+          <div class="sub-stat-lbl">MANYETİK ROTA (°M)</div>
+          <div class="sub-stat-val mono"><span id="valTrackMag">---.-</span>°</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- 5. Trip Computer & Odometer -->
+    <div class="tele-card">
+      <div class="card-title">
+        <span>⏱️ SEYAHAT BİLGİSAYARI & KİLOMETRE</span>
+        <span class="mono" style="color:var(--accent-purple);">TRIP ODOMETER</span>
+      </div>
+      <div class="grid-3col">
+        <div class="sub-stat">
+          <div class="sub-stat-lbl">MESAFE</div>
+          <div class="sub-stat-val mono" style="color:#34d399;"><span id="valOdometer">0.00</span> <span style="font-size:10px;">km</span></div>
+        </div>
+        <div class="sub-stat">
+          <div class="sub-stat-lbl">SÜRE</div>
+          <div class="sub-stat-val mono"><span id="valTripDuration">00:00:00</span></div>
+        </div>
+        <div class="sub-stat">
+          <div class="sub-stat-lbl">İZ NOKTASI</div>
+          <div class="sub-stat-val mono" style="color:var(--accent-cyan);"><span id="valBreadcrumbCount">0</span></div>
+        </div>
+      </div>
+    </div>
+
+  </aside>
+
+  <!-- RIGHT HUD: Polar Radar Skyview, Constellations, SNR & DOP -->
+  <aside class="hud-overlay hud-panel hud-right">
+    
+    <!-- 1. Polar Radar Skyplot -->
+    <div class="tele-card">
+      <div class="card-title">
+        <span>📡 360° UYDU GÖKYÜZÜ RADARI (SKYVIEW)</span>
+        <span class="mono" style="color:var(--accent-cyan);"><span id="valSkyviewCount">0</span> UYDU</span>
+      </div>
+      
+      <!-- Canvas Skyview Radar -->
+      <canvas id="skyviewCanvas" width="330" height="220"></canvas>
+
+      <div style="display:flex; justify-content:space-between; align-items:center; margin-top:6px; font-size:9.5px; font-family:'JetBrains Mono';">
+        <span style="color:#3b82f6;">● GPS (ABD)</span>
+        <span style="color:#10b981;">● Galileo (AB)</span>
+        <span style="color:#f59e0b;">● BeiDou (Çin)</span>
+        <span style="color:#a855f7;">● GLONASS (Rus)</span>
+        <span style="color:#ec4899;">● QZSS (Jap)</span>
+      </div>
+    </div>
+
+    <!-- 2. Constellation Satellite Breakdown -->
+    <div class="tele-card">
+      <div class="card-title">
+        <span>🌌 ÇOKLU KONSTELASYON KİLİT DAĞILIMI</span>
+        <span id="valFixEngineMode" class="mono" style="color:var(--accent-emerald);">M10Q 4-GNSS</span>
+      </div>
+      <div class="grid-2col">
+        <div class="sub-stat">
+          <div class="sub-stat-lbl">ÇÖZÜMDE AKTİF (KULLANILAN)</div>
+          <div class="sub-stat-val mono" style="color:#10b981; font-size:16px;"><span id="valSatsUsed">0</span> <span style="font-size:10px; color:var(--text-muted);">Uydu</span></div>
+        </div>
+        <div class="sub-stat">
+          <div class="sub-stat-lbl">GÖRÜŞ ALANINDA (İZLENEN)</div>
+          <div class="sub-stat-val mono" style="color:var(--accent-amber); font-size:16px;"><span id="valSatsView">0</span> <span style="font-size:10px; color:var(--text-muted);">Uydu</span></div>
+        </div>
+      </div>
+
+      <div class="grid-4col" style="margin-top:6px;">
+        <div class="sub-stat" style="text-align:center;">
+          <div class="sub-stat-lbl" style="color:#60a5fa;">GPS</div>
+          <div class="sub-stat-val mono" id="valSatGP">0</div>
+        </div>
+        <div class="sub-stat" style="text-align:center;">
+          <div class="sub-stat-lbl" style="color:#34d399;">GAL</div>
+          <div class="sub-stat-val mono" id="valSatGA">0</div>
+        </div>
+        <div class="sub-stat" style="text-align:center;">
+          <div class="sub-stat-lbl" style="color:#fbbf24;">BDS</div>
+          <div class="sub-stat-val mono" id="valSatGB">0</div>
+        </div>
+        <div class="sub-stat" style="text-align:center;">
+          <div class="sub-stat-lbl" style="color:#c084fc;">GLO</div>
+          <div class="sub-stat-val mono" id="valSatGL">0</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- 3. Dilution of Precision (DOP) & Accuracy Integrity -->
+    <div class="tele-card">
+      <div class="card-title">
+        <span>🎯 HASSASİYET KAYBI (DOP) & KONUM HATASI</span>
+        <span id="valDopRating" class="mono" style="color:var(--accent-emerald);">MÜKEMMEL</span>
+      </div>
+      <div class="grid-3col">
+        <div class="sub-stat">
+          <div class="sub-stat-lbl">HDOP (YATAY)</div>
+          <div class="sub-stat-val mono" style="color:var(--accent-cyan);"><span id="valHdop">--.--</span></div>
+        </div>
+        <div class="sub-stat">
+          <div class="sub-stat-lbl">VDOP (DİKEY)</div>
+          <div class="sub-stat-val mono"><span id="valVdop">--.--</span></div>
+        </div>
+        <div class="sub-stat">
+          <div class="sub-stat-lbl">PDOP (3D KONUM)</div>
+          <div class="sub-stat-val mono" style="color:var(--accent-purple);"><span id="valPdop">--.--</span></div>
+        </div>
+      </div>
+
+      <div class="metric-row" style="margin-top:6px; border-top:1px solid rgba(255,255,255,0.04); padding-top:4px;">
+        <span style="font-size:10.5px; color:var(--text-muted);">Tahmini Yatay Hata Payı (EPE):</span>
+        <span class="mono" style="font-size:12px; font-weight:700; color:#34d399;">± <span id="valEpe">--.-</span> m</span>
+      </div>
+    </div>
+
+    <!-- 4. Satellite Signal-to-Noise Ratio (C/N0 dB-Hz) Bars -->
+    <div class="tele-card">
+      <div class="card-title">
+        <span>📶 SİNYAL GÜCÜ (C/N0 dB-Hz) ÇUBUK GRAFİĞİ</span>
+        <span style="font-size:9.5px; color:var(--text-muted);">>35: Güçlü | 25-35: Orta | &lt;25: Zayıf</span>
+      </div>
+      
+      <div id="snrBarsList" class="snr-bars-wrapper">
+        <div style="font-size:11px; color:var(--text-dim); text-align:center; padding:12px 0;">
+          Uydu sinyal verisi (GSV) bekleniyor...
+        </div>
+      </div>
+    </div>
+
+    <!-- 5. Time & Ephemeris Sync -->
+    <div class="tele-card">
+      <div class="card-title">
+        <span>🕒 ATOMİK GNSS ZAMANI & TARİH</span>
+        <span class="mono" style="color:var(--accent-cyan);">UTC SENKRON</span>
+      </div>
+      <div class="grid-2col">
+        <div class="sub-stat">
+          <div class="sub-stat-lbl">GNSS UTC SAATİ</div>
+          <div class="sub-stat-val mono" style="color:#ffffff;"><span id="valUtcTime">--:--:--.--</span></div>
+        </div>
+        <div class="sub-stat">
+          <div class="sub-stat-lbl">GNSS TARİHİ</div>
+          <div class="sub-stat-val mono" style="color:#ffffff;"><span id="valUtcDate">--/--/----</span></div>
+        </div>
+      </div>
+    </div>
+
+  </aside>
+
+  <!-- BOTTOM NMEA CONSOLE & PACKET INSPECTOR DRAWER -->
+  <div id="bottomDrawer" class="bottom-drawer collapsed">
+    <div class="drawer-handle" onclick="toggleBottomDrawer()">
+      <div class="drawer-title">
+        <span>📟</span>
+        <span>CANLI NMEA 0183 VERİ AKIŞI & PAKET İNCELEYİCİ</span>
+        <span id="logCounter" class="mono" style="font-size:10px; color:var(--accent-cyan); background:rgba(56,189,248,0.15); padding:1px 6px; border-radius:4px;">0 PAKET</span>
+      </div>
+      <div class="drawer-controls" onclick="event.stopPropagation()">
+        <span style="font-size:10px; color:var(--text-dim); margin-right:4px;">FİLTRE:</span>
+        <button class="filter-btn active" onclick="setNmeaFilter('ALL')">TÜMÜ</button>
+        <button class="filter-btn" onclick="setNmeaFilter('GGA')">GGA</button>
+        <button class="filter-btn" onclick="setNmeaFilter('RMC')">RMC</button>
+        <button class="filter-btn" onclick="setNmeaFilter('GSA')">GSA</button>
+        <button class="filter-btn" onclick="setNmeaFilter('GSV')">GSV</button>
+        <button class="filter-btn" onclick="setNmeaFilter('VTG')">VTG</button>
+        <button class="filter-btn" id="btnPauseStream" onclick="togglePauseStream()" style="margin-left:6px; color:#fbbf24;">⏸ Duraklat</button>
+        <button class="filter-btn" onclick="copyNmeaLog()" style="margin-left:2px; color:var(--accent-emerald);">📋 Kopyala</button>
+        <button class="filter-btn" onclick="toggleBottomDrawer()" style="margin-left:6px;">⮟ / ⮝</button>
+      </div>
+    </div>
+    <div id="nmeaLogBox" class="drawer-body">
+      <div class="log-line">M10Q GNSS UART2 Donanım akışı dinleniyor...</div>
+    </div>
+  <!-- GNSS ACCURACY & BENCHMARK ANALYSIS STUDIO MODAL -->
+  <div id="accuracyModal" class="accuracy-modal-overlay" style="display:none;" onclick="if(event.target===this) toggleAccuracyPanel()">
+    <div class="accuracy-modal-box">
+      <!-- Modal Header -->
+      <div class="acc-header">
+        <div style="display:flex; align-items:center; gap:10px;">
+          <div class="acc-icon">🎯</div>
+          <div>
+            <div style="font-size:15px; font-weight:800; color:#fff; display:flex; align-items:center; gap:8px;">
+              GNSS DOĞRULUK ANALİZİ & STATİK SAÇILIM LABORATUVARI
+              <span id="accRecordingBadge" class="acc-pill-live">● CANLI KAYIT ALINIYOR</span>
+            </div>
+            <div style="font-size:11px; color:var(--text-muted);">
+              u-blox MAX-M10S 2D/3D Statik Saçılım, CEP %50, 2DRMS %95 Güvenlik Sınırı & Kıyaslama Motoru
+            </div>
+          </div>
+        </div>
+        <button onclick="toggleAccuracyPanel()" class="acc-close-btn" title="Kapat">✕</button>
+      </div>
+
+      <!-- Control & Session Toolbar -->
+      <div class="acc-toolbar">
+        <div style="display:flex; align-items:center; gap:8px; flex-wrap:wrap;">
+          <span style="font-size:11px; font-weight:700; color:var(--text-dim);">TEST PROFİLİ:</span>
+          <select id="accTestTagSelect" class="acc-select" onchange="onTestTagChange()">
+            <option value="Pencere Kenarı">🪟 Pencere Kenarı (Aktif Test)</option>
+            <option value="Masa Üstü (İç Mekan)">🛋️ Masa Üstü (İç Mekan)</option>
+            <option value="Balkon / Açık Alan">🌿 Balkon / Dış Mekan</option>
+            <option value="Mobil / Yürüyüş">🚶 Hareketli / Mobil</option>
+            <option value="Özel Test">🏷️ Özel Test</option>
+          </select>
+          <button id="btnAccRecordToggle" class="acc-btn acc-btn-pause" onclick="toggleAccuracyRecording()">⏸ Duraklat</button>
+          <button class="acc-btn acc-btn-reset" onclick="resetAccuracySession()">🔄 Sıfırla</button>
+          <button class="acc-btn acc-btn-save" onclick="saveBenchmarkSnapshot()">💾 Bu Testi Kıyaslamaya Ekle</button>
+        </div>
+        <div style="display:flex; align-items:center; gap:8px;">
+          <input type="file" id="accCsvFileInput" accept=".csv,.txt,.log,.nmea" style="display:none;" onchange="handleCsvFileSelected(event)">
+          <button class="acc-btn" onclick="document.getElementById('accCsvFileInput').click()" style="background:rgba(59,130,246,0.2); border-color:#3b82f6; color:#93c5fd;" title="Önceden kaydedilmiş 1 saatlik test dosyasını yükle">📂 Test Dosyası Yükle</button>
+          <button class="acc-btn" onclick="fetchServerLatestLog()" style="background:rgba(168,85,247,0.2); border-color:#a855f7; color:#d8b4fe;" title="Arka plan köprüsünde kaydedilen canlı cihaz oturumunu çek">⚡ Cihaz Kaydını Çek</button>
+          <button class="acc-btn" onclick="exportAccuracyCsv()">📥 CSV İndir</button>
+          <button class="acc-btn" onclick="copyAccuracyReport()">📋 Raporu Kopyala</button>
+        </div>
+      </div>
+
+      <!-- Anchor / Ground Truth Status Bar -->
+      <div class="acc-anchor-bar">
+        <div style="display:flex; align-items:center; gap:6px;">
+          <span style="color:var(--accent-cyan); font-weight:700;">📍 REFERANS MERKEZ (AĞIRLIK MERKEZİ):</span>
+          <span id="accCentroidText" class="mono" style="color:#ffffff;">Hesaplanıyor...</span>
+        </div>
+        <div class="mono" style="font-size:11px; color:var(--text-muted);">
+          Örnek: <b id="accSampleCount" style="color:var(--accent-cyan);">0</b> | Süre: <b id="accDurationText" style="color:#ffffff;">00:00:00</b>
+        </div>
+      </div>
+
+      <!-- Main Analysis Grid (2 Columns) -->
+      <div class="acc-grid">
+        <!-- LEFT: Visual Canvas Charts -->
+        <div class="acc-col">
+          <!-- 1. 2D Scatter Reticle Canvas -->
+          <div class="tele-card" style="padding:10px;">
+            <div class="card-title">
+              <span>🎯 2D HATA DAĞILIM RETİKÜLÜ (SCATTER TARGET)</span>
+              <div style="display:flex; align-items:center; gap:6px;">
+                <span style="font-size:9.5px; color:var(--text-muted);">ÖLÇEK:</span>
+                <select id="accReticleScale" class="acc-select-mini" onchange="renderScatterPlot()">
+                  <option value="5">±5 Metre</option>
+                  <option value="10" selected>±10 Metre</option>
+                  <option value="25">±25 Metre</option>
+                  <option value="50">±50 Metre</option>
+                </select>
+              </div>
+            </div>
+            
+            <canvas id="scatterCanvas" width="420" height="300" style="background:#03060f; border-radius:6px; border:1px solid rgba(56,189,248,0.2); width:100%; display:block;"></canvas>
+
+            <div style="display:flex; justify-content:space-between; align-items:center; margin-top:6px; font-size:10px; font-family:'JetBrains Mono';">
+              <span style="color:#38bdf8;">━ CEP %50: <b id="lblScatterCep">-- m</b></span>
+              <span style="color:#f59e0b;">━ 2DRMS %95: <b id="lblScatter2Drms">-- m</b></span>
+              <span style="color:#ef4444;">━ Maks Sapma: <b id="lblScatterMax">-- m</b></span>
+            </div>
+          </div>
+
+          <!-- 2. Altitude & HDOP Strip Chart -->
+          <div class="tele-card" style="padding:10px; margin-top:10px;">
+            <div class="card-title">
+              <span>📈 İRTİFA & DİKEY DALGALANMA GRAFİĞİ</span>
+              <span class="mono" style="color:var(--accent-emerald);">MSL ALTITUDE DRIFT</span>
+            </div>
+            <canvas id="altStripCanvas" width="420" height="90" style="background:#03060f; border-radius:6px; border:1px solid rgba(16,185,129,0.2); width:100%; display:block;"></canvas>
+            <div style="display:flex; justify-content:space-between; margin-top:4px; font-size:10px; font-family:'JetBrains Mono'; color:var(--text-muted);">
+              <span>Ortalama: <b id="lblStripMeanAlt" style="color:#ffffff;">-- m</b></span>
+              <span>Min/Maks: <b id="lblStripMinMaxAlt" style="color:var(--accent-emerald);">-- / -- m</b></span>
+              <span>Dikey Dalgalanma (Δ): <b id="lblStripPeakAlt" style="color:var(--accent-amber);">-- m</b></span>
+            </div>
+          </div>
+        </div>
+
+        <!-- RIGHT: Statistics Scorecard & Comparison Table -->
+        <div class="acc-col">
+          <!-- 1. Accuracy Key Performance Indicators -->
+          <div class="tele-card" style="padding:10px;">
+            <div class="card-title">
+              <span>🏆 DOĞRULUK SKOR KARTI & GÜVENLİK SINIRLARI</span>
+              <span id="accGradeBadge" class="acc-pill-grade">BEKLENİYOR</span>
+            </div>
+            
+            <div class="grid-2col" style="margin-top:6px;">
+              <div class="sub-stat">
+                <div class="sub-stat-lbl" style="color:#38bdf8;">CEP (%50 İHTİMAL YARIÇAPI)</div>
+                <div class="sub-stat-val mono" style="font-size:20px; color:#38bdf8;"><span id="valStatCep">--.--</span> <span style="font-size:11px;">m</span></div>
+                <div style="font-size:9.5px; color:var(--text-dim); margin-top:2px;">Ölçümlerin %50'si bu dairenin içinde</div>
+              </div>
+              <div class="sub-stat">
+                <div class="sub-stat-lbl" style="color:#f59e0b;">2DRMS (%95 GÜVENLİK SINIRI)</div>
+                <div class="sub-stat-val mono" style="font-size:20px; color:#f59e0b;"><span id="valStat2Drms">--.--</span> <span style="font-size:11px;">m</span></div>
+                <div style="font-size:9.5px; color:var(--text-dim); margin-top:2px;">Havacılık ve askeri 2-Sigma standardı</div>
+              </div>
+            </div>
+
+            <div class="grid-3col" style="margin-top:8px;">
+              <div class="sub-stat">
+                <div class="sub-stat-lbl">MAKS SAPMA (PEAK)</div>
+                <div class="sub-stat-val mono" style="color:#ef4444;"><span id="valStatMaxDrift">--.--</span> m</div>
+              </div>
+              <div class="sub-stat">
+                <div class="sub-stat-lbl">YATAY RMS (σ 2D)</div>
+                <div class="sub-stat-val mono" style="color:#34d399;"><span id="valStatSigma2D">--.--</span> m</div>
+              </div>
+              <div class="sub-stat">
+                <div class="sub-stat-lbl">DİKEY SAPMA (σ ALT)</div>
+                <div class="sub-stat-val mono" style="color:#c084fc;"><span id="valStatSigmaAlt">--.--</span> m</div>
+              </div>
+            </div>
+
+            <div class="grid-3col" style="margin-top:6px;">
+              <div class="sub-stat">
+                <div class="sub-stat-lbl">ORTALAMA HDOP</div>
+                <div class="sub-stat-val mono"><span id="valStatAvgHdop">--.--</span></div>
+              </div>
+              <div class="sub-stat">
+                <div class="sub-stat-lbl">ORT. UYDU (KİLİT)</div>
+                <div class="sub-stat-val mono" style="color:var(--accent-cyan);"><span id="valStatAvgSats">--</span></div>
+              </div>
+              <div class="sub-stat">
+                <div class="sub-stat-lbl">3D KİLİT ORANI</div>
+                <div class="sub-stat-val mono" style="color:#10b981;"><span id="valStatFixPercent">100%</span></div>
+              </div>
+            </div>
+          </div>
+
+          <!-- 2. Benchmark Comparison Ledger (Kıyaslama Tablosu) -->
+          <div class="tele-card" style="padding:10px; margin-top:10px;">
+            <div class="card-title">
+              <span>📑 TEST KIYASLAMA TABLOSU (BENCHMARK LEDGER)</span>
+              <button class="acc-btn" style="padding:2px 6px; font-size:9.5px;" onclick="clearBenchmarkLedger()">Listeyi Temizle</button>
+            </div>
+            
+            <div class="acc-table-wrapper">
+              <table class="acc-table">
+                <thead>
+                  <tr>
+                    <th>Test / Konum</th>
+                    <th>Örnek (N)</th>
+                    <th>2DRMS (%95)</th>
+                    <th>CEP (%50)</th>
+                    <th>Maks Sapma</th>
+                    <th>Ort. HDOP</th>
+                    <th>Ort. Uydu</th>
+                  </tr>
+                </thead>
+                <tbody id="accBenchmarkTableBody">
+                  <tr>
+                    <td colspan="7" style="text-align:center; color:var(--text-dim); padding:16px;">
+                      Henüz kaydedilmiş kıyaslama testi yok. Yukarıdaki "💾 Bu Testi Kıyaslamaya Ekle" butonuna basarak konumları (Masa vs Pencere vs Dış Mekan) kaydedebilirsiniz.
+                    </td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    /* =========================================================================
+       MET-SURV TBS M10Q HIGH-FIDELITY GNSS ENGINE & REALTIME TRACKER
+       ========================================================================= */
+
+    /* =========================================================================
+       OPERATIONAL GNSS PROFILES SPECIFICATION (ADAPTIVE MATRICES)
+       ========================================================================= */
+    const GNSS_PROFILES = {
+      STATIONARY: {
+        key: 'STATIONARY',
+        name: 'Statik / Benchmark',
+        shortName: 'Statik',
+        icon: '🪟',
+        ubx: 'stationary',
+        q_pos: 0.005,
+        q_vel: 0.005,
+        zvuThreshKmh: 1.2,
+        deadBandMeters: 3.0,
+        outlierMeters: 12.0,
+        desc: 'Pencere ve masa testleri için agresif statik yüzme bastırma'
+      },
+      PEDESTRIAN: {
+        key: 'PEDESTRIAN',
+        name: 'Yaya / Dağcılık',
+        shortName: 'Yaya',
+        icon: '🚶',
+        ubx: 'pedestrian',
+        q_pos: 0.15,
+        q_vel: 0.35,
+        zvuThreshKmh: 0.8,
+        deadBandMeters: 1.4,
+        outlierMeters: 16.0,
+        desc: 'Taktik yürüyüş, dağ rotası ve dengeli kinematik takip'
+      },
+      AUTOMOTIVE: {
+        key: 'AUTOMOTIVE',
+        name: 'Araç / Karayolu',
+        shortName: 'Araç',
+        icon: '🚗',
+        ubx: 'automotive',
+        q_pos: 1.5,
+        q_vel: 2.5,
+        zvuThreshKmh: 2.0,
+        deadBandMeters: 0.5,
+        outlierMeters: 35.0,
+        desc: 'Yüksek hız, viraj dönüşleri ve ani fren/gaz manevraları'
+      },
+      AIRBORNE: {
+        key: 'AIRBORNE',
+        name: 'İHA / Serbest 3D',
+        shortName: 'İHA',
+        icon: '🛸',
+        ubx: 'airborne',
+        q_pos: 4.0,
+        q_vel: 5.0,
+        zvuThreshKmh: 0.0,
+        deadBandMeters: 0.0,
+        outlierMeters: 55.0,
+        desc: 'Serbest 3D uçuş ve merkezkaç ivmeli dönüşler'
+      }
+    };
+
+    /* =========================================================================
+       ADAPTIVE GNSS KINEMATIC FILTER (2D KALMAN + ZVU + MULTIPATH SPIKE GATE)
+       Optimized for u-blox MAX-M10S window & urban multipath suppression.
+       ========================================================================= */
+    const gnssFilter = {
+      enabled: true,
+      profileMode: 'AUTO', // 'AUTO' or 'MANUAL'
+      currentProfileKey: 'STATIONARY',
+      speedHistory: [],
+      vsiHistory: [],
+
+      isInitialized: false,
+      originLat: null,
+      originLon: null,
+      x: 0.0,
+      y: 0.0,
+      vx: 0.0,
+      vy: 0.0,
+      p: [
+        [10.0, 0.0, 0.0, 0.0],
+        [0.0, 10.0, 0.0, 0.0],
+        [0.0, 0.0, 4.0, 0.0],
+        [0.0, 0.0, 0.0, 4.0]
+      ],
+      lastTime: null,
+      filteredLat: null,
+      filteredLon: null,
+      outliersRejected: 0,
+      stationaryCount: 0,
+
+      reset() {
+        this.isInitialized = false;
+        this.originLat = null;
+        this.originLon = null;
+        this.x = 0; this.y = 0; this.vx = 0; this.vy = 0;
+        this.p = [[10,0,0,0],[0,10,0,0],[0,0,4,0],[0,0,0,4]];
+        this.lastTime = null;
+        this.filteredLat = null;
+        this.filteredLon = null;
+        this.speedHistory = [];
+        this.vsiHistory = [];
+      },
+
+      evaluateAutoProfile(speedKmh, vsi) {
+        if (this.profileMode !== 'AUTO') return;
+        if (speedKmh !== null && !isNaN(speedKmh)) {
+          this.speedHistory.push(speedKmh);
+          if (this.speedHistory.length > 8) this.speedHistory.shift();
+        }
+        if (vsi !== null && !isNaN(vsi)) {
+          this.vsiHistory.push(vsi);
+          if (this.vsiHistory.length > 8) this.vsiHistory.shift();
+        }
+        if (this.speedHistory.length < 3) return;
+
+        const avgSpd = this.speedHistory.reduce((a, b) => a + b, 0) / this.speedHistory.length;
+        const maxSpd = Math.max(...this.speedHistory);
+        const avgVsi = this.vsiHistory.length > 0 ? (this.vsiHistory.reduce((a, b) => a + b, 0) / this.vsiHistory.length) : 0;
+
+        let nextKey = this.currentProfileKey;
+
+        // Airborne detection (High climb rate + speed)
+        if (Math.abs(avgVsi) > 4.5 && avgSpd > 20.0) {
+          nextKey = 'AIRBORNE';
+        }
+        // Automotive detection (> 16 km/h)
+        else if (avgSpd >= 16.0 || maxSpd >= 24.0) {
+          nextKey = 'AUTOMOTIVE';
+        }
+        // Pedestrian detection (1.4 - 15 km/h)
+        else if (avgSpd >= 1.4 || maxSpd >= 3.0) {
+          if (this.currentProfileKey === 'AUTOMOTIVE') {
+            if (avgSpd < 11.0 && this.speedHistory.length >= 6) nextKey = 'PEDESTRIAN';
+          } else {
+            nextKey = 'PEDESTRIAN';
+          }
+        }
+        // Stationary detection (speed consistently < 0.8 km/h)
+        else if (avgSpd < 0.8 && maxSpd < 1.2) {
+          if (this.speedHistory.length >= 5) {
+            nextKey = 'STATIONARY';
+          }
+        }
+
+        if (nextKey !== this.currentProfileKey) {
+          applyProfile(nextKey, true);
+        }
+      },
+
+      update(rawLat, rawLon, speedKmh, hdop, nowMs) {
+        if (!this.enabled) {
+          this.filteredLat = rawLat;
+          this.filteredLon = rawLon;
+          return { lat: rawLat, lon: rawLon, isOutlier: false };
+        }
+
+        // Run automated dynamic profile state machine
+        this.evaluateAutoProfile(speedKmh, gnss.vsi);
+
+        const prof = GNSS_PROFILES[this.currentProfileKey] || GNSS_PROFILES.STATIONARY;
+
+        if (!this.isInitialized) {
+          this.originLat = rawLat;
+          this.originLon = rawLon;
+          this.x = 0.0;
+          this.y = 0.0;
+          this.vx = 0.0;
+          this.vy = 0.0;
+          this.lastTime = nowMs || Date.now();
+          this.isInitialized = true;
+          this.filteredLat = rawLat;
+          this.filteredLon = rawLon;
+          return { lat: rawLat, lon: rawLon, isOutlier: false };
+        }
+
+        const t = nowMs || Date.now();
+        let dt = (t - this.lastTime) / 1000.0;
+        this.lastTime = t;
+        if (dt <= 0.05 || dt > 10.0) dt = 1.0;
+
+        // Metric local planar projection (WGS84 ellipsoidal local tangential approximation)
+        const phiRad = this.originLat * (Math.PI / 180.0);
+        const R_lat = 111319.9;
+        const R_lon = 111319.9 * Math.cos(phiRad);
+        const zx = (rawLon - this.originLon) * R_lon;
+        const zy = (rawLat - this.originLat) * R_lat;
+
+        // Kalman Prediction
+        const x_pred = this.x + this.vx * dt;
+        const y_pred = this.y + this.vy * dt;
+
+        const isStationary = (speedKmh !== null && speedKmh < prof.zvuThreshKmh);
+        const q_pos = isStationary ? prof.q_pos * dt : (prof.q_pos * 8.0) * dt * dt;
+        const q_vel = isStationary ? prof.q_vel * dt : (prof.q_vel * 4.0) * dt;
+
+        this.p[0][0] += q_pos + dt * (this.p[2][0] + this.p[0][2] + dt * this.p[2][2]);
+        this.p[1][1] += q_pos + dt * (this.p[3][1] + this.p[1][3] + dt * this.p[3][3]);
+        this.p[2][2] += q_vel;
+        this.p[3][3] += q_vel;
+
+        // Innovation
+        const dx = zx - x_pred;
+        const dy = zy - y_pred;
+        const innovDist = Math.sqrt(dx * dx + dy * dy);
+
+        // Multipath Outlier Rejection Gate
+        let isOutlier = false;
+        const maxOutlierAllowed = prof.outlierMeters;
+        if (innovDist > maxOutlierAllowed && (speedKmh === null || speedKmh < 8.0)) {
+          isOutlier = true;
+          this.outliersRejected++;
+          this.filteredLat = this.originLat + (this.y / R_lat);
+          this.filteredLon = this.originLon + (this.x / R_lon);
+          return { lat: this.filteredLat, lon: this.filteredLon, isOutlier: true };
+        }
+
+        // Zero-Velocity Update (ZVU Dead-band stationary lock)
+        if (isStationary && prof.zvuThreshKmh > 0) {
+          this.stationaryCount++;
+          this.vx *= 0.1;
+          this.vy *= 0.1;
+          if (innovDist < prof.deadBandMeters) {
+            this.filteredLat = this.originLat + (this.y / R_lat);
+            this.filteredLon = this.originLon + (this.x / R_lon);
+            return { lat: this.filteredLat, lon: this.filteredLon, isOutlier: false };
+          }
+        } else {
+          this.stationaryCount = 0;
+        }
+
+        // Adaptive measurement noise R based on HDOP
+        const safeHdop = (hdop && hdop > 0) ? hdop : 1.5;
+        const sigma = Math.max(1.5, safeHdop * 2.2);
+        const R = sigma * sigma;
+
+        // Kalman Correction
+        const Kx = this.p[0][0] / (this.p[0][0] + R);
+        const Ky = this.p[1][1] / (this.p[1][1] + R);
+        const Kvx = this.p[2][0] / (this.p[0][0] + R);
+        const Kvy = this.p[3][1] / (this.p[1][1] + R);
+
+        this.x = x_pred + Kx * dx;
+        this.y = y_pred + Ky * dy;
+        this.vx = this.vx + Kvx * dx;
+        this.vy = this.vy + Kvy * dy;
+
+        this.p[0][0] = (1.0 - Kx) * this.p[0][0];
+        this.p[1][1] = (1.0 - Ky) * this.p[1][1];
+        this.p[2][2] = (1.0 - Kvx) * this.p[2][2];
+        this.p[3][3] = (1.0 - Kvy) * this.p[3][3];
+
+        this.filteredLat = this.originLat + (this.y / R_lat);
+        this.filteredLon = this.originLon + (this.x / R_lon);
+
+        return { lat: this.filteredLat, lon: this.filteredLon, isOutlier: false };
+      }
+    };
+
+    function toggleProfileDropdown() {
+      const dd = document.getElementById('profileDropdown');
+      if (dd) dd.style.display = dd.style.display === 'none' ? 'block' : 'none';
+    }
+
+    function setProfileManual(modeOrKey) {
+      const dd = document.getElementById('profileDropdown');
+      if (dd) dd.style.display = 'none';
+
+      if (modeOrKey === 'AUTO') {
+        gnssFilter.profileMode = 'AUTO';
+        updateProfileUI();
+      } else {
+        gnssFilter.profileMode = 'MANUAL';
+        applyProfile(modeOrKey, false);
+      }
+    }
+
+    function applyProfile(key, wasAuto) {
+      if (!GNSS_PROFILES[key]) return;
+      gnssFilter.currentProfileKey = key;
+      updateProfileUI();
+
+      // Send hardware UBX reconfiguration command to TBS M10Q
+      const ubxName = GNSS_PROFILES[key].ubx;
+      fetch(`/api/set_profile?profile=${ubxName}`)
+        .then(r => r.json())
+        .then(data => {
+          console.log(`[GNSS PROFILE] TBS M10Q donanımı güncellendi: ${key} (${ubxName}) -> ubx_sent: ${data.ubx_sent}`);
+        })
+        .catch(() => {});
+    }
+
+    function updateProfileUI() {
+      const prof = GNSS_PROFILES[gnssFilter.currentProfileKey] || GNSS_PROFILES.STATIONARY;
+      const isAuto = gnssFilter.profileMode === 'AUTO';
+
+      const iconEl = document.getElementById('profileIcon');
+      const textEl = document.getElementById('profileText');
+
+      if (iconEl && textEl) {
+        if (isAuto) {
+          iconEl.textContent = '🤖';
+          textEl.textContent = `Profil: OTO (${prof.icon} ${prof.shortName})`;
+        } else {
+          iconEl.textContent = prof.icon;
+          textEl.textContent = `Profil: ${prof.shortName}`;
+        }
+      }
+
+      // Update dropdown active class
+      document.querySelectorAll('.profile-item').forEach(el => el.classList.remove('active'));
+      if (isAuto) {
+        const item = document.getElementById('profItemAuto');
+        if (item) item.classList.add('active');
+      } else {
+        const mapKeys = {
+          STATIONARY: 'profItemStat',
+          PEDESTRIAN: 'profItemPed',
+          AUTOMOTIVE: 'profItemAutoVeh',
+          AIRBORNE: 'profItemAir'
+        };
+        const item = document.getElementById(mapKeys[gnssFilter.currentProfileKey]);
+        if (item) item.classList.add('active');
+      }
+    }
+
+    // Close dropdown on outside click
+    document.addEventListener('click', (e) => {
+      const btn = document.getElementById('btnProfileSelect');
+      const dd = document.getElementById('profileDropdown');
+      if (btn && dd && !btn.contains(e.target) && !dd.contains(e.target)) {
+        dd.style.display = 'none';
+      }
+    });
+
+    let pendingEpoch = {
+      lat: null,
+      lon: null,
+      latDir: 'N',
+      lonDir: 'E',
+      alt: null,
+      hdop: null,
+      sats: null,
+      fixQuality: null,
+      speedKmh: null,
+      heading: null,
+      utc: null
+    };
+
+    function commitEpochPosition() {
+      if (pendingEpoch.lat === null || pendingEpoch.lon === null) return;
+      updatePosition(pendingEpoch.lat, pendingEpoch.lon, pendingEpoch.latDir, pendingEpoch.lonDir);
+      pendingEpoch.lat = null;
+      pendingEpoch.lon = null;
+    }
+
+    function toggleGnssFilter() {
+      gnssFilter.enabled = !gnssFilter.enabled;
+      const btn = document.getElementById('btnFilterToggle');
+      const txt = document.getElementById('filterToggleText');
+      const pill = document.getElementById('filterStatusText');
+      if (gnssFilter.enabled) {
+        btn.style.background = 'rgba(59,130,246,0.22)';
+        btn.style.borderColor = '#3b82f6';
+        btn.style.color = '#60a5fa';
+        if (txt) txt.textContent = 'Filtre: Kalman + ZVU';
+        if (pill) pill.textContent = '🛡️ KALMAN & ZVU AKTİF';
+      } else {
+        btn.style.background = 'rgba(239,68,68,0.22)';
+        btn.style.borderColor = '#ef4444';
+        btn.style.color = '#f87171';
+        if (txt) txt.textContent = 'Filtre: Ham (Raw) Kapalı';
+        if (pill) pill.textContent = '⚠️ FİLTRE DEVRE DIŞI (HAM)';
+      }
+    }
+
+    // Global GNSS Telemetry State
+    const gnss = {
+      // Position
+      lat: null,
+      lon: null,
+      rawLat: null,
+      rawLon: null,
+      isOutlier: false,
+      latDir: 'N',
+      lonDir: 'E',
+      fixQuality: 0,   // 0=No fix, 1=SPS, 2=DGPS, 3=PPS, 4=RTK, 5=Float
+      fixMode: 1,      // 1=No fix, 2=2D, 3=3D (from GSA)
+      
+      // Altitude & Dynamics
+      altMsl: null,    // Mean Sea Level
+      geoidSep: null,  // Geoidal separation
+      speedKnots: 0.0,
+      speedKmh: 0.0,
+      trackTrue: null,
+      trackMag: null,
+      heading: null,
+      vsi: 0.0,        // Vertical speed indicator (m/s)
+      
+      // DOP & Quality
+      hdop: null,
+      vdop: null,
+      pdop: null,
+      
+      // Satellites
+      satsUsed: 0,
+      satsInView: 0,
+      satGP: 0,
+      satGA: 0,
+      satGB: 0,
+      satGL: 0,
+      satGQ: 0,
+      activeSatPrns: new Set(),
+      satellites: {},  // Key: 'GP07', val: { prn, elev, az, snr, constel }
+      
+      // Time & Ephemeris
+      utcTime: '',
+      utcDate: '',
+      
+      // Statistics & Trip
+      maxSpeedKmh: 0.0,
+      speedSum: 0.0,
+      speedCount: 0,
+      minAlt: null,
+      maxAlt: null,
+      odometerMeters: 0.0,
+      lastLat: null,
+      lastLon: null,
+      lastAltTime: null,
+      lastAlt: null,
+      tripStartTime: Date.now(),
+      
+      // Hardware link
+      connected: false,
+      port: 'COM4',
+      packetCount: 0,
+      lastPacketTime: Date.now(),
+      packetsLastSec: 0,
+      currentHz: 1.0
+    };
+
+    // UI Configuration & State
+    let followMap = true;
+    let map = null;
+    let baseLayers = {};
+    let currentLayerKey = 'dark';
+    let gpsMarker = null;
+    let accuracyCircle = null;
+    let breadcrumbLine = null;
+    let breadcrumbPoints = [];
+    let targetMarker = null;
+    let targetLine = null;
+    let targetLatLng = null;
+
+    // Console drawer state
+    let streamPaused = false;
+    let currentNmeaFilter = 'ALL';
+    const maxLogLines = 150;
+    const logBuffer = [];
+
+    // Demo Mode Simulation State
+    let demoActive = false;
+    let demoTimer = null;
+    let demoAngle = 0;
+
+    /* =========================================================================
+       MAP INITIALIZATION (LEAFLET)
+       ========================================================================= */
+    function initMap() {
+      // Base map layers with Ultra-Deep Zoom (Level 22 ~ 1 meter resolution, 100% Free & No API Key)
+      baseLayers.sat = L.tileLayer('https://mt{s}.google.com/vt/lyrs=y&x={x}&y={y}&z={z}', {
+        subdomains: ['0', '1', '2', '3'],
+        attribution: 'Google Satellite',
+        maxNativeZoom: 20,
+        maxZoom: 22
+      });
+
+      baseLayers.street = L.tileLayer('https://mt{s}.google.com/vt/lyrs=m&x={x}&y={y}&z={z}', {
+        subdomains: ['0', '1', '2', '3'],
+        attribution: 'Google Maps',
+        maxNativeZoom: 20,
+        maxZoom: 22
+      });
+
+      baseLayers.topo = L.tileLayer('https://mt{s}.google.com/vt/lyrs=p&x={x}&y={y}&z={z}', {
+        subdomains: ['0', '1', '2', '3'],
+        attribution: 'Google Terrain',
+        maxNativeZoom: 18,
+        maxZoom: 22
+      });
+
+      baseLayers.dark = L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', {
+        attribution: 'CartoDB Dark',
+        maxNativeZoom: 19,
+        maxZoom: 22
+      });
+
+      // Default active: High-Res Real Satellite
+      currentLayerKey = 'sat';
+
+      // Initial center: Zonguldak (last known device position)
+      map = L.map('map', {
+        center: [41.45007, 31.75833],
+        zoom: 18,
+        minZoom: 3,
+        maxZoom: 22,
+        layers: [baseLayers.sat],
+        zoomControl: true
+      });
+
+      // Target measurement on click
+      map.on('click', function(e) {
+        setTargetMeasure(e.latlng);
+      });
+
+      // User interaction (pan/zoom) automatically releases follow lock
+      map.on('dragstart zoomstart', function() {
+        if (followMap) {
+          followMap = false;
+          const btn = document.getElementById('btnFollow');
+          const text = document.getElementById('btnFollowText');
+          if (btn) btn.classList.remove('active');
+          if (text) text.textContent = "Takibi Kilitle: KAPALI";
+        }
+      });
+
+      // Polyline for breadcrumb tracking
+      breadcrumbLine = L.polyline([], {
+        color: '#38bdf8',
+        weight: 3.5,
+        opacity: 0.9,
+        dashArray: '6, 6'
+      }).addTo(map);
+
+      // Custom Heading Marker
+      const customIcon = L.divIcon({
+        className: 'gps-marker-icon',
+        html: `
+          <div class="gps-marker-container">
+            <div class="gps-pulse-ring"></div>
+            <div class="gps-marker-dot"></div>
+            <div id="markerArrow" class="gps-marker-arrow"></div>
+          </div>
+        `,
+        iconSize: [32, 32],
+        iconAnchor: [16, 16]
+      });
+
+      gpsMarker = L.marker([41.45007, 31.75833], {
+        icon: customIcon,
+        zIndexOffset: 1000
+      }).addTo(map);
+
+      accuracyCircle = L.circle([41.45007, 31.75833], {
+        radius: 15,
+        color: '#38bdf8',
+        fillColor: '#38bdf8',
+        fillOpacity: 0.12,
+        weight: 1.5,
+        dashArray: '3, 4'
+      }).addTo(map);
+
+      buildCompassTape();
+      initSkyviewCanvas();
+    }
+
+    function setBaseLayer(layerKey) {
+      if (!baseLayers[layerKey]) return;
+      map.removeLayer(baseLayers[currentLayerKey]);
+      map.addLayer(baseLayers[layerKey]);
+      currentLayerKey = layerKey;
+    }
+
+    function toggleFollowMap() {
+      followMap = !followMap;
+      const btn = document.getElementById('btnFollow');
+      const text = document.getElementById('btnFollowText');
+      if (followMap) {
+        btn.classList.add('active');
+        text.textContent = "Takibi Kilitle: AÇIK";
+        if (gnss.lat !== null && gnss.lon !== null) {
+          map.panTo([gnss.lat, gnss.lon], { animate: true });
+        }
+      } else {
+        btn.classList.remove('active');
+        text.textContent = "Takibi Kilitle: KAPALI";
+      }
+    }
+
+    function fitTrackBounds() {
+      if (breadcrumbPoints.length > 1) {
+        map.fitBounds(L.latLngBounds(breadcrumbPoints), { padding: [80, 80] });
+      } else if (gnss.lat !== null) {
+        map.setView([gnss.lat, gnss.lon], 19);
+      }
+    }
+
+    function clearTrack() {
+      if (confirm("Kayıtlı rota izini ve kilometre sayacını sıfırlamak istiyor musunuz?")) {
+        breadcrumbPoints = [];
+        breadcrumbLine.setLatLngs([]);
+        gnss.odometerMeters = 0.0;
+        gnss.maxSpeedKmh = 0.0;
+        gnss.speedSum = 0.0;
+        gnss.speedCount = 0;
+        gnss.tripStartTime = Date.now();
+        updateUI();
+      }
+    }
+
+    /* =========================================================================
+       TARGET MEASUREMENT (CLICK TO MEASURE DISTANCE & BEARING)
+       ========================================================================= */
+    function setTargetMeasure(latlng) {
+      targetLatLng = latlng;
+      if (!targetMarker) {
+        targetMarker = L.circleMarker(latlng, {
+          radius: 7,
+          color: '#f59e0b',
+          fillColor: '#fbbf24',
+          fillOpacity: 0.9,
+          weight: 2
+        }).addTo(map);
+      } else {
+        targetMarker.setLatLng(latlng);
+      }
+
+      if (gnss.lat !== null && gnss.lon !== null) {
+        const from = L.latLng(gnss.lat, gnss.lon);
+        if (!targetLine) {
+          targetLine = L.polyline([from, latlng], {
+            color: '#f59e0b',
+            weight: 2,
+            dashArray: '4, 4'
+          }).addTo(map);
+        } else {
+          targetLine.setLatLngs([from, latlng]);
+        }
+      }
+
+      updateTargetCalc();
+      document.getElementById('targetInfoBox').style.display = 'flex';
+    }
+
+    function clearTargetMeasure() {
+      if (targetMarker) { map.removeLayer(targetMarker); targetMarker = null; }
+      if (targetLine) { map.removeLayer(targetLine); targetLine = null; }
+      targetLatLng = null;
+      document.getElementById('targetInfoBox').style.display = 'none';
+    }
+
+    function updateTargetCalc() {
+      if (!targetLatLng || gnss.lat === null) return;
+      const d = calcDistanceKm(gnss.lat, gnss.lon, targetLatLng.lat, targetLatLng.lng);
+      const b = calcBearingDeg(gnss.lat, gnss.lon, targetLatLng.lat, targetLatLng.lng);
+      const card = degToCardinal(b);
+
+      document.getElementById('targetDist').textContent = d < 1.0 
+        ? `${Math.round(d * 1000)} m` 
+        : `${d.toFixed(2)} km`;
+      document.getElementById('targetBrg').textContent = `${Math.round(b).toString().padStart(3, '0')}° (${card})`;
+
+      if (targetLine) {
+        targetLine.setLatLngs([L.latLng(gnss.lat, gnss.lon), targetLatLng]);
+      }
+    }
+
+    /* =========================================================================
+       NMEA 0183 PARSING ENGINE (MAX-M10S COMPLETE TELEMETRY)
+       ========================================================================= */
+    function parseNmeaLine(raw) {
+      if (!raw || !raw.startsWith('$')) return;
+
+      // Strip checksum
+      const starIdx = raw.indexOf('*');
+      const content = starIdx !== -1 ? raw.substring(1, starIdx) : raw.substring(1);
+      const parts = content.split(',');
+      const tag = parts[0];
+
+      gnss.packetCount++;
+      gnss.packetsLastSec++;
+      appendNmeaLog(raw, tag);
+
+      // 1. $--GGA (Global Positioning System Fix Data)
+      if (tag.endsWith('GGA')) {
+        parseGGA(parts);
+      }
+      // 2. $--RMC (Recommended Minimum Specific GNSS Data)
+      else if (tag.endsWith('RMC')) {
+        parseRMC(parts);
+      }
+      // 3. $--GSA (GNSS DOP and Active Satellites)
+      else if (tag.endsWith('GSA')) {
+        parseGSA(parts);
+      }
+      // 4. $--GSV (GNSS Satellites in View)
+      else if (tag.endsWith('GSV')) {
+        parseGSV(parts, tag);
+      }
+      // 5. $--VTG (Track Made Good and Ground Speed)
+      else if (tag.endsWith('VTG')) {
+        parseVTG(parts);
+      }
+      // 6. $--GLL (Geographic Position)
+      else if (tag.endsWith('GLL')) {
+        parseGLL(parts);
+      }
+
+      updateUI();
+    }
+
+    function parseCoordNmea(rawCoord, dir) {
+      if (!rawCoord || !dir) return null;
+      const dot = rawCoord.indexOf('.');
+      if (dot === -1) return null;
+      const degLen = dot - 2;
+      const deg = parseFloat(rawCoord.substring(0, degLen));
+      const min = parseFloat(rawCoord.substring(degLen));
+      let dec = deg + (min / 60.0);
+      if (dir === 'S' || dir === 'W') dec = -dec;
+      return dec;
+    }
+
+    function parseGGA(p) {
+      if (p.length < 10) return;
+      
+      // UTC Time
+      if (p[1]) formatUtcTime(p[1]);
+
+      // Lat / Lon
+      const lat = parseCoordNmea(p[2], p[3]);
+      const lon = parseCoordNmea(p[4], p[5]);
+
+      // Fix Quality (0=Invalid, 1=SPS, 2=DGPS, 4=RTK, 5=Float RTK)
+      gnss.fixQuality = parseInt(p[6], 10) || 0;
+      
+      // Satellites in fix solution
+      gnss.satsUsed = parseInt(p[7], 10) || 0;
+
+      // HDOP
+      const hdopVal = parseFloat(p[8]);
+      if (!isNaN(hdopVal)) gnss.hdop = hdopVal;
+
+      // Altitude MSL
+      const altVal = parseFloat(p[9]);
+      if (!isNaN(altVal)) {
+        updateAltitude(altVal);
+      }
+
+      // Geoidal Separation
+      const geoidVal = parseFloat(p[11]);
+      if (!isNaN(geoidVal)) {
+        gnss.geoidSep = geoidVal;
+      }
+
+      // Buffer into current epoch
+      if (lat !== null && lon !== null && gnss.fixQuality > 0) {
+        pendingEpoch.lat = lat;
+        pendingEpoch.lon = lon;
+        pendingEpoch.latDir = p[3];
+        pendingEpoch.lonDir = p[5];
+        pendingEpoch.alt = altVal;
+        pendingEpoch.hdop = hdopVal;
+        pendingEpoch.sats = gnss.satsUsed;
+        pendingEpoch.fixQuality = gnss.fixQuality;
+      }
+    }
+
+    function parseRMC(p) {
+      if (p.length < 9) return;
+      if (p[1]) formatUtcTime(p[1]);
+
+      const status = p[2]; // 'A' = Valid, 'V' = Void
+      if (status === 'A') {
+        const lat = parseCoordNmea(p[3], p[4]);
+        const lon = parseCoordNmea(p[5], p[6]);
+
+        if (gnss.fixQuality === 0) gnss.fixQuality = 1;
+
+        // Speed in knots
+        const knots = parseFloat(p[7]) || 0.0;
+        gnss.speedKnots = knots;
+        gnss.speedKmh = parseFloat((knots * 1.852).toFixed(1));
+
+        // Track angle / Heading
+        const heading = parseFloat(p[8]);
+        if (!isNaN(heading)) {
+          gnss.trackTrue = heading;
+          gnss.heading = Math.round(heading);
+        }
+
+        // Date (DDMMYY)
+        if (p[9] && p[9].length === 6) {
+          const d = p[9];
+          gnss.utcDate = `${d.substring(0, 2)}/${d.substring(2, 4)}/20${d.substring(4, 6)}`;
+        }
+
+        if (pendingEpoch.lat === null && lat !== null) {
+          pendingEpoch.lat = lat;
+          pendingEpoch.lon = lon;
+          pendingEpoch.latDir = p[4];
+          pendingEpoch.lonDir = p[6];
+        }
+
+        // Commit coherent epoch once RMC completes cycle
+        commitEpochPosition();
+      }
+    }
+
+    function parseGSA(p) {
+      if (p.length < 18) return;
+      gnss.fixMode = parseInt(p[2], 10) || 1; // 1=No fix, 2=2D, 3=3D
+
+      // Satellite PRNs used in active fix
+      for (let i = 3; i <= 14; i++) {
+        const prn = p[i];
+        if (prn && prn.trim() !== '') {
+          gnss.activeSatPrns.add(prn.padStart(2, '0'));
+        }
+      }
+
+      const pdop = parseFloat(p[15]);
+      const hdop = parseFloat(p[16]);
+      const vdop = parseFloat(p[17]);
+      if (!isNaN(pdop)) gnss.pdop = pdop;
+      if (!isNaN(hdop)) gnss.hdop = hdop;
+      if (!isNaN(vdop)) gnss.vdop = vdop;
+    }
+
+    function parseGSV(p, tag) {
+      if (p.length < 4) return;
+      const totalSats = parseInt(p[3], 10) || 0;
+      const prefix = tag.substring(0, 2);
+
+      if (prefix === 'GP') gnss.satGP = totalSats;
+      else if (prefix === 'GA') gnss.satGA = totalSats;
+      else if (prefix === 'GB' || prefix === 'BD') gnss.satGB = totalSats;
+      else if (prefix === 'GL') gnss.satGL = totalSats;
+      else if (prefix === 'GQ' || prefix === 'QZ') gnss.satGQ = totalSats;
+
+      gnss.satsInView = gnss.satGP + gnss.satGA + gnss.satGB + gnss.satGL + gnss.satGQ;
+
+      // Sat details (up to 4 sats per sentence)
+      for (let i = 4; i < p.length - 3; i += 4) {
+        const prn = p[i];
+        if (!prn) continue;
+        const elev = parseFloat(p[i+1]) || 0;
+        const az = parseFloat(p[i+2]) || 0;
+        const snr = parseFloat(p[i+3]) || 0;
+
+        const satKey = `${prefix}${prn.padStart(2, '0')}`;
+        gnss.satellites[satKey] = {
+          prn: prn.padStart(2, '0'),
+          constel: prefix,
+          elev: elev,
+          az: az,
+          snr: snr,
+          lastSeen: Date.now()
+        };
+      }
+    }
+
+    function parseVTG(p) {
+      if (p.length < 8) return;
+      const trueCourse = parseFloat(p[1]);
+      if (!isNaN(trueCourse)) gnss.trackTrue = trueCourse;
+
+      const magCourse = parseFloat(p[3]);
+      if (!isNaN(magCourse)) gnss.trackMag = magCourse;
+
+      const kmh = parseFloat(p[7]);
+      if (!isNaN(kmh)) {
+        gnss.speedKmh = parseFloat(kmh.toFixed(1));
+        gnss.speedKnots = parseFloat((kmh / 1.852).toFixed(1));
+      }
+    }
+
+    function parseGLL(p) {
+      if (p.length < 7) return;
+      const status = p[6];
+      if (status === 'A') {
+        const lat = parseCoordNmea(p[1], p[2]);
+        const lon = parseCoordNmea(p[3], p[4]);
+        if (lat !== null && lon !== null) {
+          if (pendingEpoch.lat === null) {
+            pendingEpoch.lat = lat;
+            pendingEpoch.lon = lon;
+            pendingEpoch.latDir = p[2];
+            pendingEpoch.lonDir = p[4];
+            commitEpochPosition();
+          }
+        }
+      }
+    }
+
+    function formatUtcTime(raw) {
+      if (raw.length >= 6) {
+        const hh = raw.substring(0, 2);
+        const mm = raw.substring(2, 4);
+        const ss = raw.substring(4);
+        gnss.utcTime = `${hh}:${mm}:${ss}`;
+      }
+    }
+
+    /* =========================================================================
+       POSITION & MOVEMENT ACCUMULATION
+       ========================================================================= */
+    function updatePosition(rawLat, rawLon, latDir, lonDir) {
+      gnss.rawLat = rawLat;
+      gnss.rawLon = rawLon;
+
+      // Run adaptive Kalman filter + ZVU + Outlier Gate
+      const filtered = gnssFilter.update(rawLat, rawLon, gnss.speedKmh, gnss.hdop);
+      const useLat = gnssFilter.enabled ? filtered.lat : rawLat;
+      const useLon = gnssFilter.enabled ? filtered.lon : rawLon;
+      gnss.isOutlier = filtered.isOutlier;
+
+      gnss.lat = useLat;
+      gnss.lon = useLon;
+      gnss.latDir = latDir || 'N';
+      gnss.lonDir = lonDir || 'E';
+
+      const pt = [useLat, useLon];
+
+      // Odometer & Speed Accumulation (with stationary suppression)
+      if (gnss.lastLat !== null && gnss.lastLon !== null) {
+        const distKm = calcDistanceKm(gnss.lastLat, gnss.lastLon, useLat, useLon);
+        // Only accumulate distance if receiver is genuinely moving (> 1.2m and < 200m)
+        if (distKm > 0.0012 && distKm < 0.2 && gnss.speedKmh > 0.7) {
+          gnss.odometerMeters += (distKm * 1000);
+        }
+      }
+      gnss.lastLat = useLat;
+      gnss.lastLon = useLon;
+
+      // Speed stats
+      if (gnss.speedKmh > gnss.maxSpeedKmh) gnss.maxSpeedKmh = gnss.speedKmh;
+      if (gnss.speedKmh > 0.7) {
+        gnss.speedSum += gnss.speedKmh;
+        gnss.speedCount++;
+      }
+
+      // Breadcrumb history (Only append if moved > 1m or first point)
+      if (breadcrumbPoints.length === 0) {
+        breadcrumbPoints.push(pt);
+      } else {
+        const lastPt = breadcrumbPoints[breadcrumbPoints.length - 1];
+        const stepDist = calcDistanceKm(lastPt[0], lastPt[1], pt[0], pt[1]);
+        if (stepDist > 0.001 || !gnssFilter.enabled) {
+          breadcrumbPoints.push(pt);
+          if (breadcrumbPoints.length > 5000) breadcrumbPoints.shift();
+        }
+      }
+      if (breadcrumbLine) breadcrumbLine.setLatLngs(breadcrumbPoints);
+
+      // Marker update
+      if (gpsMarker) {
+        gpsMarker.setLatLng(pt);
+        const arrow = document.getElementById('markerArrow');
+        if (arrow && gnss.heading !== null) {
+          arrow.style.transform = `translateX(-50%) rotate(${gnss.heading}deg)`;
+        }
+      }
+
+      // Accuracy circle
+      if (accuracyCircle) {
+        accuracyCircle.setLatLng(pt);
+        const estRadius = (gnss.hdop || 1.5) * 2.5; // ~2.5m nominal CEP multiplier
+        accuracyCircle.setRadius(Math.max(4, Math.min(100, estRadius)));
+      }
+
+      if (followMap && map) {
+        map.panTo(pt, { animate: true, duration: 0.3 });
+      }
+
+      if (targetLatLng) updateTargetCalc();
+      if (typeof processAccuracySample === 'function') {
+        processAccuracySample(lat, lon, gnss.altMsl, gnss.hdop, gnss.satsUsed, gnss.fixQuality);
+      }
+    }
+
+    function updateAltitude(alt) {
+      gnss.altMsl = Math.round(alt);
+      if (gnss.minAlt === null || gnss.altMsl < gnss.minAlt) gnss.minAlt = gnss.altMsl;
+      if (gnss.maxAlt === null || gnss.altMsl > gnss.maxAlt) gnss.maxAlt = gnss.altMsl;
+
+      // Calculate VSI (Vertical Speed Indicator m/s)
+      const now = Date.now();
+      if (gnss.lastAlt !== null && gnss.lastAltTime !== null) {
+        const dt = (now - gnss.lastAltTime) / 1000.0;
+        if (dt >= 0.8) {
+          const rawVsi = (gnss.altMsl - gnss.lastAlt) / dt;
+          gnss.vsi = parseFloat((gnss.vsi * 0.7 + rawVsi * 0.3).toFixed(1)); // Low-pass filter
+          gnss.lastAlt = gnss.altMsl;
+          gnss.lastAltTime = now;
+        }
+      } else {
+        gnss.lastAlt = gnss.altMsl;
+        gnss.lastAltTime = now;
+      }
+    }
+
+    /* =========================================================================
+       UI UPDATES & METRICS BINDING
+       ========================================================================= */
+    function updateUI() {
+      // 1. Coordinates
+      if (gnss.lat !== null && gnss.lon !== null) {
+        document.getElementById('valLatDD').textContent = Math.abs(gnss.lat).toFixed(6) + '°';
+        document.getElementById('valLonDD').textContent = Math.abs(gnss.lon).toFixed(6) + '°';
+        document.getElementById('valLatDir').textContent = gnss.lat >= 0 ? 'N' : 'S';
+        document.getElementById('valLonDir').textContent = gnss.lon >= 0 ? 'E' : 'W';
+
+        document.getElementById('valDMS').textContent = `${toDms(gnss.lat, 'lat')}  ${toDms(gnss.lon, 'lon')}`;
+        document.getElementById('valDDM').textContent = `${toDdm(gnss.lat, 'lat')}  ${toDdm(gnss.lon, 'lon')}`;
+      }
+
+      // 2. Dynamics
+      document.getElementById('valSpeedKmh').textContent = gnss.speedKmh.toFixed(1);
+      document.getElementById('valSpeedKnots').textContent = gnss.speedKnots.toFixed(1);
+      document.getElementById('valSpeedMs').textContent = (gnss.speedKmh / 3.6).toFixed(1);
+      document.getElementById('valMaxSpeed').textContent = gnss.maxSpeedKmh.toFixed(1);
+      const avg = gnss.speedCount > 0 ? (gnss.speedSum / gnss.speedCount).toFixed(1) : '0.0';
+      document.getElementById('valAvgSpeed').textContent = avg;
+
+      // 3. Altitude
+      if (gnss.altMsl !== null) {
+        document.getElementById('valAltMsl').textContent = gnss.altMsl;
+        document.getElementById('valAltFt').textContent = Math.round(gnss.altMsl * 3.28084);
+        document.getElementById('valMinAlt').textContent = gnss.minAlt !== null ? gnss.minAlt : '--';
+        document.getElementById('valMaxAlt').textContent = gnss.maxAlt !== null ? gnss.maxAlt : '--';
+      }
+      document.getElementById('valVsi').textContent = (gnss.vsi >= 0 ? '+' : '') + gnss.vsi.toFixed(1);
+      if (gnss.geoidSep !== null) {
+        document.getElementById('valGeoid').textContent = gnss.geoidSep.toFixed(1);
+        if (gnss.altMsl !== null) {
+          document.getElementById('valEllipsoid').textContent = (gnss.altMsl + gnss.geoidSep).toFixed(1);
+        }
+      }
+
+      // 4. Heading & Compass
+      if (gnss.heading !== null) {
+        document.getElementById('valHeadingDeg').textContent = gnss.heading.toString().padStart(3, '0');
+        document.getElementById('valHeadingCard').textContent = degToCardinal(gnss.heading);
+        updateCompassTape(gnss.heading);
+      }
+      document.getElementById('valTrackTrue').textContent = gnss.trackTrue !== null ? gnss.trackTrue.toFixed(1) : '---.-';
+      document.getElementById('valTrackMag').textContent = gnss.trackMag !== null ? gnss.trackMag.toFixed(1) : '---.-';
+
+      // 5. Trip Odometer
+      const odoKm = (gnss.odometerMeters / 1000.0).toFixed(2);
+      document.getElementById('valOdometer').textContent = odoKm;
+      document.getElementById('valBreadcrumbCount').textContent = breadcrumbPoints.length;
+      
+      const elapsedSec = Math.floor((Date.now() - gnss.tripStartTime) / 1000);
+      const h = Math.floor(elapsedSec / 3600).toString().padStart(2, '0');
+      const m = Math.floor((elapsedSec % 3600) / 60).toString().padStart(2, '0');
+      const s = (elapsedSec % 60).toString().padStart(2, '0');
+      document.getElementById('valTripDuration').textContent = `${h}:${m}:${s}`;
+
+      // 6. Satellites & Constellations
+      const activeSats = gnss.satsUsed || gnss.activeSatPrns.size;
+      const visibleSats = gnss.satsInView || activeSats;
+      document.getElementById('valSatsUsed').textContent = activeSats;
+      document.getElementById('valSatsView').textContent = visibleSats;
+      document.getElementById('valSkyviewCount').textContent = Object.keys(gnss.satellites).length;
+
+      document.getElementById('valSatGP').textContent = gnss.satGP;
+      document.getElementById('valSatGA').textContent = gnss.satGA;
+      document.getElementById('valSatGB').textContent = gnss.satGB;
+      document.getElementById('valSatGL').textContent = gnss.satGL;
+
+      // 7. Status Pill & Fix Badge
+      const fixPill = document.getElementById('fixStatusPill');
+      const fixText = document.getElementById('fixStatusText');
+      if (gnss.fixQuality > 0 || gnss.fixMode >= 2) {
+        fixPill.className = "status-badge badge-fix-3d";
+        const modeLabel = gnss.fixQuality === 4 ? "RTK KİLİT" : (gnss.fixMode === 3 ? "3D KİLİT" : "2D KİLİT");
+        fixText.textContent = `${modeLabel} (${activeSats} Uydu)`;
+      } else {
+        fixPill.className = "status-badge badge-fix-searching";
+        fixText.textContent = `KİLİT ARANIYOR (${visibleSats}/4 Uydu)`;
+      }
+
+      // 8. DOP & EPE
+      if (gnss.hdop !== null) {
+        document.getElementById('valHdop').textContent = gnss.hdop.toFixed(2);
+        const epe = (gnss.hdop * 2.5).toFixed(1);
+        document.getElementById('valEpe').textContent = epe;
+
+        const ratingEl = document.getElementById('valDopRating');
+        if (gnss.hdop < 1.0) { ratingEl.textContent = "İDEAL (<1)"; ratingEl.style.color = "#10b981"; }
+        else if (gnss.hdop < 2.0) { ratingEl.textContent = "MÜKEMMEL"; ratingEl.style.color = "#34d399"; }
+        else if (gnss.hdop < 5.0) { ratingEl.textContent = "İYİ"; ratingEl.style.color = "#f59e0b"; }
+        else { ratingEl.textContent = "ZAYIF"; ratingEl.style.color = "#f43f5e"; }
+      }
+      document.getElementById('valVdop').textContent = gnss.vdop !== null ? gnss.vdop.toFixed(2) : '--.--';
+      document.getElementById('valPdop').textContent = gnss.pdop !== null ? gnss.pdop.toFixed(2) : '--.--';
+
+      // 9. Time
+      if (gnss.utcTime) document.getElementById('valUtcTime').textContent = gnss.utcTime;
+      if (gnss.utcDate) document.getElementById('valUtcDate').textContent = gnss.utcDate;
+
+      // Render Visualizations
+      renderSkyviewRadar();
+      renderSnrBars();
+    }
+
+    /* =========================================================================
+       CANVAS POLAR RADAR SKYVIEW (360° AZIMUTH / 90° ELEVATION)
+       ========================================================================= */
+    let skyCanvas, skyCtx;
+
+    function initSkyviewCanvas() {
+      skyCanvas = document.getElementById('skyviewCanvas');
+      skyCtx = skyCanvas.getContext('2d');
+    }
+
+    function renderSkyviewRadar() {
+      if (!skyCtx) return;
+      const w = skyCanvas.width;
+      const h = skyCanvas.height;
+      const cx = w / 2;
+      const cy = h / 2;
+      const maxR = Math.min(cx, cy) - 14;
+
+      skyCtx.clearRect(0, 0, w, h);
+
+      // Radar Background Rings
+      skyCtx.strokeStyle = 'rgba(56, 189, 248, 0.2)';
+      skyCtx.lineWidth = 1;
+
+      // Rings for 0° (horizon), 30°, 60°
+      [1.0, 0.66, 0.33].forEach(ratio => {
+        skyCtx.beginPath();
+        skyCtx.arc(cx, cy, maxR * ratio, 0, Math.PI * 2);
+        skyCtx.stroke();
+      });
+
+      // Crosshairs (N-S, E-W)
+      skyCtx.strokeStyle = 'rgba(56, 189, 248, 0.15)';
+      skyCtx.beginPath();
+      skyCtx.moveTo(cx, cy - maxR);
+      skyCtx.lineTo(cx, cy + maxR);
+      skyCtx.moveTo(cx - maxR, cy);
+      skyCtx.lineTo(cx + maxR, cy);
+      skyCtx.stroke();
+
+      // Cardinal Labels
+      skyCtx.fillStyle = '#38bdf8';
+      skyCtx.font = 'bold 9px "JetBrains Mono"';
+      skyCtx.textAlign = 'center';
+      skyCtx.textBaseline = 'bottom';
+      skyCtx.fillText('K (0°)', cx, cy - maxR - 2);
+      skyCtx.textBaseline = 'top';
+      skyCtx.fillText('G (180°)', cx, cy + maxR + 2);
+      skyCtx.textAlign = 'right';
+      skyCtx.textBaseline = 'middle';
+      skyCtx.fillText('B (270°)', cx - maxR - 4, cy);
+      skyCtx.textAlign = 'left';
+      skyCtx.fillText('D (90°)', cx + maxR + 4, cy);
+
+      // Plot Satellites
+      const sats = Object.values(gnss.satellites);
+      sats.forEach(sat => {
+        // Polar to Cartesian
+        // Elevation: 90° -> r=0, 0° -> r=maxR
+        const r = maxR * ((90 - sat.elev) / 90.0);
+        // Azimuth: 0° is North (top), 90° is East (right)
+        const rad = (sat.az - 90) * (Math.PI / 180.0);
+        const x = cx + r * Math.cos(rad);
+        const y = cy + r * Math.sin(rad);
+
+        // Constellation Color
+        let color = '#3b82f6'; // GPS
+        if (sat.constel === 'GA') color = '#10b981'; // Galileo
+        else if (sat.constel === 'GB' || sat.constel === 'BD') color = '#f59e0b'; // BeiDou
+        else if (sat.constel === 'GL') color = '#a855f7'; // GLONASS
+        else if (sat.constel === 'GQ') color = '#ec4899'; // QZSS
+
+        const isActive = gnss.activeSatPrns.has(sat.prn);
+
+        // Halo if active in fix
+        if (isActive) {
+          skyCtx.beginPath();
+          skyCtx.arc(x, y, 9, 0, Math.PI * 2);
+          skyCtx.fillStyle = 'rgba(16, 185, 129, 0.35)';
+          skyCtx.fill();
+          skyCtx.strokeStyle = '#10b981';
+          skyCtx.lineWidth = 1.5;
+          skyCtx.stroke();
+        }
+
+        // Sat Circle
+        skyCtx.beginPath();
+        skyCtx.arc(x, y, 6, 0, Math.PI * 2);
+        skyCtx.fillStyle = color;
+        skyCtx.fill();
+        skyCtx.strokeStyle = '#ffffff';
+        skyCtx.lineWidth = 1;
+        skyCtx.stroke();
+
+        // PRN Label
+        skyCtx.fillStyle = '#ffffff';
+        skyCtx.font = 'bold 8px "JetBrains Mono"';
+        skyCtx.textAlign = 'center';
+        skyCtx.textBaseline = 'middle';
+        skyCtx.fillText(sat.prn, x, y);
+      });
+    }
+
+    /* =========================================================================
+       SNR (C/N0 dB-Hz) SIGNAL BAR CHART
+       ========================================================================= */
+    function renderSnrBars() {
+      const container = document.getElementById('snrBarsList');
+      const sats = Object.values(gnss.satellites);
+
+      if (sats.length === 0) {
+        container.innerHTML = `<div style="font-size:11px; color:var(--text-dim); text-align:center; padding:12px 0;">Uydu sinyal verisi (GSV) bekleniyor...</div>`;
+        return;
+      }
+
+      // Sort by SNR descending
+      sats.sort((a, b) => b.snr - a.snr);
+
+      let html = '';
+      sats.forEach(sat => {
+        const pct = Math.min(100, Math.max(0, (sat.snr / 50.0) * 100));
+        let barColor = '#ef4444'; // Red <25
+        if (sat.snr >= 35) barColor = '#10b981'; // Green >=35
+        else if (sat.snr >= 25) barColor = '#f59e0b'; // Amber 25-34
+
+        const isActive = gnss.activeSatPrns.has(sat.prn);
+        const badge = isActive ? '✨' : '';
+
+        html += `
+          <div class="snr-bar-row">
+            <span class="snr-sat-id">${badge}${sat.constel}${sat.prn}</span>
+            <div class="snr-track">
+              <div class="snr-fill" style="width:${pct}%; background:${barColor};"></div>
+            </div>
+            <span class="snr-val" style="color:${barColor};">${sat.snr > 0 ? sat.snr : '--'}</span>
+          </div>
+        `;
+      });
+
+      container.innerHTML = html;
+    }
+
+    /* =========================================================================
+       COMPASS TAPE BUILDER & SMOOTH SCROLL
+       ========================================================================= */
+    function buildCompassTape() {
+      const tape = document.getElementById('compassTape');
+      let html = '';
+      // 360 degrees tape with markers every 15 deg
+      for (let i = 0; i <= 360; i += 15) {
+        let label = i.toString();
+        let cls = 'compass-mark';
+        if (i === 0 || i === 360) { label = 'K'; cls += ' cardinal north'; }
+        else if (i === 90) { label = 'D'; cls += ' cardinal'; }
+        else if (i === 180) { label = 'G'; cls += ' cardinal'; }
+        else if (i === 270) { label = 'B'; cls += ' cardinal'; }
+        html += `<div class="${cls}">${label}</div>`;
+      }
+      tape.innerHTML = html;
+    }
+
+    function updateCompassTape(deg) {
+      const tape = document.getElementById('compassTape');
+      if (!tape) return;
+      // 40px per 15 degrees = 2.666 px per degree
+      const offset = (deg % 360) * (40 / 15);
+      tape.style.transform = `translateX(-${offset}px)`;
+    }
+
+    /* =========================================================================
+       NMEA CONSOLE LOG & DRAWER
+       ========================================================================= */
+    function appendNmeaLog(line, tag) {
+      if (streamPaused) return;
+
+      const subTag = tag.substring(2);
+      if (currentNmeaFilter !== 'ALL' && !subTag.includes(currentNmeaFilter)) {
+        return;
+      }
+
+      let cls = 'log-line';
+      if (tag.endsWith('GGA')) cls += ' gga';
+      else if (tag.endsWith('RMC')) cls += ' rmc';
+      else if (tag.endsWith('GSA')) cls += ' gsa';
+      else if (tag.endsWith('GSV')) cls += ' gsv';
+      else if (tag.endsWith('VTG')) cls += ' vtg';
+
+      logBuffer.push({ line, cls });
+      if (logBuffer.length > maxLogLines) logBuffer.shift();
+
+      const box = document.getElementById('nmeaLogBox');
+      const shouldScroll = box.scrollTop + box.clientHeight >= box.scrollHeight - 30;
+
+      const el = document.createElement('div');
+      el.className = cls;
+      el.textContent = line;
+      box.appendChild(el);
+
+      while (box.children.length > maxLogLines) {
+        box.removeChild(box.firstChild);
+      }
+
+      if (shouldScroll) {
+        box.scrollTop = box.scrollHeight;
+      }
+
+      document.getElementById('logCounter').textContent = `${gnss.packetCount} PAKET`;
+    }
+
+    function toggleBottomDrawer() {
+      const drawer = document.getElementById('bottomDrawer');
+      drawer.classList.toggle('collapsed');
+    }
+
+    function setNmeaFilter(filter) {
+      currentNmeaFilter = filter;
+      document.querySelectorAll('.filter-btn').forEach(b => {
+        b.classList.remove('active');
+        if (b.textContent === filter) b.classList.add('active');
+      });
+    }
+
+    function togglePauseStream() {
+      streamPaused = !streamPaused;
+      const btn = document.getElementById('btnPauseStream');
+      if (streamPaused) {
+        btn.textContent = "▶ Devam Et";
+        btn.style.color = "#10b981";
+      } else {
+        btn.textContent = "⏸ Duraklat";
+        btn.style.color = "#fbbf24";
+      }
+    }
+
+    function copyNmeaLog() {
+      const text = logBuffer.map(i => i.line).join('\n');
+      navigator.clipboard.writeText(text).then(() => {
+        alert("Son NMEA veri akışı panoya kopyalandı!");
+      });
+    }
+
+    /* =========================================================================
+       EXPORT TOOLS & SHORTCUTS
+       ========================================================================= */
+    function copyCoordinates() {
+      if (gnss.lat === null || gnss.lon === null) {
+        alert("Henüz GPS kilit almadı.");
+        return;
+      }
+      const dd = `${gnss.lat.toFixed(6)}, ${gnss.lon.toFixed(6)}`;
+      const dms = `${toDms(gnss.lat, 'lat')} ${toDms(gnss.lon, 'lon')}`;
+      const gmaps = `https://maps.google.com/?q=${gnss.lat.toFixed(6)},${gnss.lon.toFixed(6)}`;
+      const report = `🛰️ TBS M10Q GNSS Konum Raporu:\nDD: ${dd}\nDMS: ${dms}\nİrtifa: ${gnss.altMsl || 0} m MSL\nHarita Linki: ${gmaps}`;
+      navigator.clipboard.writeText(report).then(() => {
+        alert(`Konum başarıyla kopyalandı!\n\n${report}`);
+      });
+    }
+
+    function exportGpx() {
+      if (breadcrumbPoints.length === 0) {
+        alert("Henüz dışa aktarılacak GPS iz noktası bulunmuyor.");
+        return;
+      }
+      let gpx = `<?xml version="1.0" encoding="UTF-8"?>\n`;
+      gpx += `<gpx version="1.1" creator="MET-SURV TBS M10Q GNSS Terminal" xmlns="http://www.topografix.com/GPX/1/1">\n`;
+      gpx += `  <trk>\n    <name>M10Q Live Track - ${new Date().toISOString()}</name>\n    <trkseg>\n`;
+      breadcrumbPoints.forEach(pt => {
+        gpx += `      <trkpt lat="${pt[0].toFixed(6)}" lon="${pt[1].toFixed(6)}"><ele>${gnss.altMsl || 0}</ele></trkpt>\n`;
+      });
+      gpx += `    </trkseg>\n  </trk>\n</gpx>`;
+
+      const blob = new Blob([gpx], { type: 'application/gpx+xml' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `gnss_track_${Date.now()}.gpx`;
+      a.click();
+      URL.revokeObjectURL(url);
+    }
+
+    /* =========================================================================
+       REALTIME DATA POLLING (LOCAL PYTHON BRIDGE /api/gps)
+       ========================================================================= */
+    let lastPollSuccess = Date.now();
+
+    async function pollGpsBridge() {
+      if (demoActive) return; // Don't fetch while user is running demo simulation
+
+      try {
+        const res = await fetch('/api/gps');
+        if (res.ok) {
+          const data = await res.json();
+          lastPollSuccess = Date.now();
+
+          // Link status
+          gnss.connected = data.connected;
+          gnss.port = data.port || 'COM4';
+
+          const hwPill = document.getElementById('hwStatusPill');
+          const hwPort = document.getElementById('hwPortText');
+          if (data.connected) {
+            hwPill.className = "status-badge badge-live";
+            hwPort.textContent = `DONANIM BAĞLI (${gnss.port})`;
+          } else {
+            hwPill.className = "status-badge badge-fix-none";
+            hwPort.textContent = `DONANIM ARANIYOR (${gnss.port})`;
+          }
+
+          // Process batch of NMEA lines
+          if (Array.isArray(data.lines) && data.lines.length > 0) {
+            for (const line of data.lines) {
+              parseNmeaLine(line);
+            }
+          }
+        }
+      } catch (err) {
+        // Local bridge error handling
+        const hwPill = document.getElementById('hwStatusPill');
+        const hwPort = document.getElementById('hwPortText');
+        if (Date.now() - lastPollSuccess > 4000) {
+          hwPill.className = "status-badge badge-fix-none";
+          hwPort.textContent = "KÖPRÜ BAĞLANTI HATASI";
+        }
+      }
+    }
+
+    // High frequency 250ms polling loop for smooth telemetry
+    setInterval(pollGpsBridge, 250);
+
+    // Calculate update Hz every 1 second
+    setInterval(() => {
+      gnss.currentHz = (gnss.packetsLastSec).toFixed(1);
+      gnss.packetsLastSec = 0;
+      document.getElementById('hzRateText').textContent = `${gnss.currentHz} Hz`;
+    }, 1000);
+
+    /* =========================================================================
+       DEMO / TEST MODE SIMULATION
+       ========================================================================= */
+    function toggleDemoMode() {
+      demoActive = !demoActive;
+      const btn = document.getElementById('btnDemo');
+      if (demoActive) {
+        btn.classList.add('active');
+        btn.innerHTML = `<span>🛑</span> Demo Modunu Durdur`;
+        startDemoSimulation();
+      } else {
+        btn.classList.remove('active');
+        btn.innerHTML = `<span>🎮</span> Demo Simülatör`;
+        clearInterval(demoTimer);
+      }
+    }
+
+    function startDemoSimulation() {
+      let baseLat = 41.45007;
+      let baseLon = 31.75833;
+      let alt = 124;
+      let simSpeed = 38.5; // km/h
+
+      demoTimer = setInterval(() => {
+        demoAngle += 0.04;
+        const lat = baseLat + Math.sin(demoAngle) * 0.003;
+        const lon = baseLon + Math.cos(demoAngle) * 0.004;
+        const heading = (Math.round((demoAngle * 180 / Math.PI) + 90) % 360);
+        alt += (Math.random() - 0.48) * 1.5;
+
+        // Simulated NMEA sentences
+        const latNmea = toNmeaFormat(lat, true);
+        const lonNmea = toNmeaFormat(lon, false);
+        const now = new Date();
+        const timeStr = now.toTimeString().split(' ')[0].replace(/:/g, '') + '.00';
+
+        parseNmeaLine(`$GNRMC,${timeStr},A,${latNmea},N,${lonNmea},E,${(simSpeed/1.852).toFixed(2)},${heading}.0,270926,,,A*00`);
+        parseNmeaLine(`$GNGGA,${timeStr},${latNmea},N,${lonNmea},E,1,12,0.85,${alt.toFixed(1)},M,35.4,M,,*00`);
+        parseNmeaLine(`$GNGSA,A,3,07,12,14,22,26,27,31,03,08,10,16,21,1.42,0.85,1.14,1*00`);
+        parseNmeaLine(`$GPGSV,2,1,08,07,48,112,42,12,32,240,38,14,64,055,45,22,18,310,29*00`);
+        parseNmeaLine(`$GPGSV,2,2,08,26,24,085,34,27,78,190,46,31,12,160,28,03,08,040,24*00`);
+        parseNmeaLine(`$GAGSV,1,1,04,02,52,095,41,08,34,185,39,12,68,290,44,24,15,045,27*00`);
+        parseNmeaLine(`$GBGSV,1,1,04,06,44,130,37,14,58,075,42,21,28,215,36,28,10,320,25*00`);
+        parseNmeaLine(`$GNVTG,${heading}.0,T,,M,${(simSpeed/1.852).toFixed(2)},N,${simSpeed.toFixed(1)},K,A*00`);
+      }, 500);
+    }
+
+    function toNmeaFormat(val, isLat) {
+      const absVal = Math.abs(val);
+      const deg = Math.floor(absVal);
+      const min = (absVal - deg) * 60;
+      const degStr = isLat ? deg.toString().padStart(2, '0') : deg.toString().padStart(3, '0');
+      return `${degStr}${min.toFixed(5).padStart(8, '0')}`;
+    }
+
+    /* =========================================================================
+       MATHEMATICAL & GEODESIC HELPERS
+       ========================================================================= */
+    function calcDistanceKm(lat1, lon1, lat2, lon2) {
+      const R = 6371.0;
+      const dLat = (lat2 - lat1) * Math.PI / 180;
+      const dLon = (lon2 - lon1) * Math.PI / 180;
+      const a = Math.sin(dLat/2) * Math.sin(dLat/2) +
+                Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) *
+                Math.sin(dLon/2) * Math.sin(dLon/2);
+      const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
+      return R * c;
+    }
+
+    function calcBearingDeg(lat1, lon1, lat2, lon2) {
+      const φ1 = lat1 * Math.PI / 180;
+      const φ2 = lat2 * Math.PI / 180;
+      const Δλ = (lon2 - lon1) * Math.PI / 180;
+      const y = Math.sin(Δλ) * Math.cos(φ2);
+      const x = Math.cos(φ1) * Math.sin(φ2) - Math.sin(φ1) * Math.cos(φ2) * Math.cos(Δλ);
+      const θ = Math.atan2(y, x);
+      return (θ * 180 / Math.PI + 360) % 360;
+    }
+
+    function degToCardinal(deg) {
+      const cardinals = ["K", "K-KD", "KD", "D-KD", "D", "D-GD", "GD", "G-GD", "G", "G-GB", "GB", "B-GB", "B", "B-KB", "KB", "K-KB"];
+      const idx = Math.round(deg / 22.5) % 16;
+      return cardinals[idx];
+    }
+
+    function toDms(val, type) {
+      const dir = type === 'lat' ? (val >= 0 ? 'N' : 'S') : (val >= 0 ? 'E' : 'W');
+      const absVal = Math.abs(val);
+      const deg = Math.floor(absVal);
+      const minFloat = (absVal - deg) * 60;
+      const min = Math.floor(minFloat);
+      const sec = ((minFloat - min) * 60).toFixed(2);
+      return `${deg}° ${min.toString().padStart(2, '0')}' ${sec.padStart(5, '0')}" ${dir}`;
+    }
+
+    function toDdm(val, type) {
+      const dir = type === 'lat' ? (val >= 0 ? 'N' : 'S') : (val >= 0 ? 'E' : 'W');
+      const absVal = Math.abs(val);
+      const deg = Math.floor(absVal);
+      const min = ((absVal - deg) * 60).toFixed(4);
+      return `${deg}° ${min}' ${dir}`;
+    }
+
+    /* =========================================================================
+       GNSS ACCURACY ANALYSIS & BENCHMARK STUDIO ENGINE
+       ========================================================================= */
+    let accuracyModalOpen = false;
+
+    const accSession = {
+      active: true,
+      samples: [],
+      testTag: 'Pencere Kenarı',
+      startTime: Date.now(),
+      
+      // Cumulative
+      sumLat: 0,
+      sumLon: 0,
+      sumAlt: 0,
+      sumHdop: 0,
+      sumSats: 0,
+      validFixCount: 0,
+
+      // Geodetic Stats
+      centroidLat: null,
+      centroidLon: null,
+      centroidAlt: null,
+      cep50: 0,
+      drms95: 0,
+      r99: 0,
+      maxDrift: 0,
+      sigma2d: 0,
+      sigmaAlt: 0,
+      minAlt: null,
+      maxAlt: null,
+      avgHdop: 0,
+      avgSats: 0,
+      fixPercent: 100,
+
+      // Benchmarks
+      snapshots: []
+    };
+
+    function toggleAccuracyPanel() {
+      accuracyModalOpen = !accuracyModalOpen;
+      const modal = document.getElementById('accuracyModal');
+      const btn = document.getElementById('btnAccuracyLab');
+      if (accuracyModalOpen) {
+        modal.style.display = 'flex';
+        btn.classList.add('active');
+        initScatterCanvas();
+        initAltStripCanvas();
+        updateAccuracyUI();
+        renderScatterPlot();
+        renderAltStripChart();
+      } else {
+        modal.style.display = 'none';
+        btn.classList.remove('active');
+      }
+    }
+
+    function toggleAccuracyRecording() {
+      accSession.active = !accSession.active;
+      const btn = document.getElementById('btnAccRecordToggle');
+      const badge = document.getElementById('accRecordingBadge');
+      if (accSession.active) {
+        btn.textContent = "⏸ Duraklat";
+        btn.className = "acc-btn acc-btn-pause";
+        badge.textContent = "● CANLI KAYIT ALINIYOR";
+        badge.className = "acc-pill-live";
+      } else {
+        btn.textContent = "▶ Devam Et";
+        btn.className = "acc-btn";
+        btn.style.borderColor = "#10b981";
+        btn.style.color = "#34d399";
+        badge.textContent = "⏸ DURAKLATILDI";
+        badge.className = "acc-pill-live";
+        badge.style.background = "rgba(245,158,11,0.2)";
+        badge.style.borderColor = "rgba(245,158,11,0.4)";
+        badge.style.color = "#fbbf24";
+      }
+    }
+
+    function resetAccuracySession() {
+      if (accSession.samples.length > 0 && !confirm("Mevcut oturum verilerini sıfırlamak istiyor musunuz?")) return;
+      accSession.samples = [];
+      accSession.startTime = Date.now();
+      accSession.sumLat = 0;
+      accSession.sumLon = 0;
+      accSession.sumAlt = 0;
+      accSession.sumHdop = 0;
+      accSession.sumSats = 0;
+      accSession.validFixCount = 0;
+      accSession.centroidLat = null;
+      accSession.centroidLon = null;
+      accSession.centroidAlt = null;
+      accSession.cep50 = 0;
+      accSession.drms95 = 0;
+      accSession.r99 = 0;
+      accSession.maxDrift = 0;
+      accSession.sigma2d = 0;
+      accSession.sigmaAlt = 0;
+      accSession.minAlt = null;
+      accSession.maxAlt = null;
+      accSession.avgHdop = 0;
+      accSession.avgSats = 0;
+      accSession.fixPercent = 100;
+      updateAccuracyUI();
+      renderScatterPlot();
+      renderAltStripChart();
+    }
+
+    function onTestTagChange() {
+      const sel = document.getElementById('accTestTagSelect');
+      accSession.testTag = sel.value;
+    }
+
+    function processAccuracySample(lat, lon, alt, hdop, sats, fixQuality) {
+      if (!accSession.active) return;
+      if (lat === null || lon === null) return;
+
+      const altVal = (alt !== null && !isNaN(alt)) ? alt : (gnss.altMsl || 0);
+      const hdopVal = (hdop !== null && !isNaN(hdop)) ? hdop : (gnss.hdop || 1.5);
+      const satsVal = (sats !== null && !isNaN(sats)) ? sats : (gnss.satsUsed || 0);
+
+      accSession.samples.push({
+        lat,
+        lon,
+        alt: altVal,
+        hdop: hdopVal,
+        sats: satsVal,
+        fix: fixQuality > 0,
+        time: Date.now()
+      });
+
+      const N = accSession.samples.length;
+      accSession.sumLat += lat;
+      accSession.sumLon += lon;
+      accSession.sumAlt += altVal;
+      accSession.sumHdop += hdopVal;
+      accSession.sumSats += satsVal;
+      if (fixQuality > 0) accSession.validFixCount++;
+
+      if (accSession.minAlt === null || altVal < accSession.minAlt) accSession.minAlt = altVal;
+      if (accSession.maxAlt === null || altVal > accSession.maxAlt) accSession.maxAlt = altVal;
+
+      // Centroid
+      accSession.centroidLat = accSession.sumLat / N;
+      accSession.centroidLon = accSession.sumLon / N;
+      accSession.centroidAlt = accSession.sumAlt / N;
+
+      // Geodetic metric projection (WGS84 ellipsoidal local planar approximation)
+      const phiRad = accSession.centroidLat * (Math.PI / 180.0);
+      const R_lat = 111319.9;
+      const R_lon = 111319.9 * Math.cos(phiRad);
+
+      let sumSqX = 0, sumSqY = 0, sumSqAlt = 0;
+      let maxDrift = 0;
+      const radii = [];
+
+      for (let i = 0; i < N; i++) {
+        const s = accSession.samples[i];
+        const dx = (s.lon - accSession.centroidLon) * R_lon;
+        const dy = (s.lat - accSession.centroidLat) * R_lat;
+        const r = Math.sqrt(dx * dx + dy * dy);
+        radii.push(r);
+        sumSqX += (dx * dx);
+        sumSqY += (dy * dy);
+        const dAlt = s.alt - accSession.centroidAlt;
+        sumSqAlt += (dAlt * dAlt);
+        if (r > maxDrift) maxDrift = r;
+      }
+
+      radii.sort((a, b) => a - b);
+      const cepIdx = Math.floor(0.50 * N);
+      const r95Idx = Math.floor(0.95 * N);
+      const r99Idx = Math.floor(0.99 * N);
+
+      accSession.cep50 = radii[cepIdx] || 0;
+      accSession.sigma2d = Math.sqrt((sumSqX + sumSqY) / N);
+      accSession.drms95 = radii[r95Idx] || (2.0 * accSession.sigma2d);
+      accSession.r99 = radii[r99Idx] || 0;
+      accSession.maxDrift = maxDrift;
+      accSession.sigmaAlt = Math.sqrt(sumSqAlt / N);
+      accSession.avgHdop = accSession.sumHdop / N;
+      accSession.avgSats = (accSession.sumSats / N).toFixed(1);
+      accSession.fixPercent = ((accSession.validFixCount / N) * 100).toFixed(1);
+
+      if (accuracyModalOpen) {
+        updateAccuracyUI();
+        renderScatterPlot();
+        renderAltStripChart();
+      }
+    }
+
+    function updateAccuracyUI() {
+      const N = accSession.samples.length;
+      document.getElementById('accSampleCount').textContent = N;
+
+      const durSec = Math.floor((Date.now() - accSession.startTime) / 1000);
+      const h = Math.floor(durSec / 3600).toString().padStart(2, '0');
+      const m = Math.floor((durSec % 3600) / 60).toString().padStart(2, '0');
+      const s = (durSec % 60).toString().padStart(2, '0');
+      document.getElementById('accDurationText').textContent = `${h}:${m}:${s}`;
+
+      if (accSession.centroidLat !== null) {
+        document.getElementById('accCentroidText').textContent = 
+          `${accSession.centroidLat.toFixed(6)}° N, ${accSession.centroidLon.toFixed(6)}° E | ${accSession.centroidAlt.toFixed(1)} m`;
+      }
+
+      // Statistical KPI Cards
+      document.getElementById('valStatCep').textContent = accSession.cep50 > 0 ? accSession.cep50.toFixed(2) : '--.--';
+      document.getElementById('valStat2Drms').textContent = accSession.drms95 > 0 ? accSession.drms95.toFixed(2) : '--.--';
+      document.getElementById('valStatMaxDrift').textContent = accSession.maxDrift > 0 ? accSession.maxDrift.toFixed(2) : '--.--';
+      document.getElementById('valStatSigma2D').textContent = accSession.sigma2d > 0 ? accSession.sigma2d.toFixed(2) : '--.--';
+      document.getElementById('valStatSigmaAlt').textContent = accSession.sigmaAlt > 0 ? accSession.sigmaAlt.toFixed(2) : '--.--';
+      document.getElementById('valStatAvgHdop').textContent = accSession.avgHdop > 0 ? accSession.avgHdop.toFixed(2) : '--.--';
+      document.getElementById('valStatAvgSats').textContent = accSession.avgSats || '--';
+      document.getElementById('valStatFixPercent').textContent = `%${accSession.fixPercent}`;
+
+      // Canvas subtitle labels
+      document.getElementById('lblScatterCep').textContent = `${accSession.cep50.toFixed(2)} m`;
+      document.getElementById('lblScatter2Drms').textContent = `${accSession.drms95.toFixed(2)} m`;
+      document.getElementById('lblScatterMax').textContent = `${accSession.maxDrift.toFixed(2)} m`;
+
+      document.getElementById('lblStripMeanAlt').textContent = `${accSession.centroidAlt !== null ? accSession.centroidAlt.toFixed(1) : '--'} m`;
+      document.getElementById('lblStripMinMaxAlt').textContent = `${accSession.minAlt !== null ? accSession.minAlt : '--'} / ${accSession.maxAlt !== null ? accSession.maxAlt : '--'} m`;
+      const dAlt = (accSession.maxAlt !== null && accSession.minAlt !== null) ? (accSession.maxAlt - accSession.minAlt).toFixed(1) : '--';
+      document.getElementById('lblStripPeakAlt').textContent = `${dAlt} m`;
+
+      // Rating Grade
+      const grade = document.getElementById('accGradeBadge');
+      if (accSession.drms95 > 0) {
+        if (accSession.drms95 < 2.0) { grade.textContent = "A+ (MÜKEMMEL / AÇIK ALAN)"; grade.style.color = "#10b981"; }
+        else if (accSession.drms95 < 4.0) { grade.textContent = "A (İYİ / PENCERE KENARI)"; grade.style.color = "#34d399"; }
+        else if (accSession.drms95 < 8.0) { grade.textContent = "B (ORTA / KISITLI GÖRÜŞ)"; grade.style.color = "#f59e0b"; }
+        else { grade.textContent = "C (YÜKSEK SAÇILIM / İÇ MEKAN)"; grade.style.color = "#ef4444"; }
+      }
+    }
+
+    /* 2D Scatter Reticle Canvas Renderer */
+    let scatterCanvas = null, scatterCtx = null;
+    function initScatterCanvas() {
+      scatterCanvas = document.getElementById('scatterCanvas');
+      if (scatterCanvas) scatterCtx = scatterCanvas.getContext('2d');
+    }
+
+    function renderScatterPlot() {
+      if (!scatterCtx || !scatterCanvas) return;
+      const w = scatterCanvas.width;
+      const h = scatterCanvas.height;
+      const cx = w / 2;
+      const cy = h / 2;
+      const maxR = Math.min(cx, cy) - 18;
+
+      scatterCtx.clearRect(0, 0, w, h);
+
+      const scaleMeters = parseFloat(document.getElementById('accReticleScale').value) || 10.0;
+      const pxPerMeter = maxR / scaleMeters;
+
+      // Concentric Rings (1/5, 2/5, 3/5, 4/5, 5/5)
+      scatterCtx.strokeStyle = 'rgba(56, 189, 248, 0.15)';
+      scatterCtx.lineWidth = 1;
+      const steps = [0.2, 0.4, 0.6, 0.8, 1.0];
+      steps.forEach(ratio => {
+        const r = maxR * ratio;
+        scatterCtx.beginPath();
+        scatterCtx.arc(cx, cy, r, 0, Math.PI * 2);
+        scatterCtx.stroke();
+        
+        // Ring distance label
+        scatterCtx.fillStyle = 'rgba(148, 163, 184, 0.6)';
+        scatterCtx.font = '8.5px "JetBrains Mono"';
+        scatterCtx.textAlign = 'left';
+        scatterCtx.fillText(`${(scaleMeters * ratio).toFixed(0)}m`, cx + r + 3, cy - 2);
+      });
+
+      // Reticle Crosshairs (North, South, East, West)
+      scatterCtx.strokeStyle = 'rgba(56, 189, 248, 0.25)';
+      scatterCtx.beginPath();
+      scatterCtx.moveTo(cx, cy - maxR);
+      scatterCtx.lineTo(cx, cy + maxR);
+      scatterCtx.moveTo(cx - maxR, cy);
+      scatterCtx.lineTo(cx + maxR, cy);
+      scatterCtx.stroke();
+
+      scatterCtx.fillStyle = '#38bdf8';
+      scatterCtx.font = 'bold 9px "JetBrains Mono"';
+      scatterCtx.textAlign = 'center';
+      scatterCtx.fillText('K (+N)', cx, cy - maxR - 4);
+      scatterCtx.fillText('G (-S)', cx, cy + maxR + 11);
+      scatterCtx.fillText('B (-W)', cx - maxR - 10, cy + 3);
+      scatterCtx.fillText('D (+E)', cx + maxR + 10, cy + 3);
+
+      if (accSession.samples.length === 0 || accSession.centroidLat === null) return;
+
+      const phiRad = accSession.centroidLat * (Math.PI / 180.0);
+      const R_lat = 111319.9;
+      const R_lon = 111319.9 * Math.cos(phiRad);
+
+      // Plot All Scatter Points
+      accSession.samples.forEach((s, idx) => {
+        const dx = (s.lon - accSession.centroidLon) * R_lon;
+        const dy = (s.lat - accSession.centroidLat) * R_lat;
+        // Target: X is East (+dx), Y is North (-dy in canvas coordinates)
+        const px = cx + (dx * pxPerMeter);
+        const py = cy - (dy * pxPerMeter);
+
+        // Constrain drawing within canvas
+        if (px >= 0 && px <= w && py >= 0 && py <= h) {
+          scatterCtx.beginPath();
+          scatterCtx.arc(px, py, 2.5, 0, Math.PI * 2);
+          scatterCtx.fillStyle = (idx === accSession.samples.length - 1) ? '#ffffff' : 'rgba(56, 189, 248, 0.45)';
+          scatterCtx.fill();
+        }
+      });
+
+      // Draw CEP 50% Circle (Cyan dashed)
+      if (accSession.cep50 > 0) {
+        const cepPx = accSession.cep50 * pxPerMeter;
+        scatterCtx.save();
+        scatterCtx.setLineDash([4, 4]);
+        scatterCtx.strokeStyle = '#38bdf8';
+        scatterCtx.lineWidth = 1.5;
+        scatterCtx.beginPath();
+        scatterCtx.arc(cx, cy, cepPx, 0, Math.PI * 2);
+        scatterCtx.stroke();
+        scatterCtx.restore();
+      }
+
+      // Draw 2DRMS 95% Circle (Amber solid)
+      if (accSession.drms95 > 0) {
+        const drmsPx = accSession.drms95 * pxPerMeter;
+        scatterCtx.strokeStyle = '#f59e0b';
+        scatterCtx.lineWidth = 1.5;
+        scatterCtx.beginPath();
+        scatterCtx.arc(cx, cy, drmsPx, 0, Math.PI * 2);
+        scatterCtx.stroke();
+      }
+
+      // Draw Mean Center Crosshair (+)
+      scatterCtx.strokeStyle = '#10b981';
+      scatterCtx.lineWidth = 2;
+      scatterCtx.beginPath();
+      scatterCtx.moveTo(cx - 6, cy);
+      scatterCtx.lineTo(cx + 6, cy);
+      scatterCtx.moveTo(cx, cy - 6);
+      scatterCtx.lineTo(cx + 6, cy);
+      scatterCtx.stroke();
+    }
+
+    /* Altitude & HDOP Strip Chart Renderer */
+    let altStripCanvas = null, altStripCtx = null;
+    function initAltStripCanvas() {
+      altStripCanvas = document.getElementById('altStripCanvas');
+      if (altStripCanvas) altStripCtx = altStripCanvas.getContext('2d');
+    }
+
+    function renderAltStripChart() {
+      if (!altStripCtx || !altStripCanvas) return;
+      const w = altStripCanvas.width;
+      const h = altStripCanvas.height;
+      altStripCtx.clearRect(0, 0, w, h);
+
+      const N = accSession.samples.length;
+      if (N < 2) return;
+
+      // Take last 80 samples
+      const slice = accSession.samples.slice(-80);
+      let minA = Infinity, maxA = -Infinity;
+      slice.forEach(s => {
+        if (s.alt < minA) minA = s.alt;
+        if (s.alt > maxA) maxA = s.alt;
+      });
+      if (maxA - minA < 3) { minA -= 1.5; maxA += 1.5; }
+
+      const dx = w / (slice.length - 1);
+
+      // Background grid lines
+      altStripCtx.strokeStyle = 'rgba(255,255,255,0.06)';
+      altStripCtx.lineWidth = 1;
+      altStripCtx.beginPath();
+      altStripCtx.moveTo(0, h/2); altStripCtx.lineTo(w, h/2);
+      altStripCtx.stroke();
+
+      // Altitude Curve
+      altStripCtx.beginPath();
+      altStripCtx.strokeStyle = '#10b981';
+      altStripCtx.lineWidth = 1.8;
+
+      slice.forEach((s, idx) => {
+        const x = idx * dx;
+        const normY = (s.alt - minA) / (maxA - minA);
+        const y = h - 10 - normY * (h - 20);
+        if (idx === 0) altStripCtx.moveTo(x, y);
+        else altStripCtx.lineTo(x, y);
+      });
+      altStripCtx.stroke();
+    }
+
+    /* Benchmark Ledger & Comparison Functions */
+    function saveBenchmarkSnapshot() {
+      if (accSession.samples.length < 5) {
+        alert("Kıyaslama kaydetmek için en az 5 örnek toplanmalıdır.");
+        return;
+      }
+      const tag = document.getElementById('accTestTagSelect').value;
+      const snapshot = {
+        tag,
+        n: accSession.samples.length,
+        drms95: accSession.drms95.toFixed(2),
+        cep50: accSession.cep50.toFixed(2),
+        maxDrift: accSession.maxDrift.toFixed(2),
+        avgHdop: accSession.avgHdop.toFixed(2),
+        avgSats: accSession.avgSats,
+        time: new Date().toLocaleTimeString()
+      };
+      accSession.snapshots.push(snapshot);
+      renderBenchmarkTable();
+      alert(`"${tag}" testi kıyaslama tablosuna kaydedildi!\nŞimdi anteni başka bir konuma alıp "Sıfırla" diyerek yeni bir test başlatabilir ve aradaki farkı kıyaslayabilirsiniz.`);
+    }
+
+    function renderBenchmarkTable() {
+      const tbody = document.getElementById('accBenchmarkTableBody');
+      if (accSession.snapshots.length === 0) {
+        tbody.innerHTML = `<tr><td colspan="7" style="text-align:center; color:var(--text-dim); padding:16px;">Henüz kaydedilmiş kıyaslama testi yok.</td></tr>`;
+        return;
+      }
+
+      let html = '';
+      accSession.snapshots.forEach((snap, idx) => {
+        html += `
+          <tr>
+            <td><b style="color:#ffffff;">#${idx+1} ${snap.tag}</b> <span style="font-size:9px; color:var(--text-dim);">(${snap.time})</span></td>
+            <td>${snap.n}</td>
+            <td style="color:#f59e0b; font-weight:700;">${snap.drms95} m</td>
+            <td style="color:#38bdf8;">${snap.cep50} m</td>
+            <td style="color:#ef4444;">${snap.maxDrift} m</td>
+            <td>${snap.avgHdop}</td>
+            <td style="color:var(--accent-cyan); font-weight:700;">${snap.avgSats}</td>
+          </tr>
+        `;
+      });
+      tbody.innerHTML = html;
+    }
+
+    function clearBenchmarkLedger() {
+      if (confirm("Kayıtlı kıyaslama listesi temizlensin mi?")) {
+        accSession.snapshots = [];
+        renderBenchmarkTable();
+      }
+    }
+
+    function exportAccuracyCsv() {
+      if (accSession.samples.length === 0) {
+        alert("Dışa aktarılacak ölçüm verisi bulunmuyor.");
+        return;
+      }
+      let csv = "Index,Timestamp,Latitude,Longitude,Altitude_m,HDOP,Satellites,RadialError_m\n";
+      const phiRad = accSession.centroidLat * (Math.PI / 180.0);
+      const R_lat = 111319.9;
+      const R_lon = 111319.9 * Math.cos(phiRad);
+
+      accSession.samples.forEach((s, idx) => {
+        const dx = (s.lon - accSession.centroidLon) * R_lon;
+        const dy = (s.lat - accSession.centroidLat) * R_lat;
+        const r = Math.sqrt(dx * dx + dy * dy).toFixed(3);
+        csv += `${idx + 1},${new Date(s.time).toISOString()},${s.lat.toFixed(7)},${s.lon.toFixed(7)},${s.alt.toFixed(1)},${s.hdop.toFixed(2)},${s.sats},${r}\n`;
+      });
+
+      const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `gnss_accuracy_benchmark_${Date.now()}.csv`;
+      a.click();
+      URL.revokeObjectURL(url);
+    }
+
+    function copyAccuracyReport() {
+      if (accSession.samples.length === 0) {
+        alert("Henüz toplanmış ölçüm verisi yok.");
+        return;
+      }
+      const rep = `🎯 MET-SURV GNSS DOĞRULUK & STATİK SAÇILIM ANALİZ RAPORU
+------------------------------------------------------------
+Cihaz Modeli: TBS M10Q (u-blox MAX-M10S Multi-GNSS)
+Test Profili: ${accSession.testTag}
+Örnek Sayısı (N): ${accSession.samples.length} Ölçüm
+Ağırlık Merkezi (Centroid): ${accSession.centroidLat.toFixed(6)}° N, ${accSession.centroidLon.toFixed(6)}° E
+Ortalama İrtifa (Mean MSL): ${accSession.centroidAlt.toFixed(1)} m
+
+STATİK DOĞRULUK METRİKLERİ (WGS84):
+• CEP (%50 İhtimal Yarıçapı) : ${accSession.cep50.toFixed(2)} metre
+• 2DRMS (%95 Güvenlik Sınırı): ${accSession.drms95.toFixed(2)} metre
+• Maksimum Sapma (Max Drift) : ${accSession.maxDrift.toFixed(2)} metre
+• Yatay Standart Sapma (σ 2D): ${accSession.sigma2d.toFixed(2)} metre
+• Dikey Standart Sapma (σ Alt): ${accSession.sigmaAlt.toFixed(2)} metre
+
+KONSTELASYON & GEOMETRİ SAĞLIĞI:
+• Ortalama HDOP: ${accSession.avgHdop.toFixed(2)}
+• Ortalama Uydu Sayısı: ${accSession.avgSats} Uydu
+• 3D Kilit Sürekliliği: %${accSession.fixPercent}
+------------------------------------------------------------
+Tarih: ${new Date().toLocaleString()}`;
+
+      navigator.clipboard.writeText(rep).then(() => {
+        alert("Doğruluk Analiz Raporu panoya kopyalandı!");
+      });
+    }
+
+    function loadCsvDataset(csvText, filename) {
+      if (!csvText || typeof csvText !== 'string') return;
+      const lines = csvText.trim().split(/\r?\n/);
+      if (lines.length < 2) {
+        alert("Geçerli veri satırı bulunamadı.");
+        return;
+      }
+      
+      const headerParts = lines[0].split(',').map(s => s.trim().toLowerCase());
+      let latIdx = headerParts.findIndex(h => h === 'latitude' || h.includes('lat'));
+      let lonIdx = headerParts.findIndex(h => h === 'longitude' || h.includes('lon'));
+      let altIdx = headerParts.findIndex(h => h.includes('altitude') || h.includes('alt'));
+      let hdopIdx = headerParts.findIndex(h => h.includes('hdop'));
+      let satsIdx = headerParts.findIndex(h => h.includes('sat'));
+
+      if (latIdx === -1 || lonIdx === -1) {
+        latIdx = 2; lonIdx = 3; altIdx = 4; hdopIdx = 5; satsIdx = 6;
+      }
+
+      resetAccuracySession();
+      const tag = filename ? `Dosya: ${filename}` : "Yüklenen Test";
+      accSession.testTag = tag;
+      const sel = document.getElementById('accTestTagSelect');
+      if (sel) {
+        sel.innerHTML += `<option value="${tag}" selected>📁 ${tag}</option>`;
+      }
+
+      let validCount = 0;
+      for (let i = 1; i < lines.length; i++) {
+        const row = lines[i].split(',').map(s => s.trim());
+        if (row.length <= Math.max(latIdx, lonIdx)) continue;
+        const lat = parseFloat(row[latIdx]);
+        const lon = parseFloat(row[lonIdx]);
+        const alt = altIdx !== -1 ? parseFloat(row[altIdx]) : 88.0;
+        const hdop = hdopIdx !== -1 ? parseFloat(row[hdopIdx]) : 1.5;
+        const sats = satsIdx !== -1 ? parseInt(row[satsIdx], 10) : 12;
+        if (isNaN(lat) || isNaN(lon)) continue;
+
+        const altVal = isNaN(alt) ? 0 : alt;
+        const hdopVal = isNaN(hdop) ? 1.5 : hdop;
+        const satsVal = isNaN(sats) ? 12 : sats;
+
+        accSession.samples.push({
+          lat, lon, alt: altVal,
+          hdop: hdopVal,
+          sats: satsVal,
+          fix: true,
+          time: Date.now()
+        });
+        accSession.sumLat += lat;
+        accSession.sumLon += lon;
+        accSession.sumAlt += altVal;
+        accSession.sumHdop += hdopVal;
+        accSession.sumSats += satsVal;
+        accSession.validFixCount++;
+        if (accSession.minAlt === null || altVal < accSession.minAlt) accSession.minAlt = altVal;
+        if (accSession.maxAlt === null || altVal > accSession.maxAlt) accSession.maxAlt = altVal;
+        validCount++;
+      }
+
+      if (validCount === 0) {
+        alert("Dosyada geçerli koordinat satırı bulunamadı.");
+        return;
+      }
+
+      const N = accSession.samples.length;
+      accSession.centroidLat = accSession.sumLat / N;
+      accSession.centroidLon = accSession.sumLon / N;
+      accSession.centroidAlt = accSession.sumAlt / N;
+
+      const phiRad = accSession.centroidLat * (Math.PI / 180.0);
+      const R_lat = 111319.9;
+      const R_lon = 111319.9 * Math.cos(phiRad);
+
+      let sumSqX = 0, sumSqY = 0, sumSqAlt = 0;
+      let maxDrift = 0;
+      const radii = [];
+
+      for (let i = 0; i < N; i++) {
+        const s = accSession.samples[i];
+        const dx = (s.lon - accSession.centroidLon) * R_lon;
+        const dy = (s.lat - accSession.centroidLat) * R_lat;
+        const r = Math.sqrt(dx * dx + dy * dy);
+        radii.push(r);
+        sumSqX += (dx * dx);
+        sumSqY += (dy * dy);
+        const dAlt = s.alt - accSession.centroidAlt;
+        sumSqAlt += (dAlt * dAlt);
+        if (r > maxDrift) maxDrift = r;
+      }
+
+      radii.sort((a, b) => a - b);
+      accSession.cep50 = radii[Math.floor(0.50 * N)] || 0;
+      accSession.sigma2d = Math.sqrt((sumSqX + sumSqY) / N);
+      accSession.drms95 = radii[Math.floor(0.95 * N)] || (2.0 * accSession.sigma2d);
+      accSession.r99 = radii[Math.floor(0.99 * N)] || 0;
+      accSession.maxDrift = maxDrift;
+      accSession.sigmaAlt = Math.sqrt(sumSqAlt / N);
+      accSession.avgHdop = accSession.sumHdop / N;
+      accSession.avgSats = (accSession.sumSats / N).toFixed(1);
+      accSession.fixPercent = "100.0";
+
+      updateAccuracyUI();
+      renderScatterPlot();
+      renderAltStripChart();
+      alert(`✅ Test Verisi Başarıyla Yüklendi ve Analiz Edildi!\n\n` +
+            `Örnek Sayısı (N): ${N}\n` +
+            `CEP (%50 Yarıçap): ${accSession.cep50.toFixed(2)} m\n` +
+            `2DRMS (%95 Sınır): ${accSession.drms95.toFixed(2)} m\n` +
+            `Maksimum Sapma: ${accSession.maxDrift.toFixed(2)} m\n` +
+            `Yatay σ: ${accSession.sigma2d.toFixed(2)} m | Dikey σ: ${accSession.sigmaAlt.toFixed(2)} m`);
+    }
+
+    function handleCsvFileSelected(event) {
+      const file = event.target.files && event.target.files[0];
+      if (!file) return;
+      const reader = new FileReader();
+      reader.onload = function(e) {
+        loadCsvDataset(e.target.result, file.name);
+      };
+      reader.readAsText(file);
+      event.target.value = ''; // Reset input
+    }
+
+    async function fetchServerLatestLog() {
+      try {
+        const res = await fetch('/api/download_csv');
+        if (!res.ok) {
+          alert("Sunucuda henüz kayıtlı oturum verisi yok (Arka plan köprüsünün aktif olduğundan emin olun).");
+          return;
+        }
+        const text = await res.text();
+        loadCsvDataset(text, "Canlı Köprü Oturumu");
+      } catch (err) {
+        alert("Sunucuya bağlanılamadı: " + err.message);
+      }
+    }
+
+    // Launch application on DOM ready & setup drag-and-drop
+    window.addEventListener('DOMContentLoaded', () => {
+      initMap();
+
+      // Drag and drop CSV / Benchmark files directly into tracker
+      window.addEventListener('dragover', (e) => e.preventDefault());
+      window.addEventListener('drop', (e) => {
+        e.preventDefault();
+        if (e.dataTransfer && e.dataTransfer.files && e.dataTransfer.files.length > 0) {
+          const file = e.dataTransfer.files[0];
+          const reader = new FileReader();
+          reader.onload = function(evt) {
+            if (!accuracyModalOpen) toggleAccuracyPanel();
+            loadCsvDataset(evt.target.result, file.name);
+          };
+          reader.readAsText(file);
+        }
+      });
+    });
+  </script>
+</body>
+</html>

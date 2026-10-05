@@ -1,0 +1,844 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+<meta charset="UTF-8">
+<title>Tactical Split-Node GNSS & Satellite Terminal Specification</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;700&display=swap');
+  
+  @page {
+    size: A4 landscape;
+    margin: 0;
+  }
+  
+  * {
+    box-sizing: border-box;
+    margin: 0;
+    padding: 0;
+  }
+  
+  body {
+    font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+    background: #080c14;
+    color: #e2e8f0;
+    -webkit-print-color-adjust: exact;
+    print-color-adjust: exact;
+  }
+
+  .mono {
+    font-family: 'JetBrains Mono', monospace;
+  }
+
+  .slide {
+    width: 297mm;
+    height: 210mm;
+    page-break-after: always;
+    padding: 14mm 16mm;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    position: relative;
+    background: radial-gradient(circle at top right, #131d31 0%, #080c14 60%);
+    overflow: hidden;
+    border-bottom: 1px solid #1e293b;
+  }
+
+  /* Header */
+  .slide-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    border-bottom: 1px solid #1e293b;
+    padding-bottom: 8px;
+    margin-bottom: 10px;
+  }
+  
+  .slide-header .title-area h2 {
+    font-size: 19px;
+    font-weight: 800;
+    letter-spacing: -0.5px;
+    color: #f8fafc;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+
+  .slide-header .title-area h2 .accent {
+    color: #38bdf8;
+  }
+
+  .slide-header .subtitle {
+    font-size: 11px;
+    color: #94a3b8;
+    margin-top: 2px;
+  }
+
+  .badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    padding: 3px 8px;
+    border-radius: 6px;
+    font-size: 10px;
+    font-family: 'JetBrains Mono', monospace;
+    font-weight: 600;
+  }
+
+  .badge-cyan { background: rgba(56, 189, 248, 0.15); color: #38bdf8; border: 1px solid rgba(56, 189, 248, 0.3); }
+  .badge-emerald { background: rgba(16, 185, 129, 0.15); color: #10b981; border: 1px solid rgba(16, 185, 129, 0.3); }
+  .badge-amber { background: rgba(245, 158, 11, 0.15); color: #f59e0b; border: 1px solid rgba(245, 158, 11, 0.3); }
+  .badge-purple { background: rgba(168, 85, 247, 0.15); color: #c084fc; border: 1px solid rgba(168, 85, 247, 0.3); }
+
+  /* Footer */
+  .slide-footer {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    border-top: 1px solid #1e293b;
+    padding-top: 6px;
+    font-size: 9.5px;
+    color: #64748b;
+    font-family: 'JetBrains Mono', monospace;
+  }
+
+  /* Content Containers */
+  .content {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    gap: 12px;
+  }
+
+  .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
+  .grid-3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 12px; }
+  .grid-4 { display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; }
+  .grid-1-2 { display: grid; grid-template-columns: 1fr 2fr; gap: 14px; }
+  .grid-2-1 { display: grid; grid-template-columns: 2fr 1fr; gap: 14px; }
+
+  .card {
+    background: rgba(15, 23, 42, 0.7);
+    border: 1px solid #1e293b;
+    border-radius: 10px;
+    padding: 12px 14px;
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+  }
+
+  .card-header {
+    font-size: 12px;
+    font-weight: 700;
+    color: #cbd5e1;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+  }
+
+  .card p, .card li {
+    font-size: 10.5px;
+    line-height: 1.45;
+    color: #94a3b8;
+  }
+
+  .card ul {
+    padding-left: 14px;
+  }
+
+  .stat-grid {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 10px;
+  }
+
+  .stat-box {
+    background: rgba(15, 23, 42, 0.8);
+    border: 1px solid #334155;
+    border-radius: 8px;
+    padding: 10px;
+    text-align: center;
+  }
+
+  .stat-box .val {
+    font-size: 18px;
+    font-weight: 800;
+    color: #38bdf8;
+    font-family: 'JetBrains Mono', monospace;
+  }
+
+  .stat-box .lbl {
+    font-size: 9px;
+    font-weight: 600;
+    color: #94a3b8;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    margin-top: 2px;
+  }
+
+  table.tactical-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 9.5px;
+    font-family: 'JetBrains Mono', monospace;
+  }
+
+  table.tactical-table th {
+    background: rgba(30, 41, 59, 0.8);
+    color: #38bdf8;
+    text-align: left;
+    padding: 5px 8px;
+    border: 1px solid #334155;
+    font-weight: 700;
+  }
+
+  table.tactical-table td {
+    padding: 4.5px 8px;
+    border: 1px solid #1e293b;
+    color: #cbd5e1;
+    background: rgba(15, 23, 42, 0.5);
+  }
+
+  table.tactical-table tr:nth-child(even) td {
+    background: rgba(15, 23, 42, 0.8);
+  }
+
+  .img-frame {
+    border: 1px solid #334155;
+    border-radius: 8px;
+    background: #020617;
+    padding: 4px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+  }
+
+  .img-frame img {
+    max-width: 100%;
+    max-height: 105mm;
+    object-fit: contain;
+    border-radius: 4px;
+    image-rendering: pixelated;
+  }
+
+  .img-label {
+    font-size: 9px;
+    font-family: 'JetBrains Mono', monospace;
+    color: #94a3b8;
+    margin-top: 4px;
+    text-align: center;
+  }
+
+  .code-block {
+    background: #020617;
+    border: 1px solid #1e293b;
+    border-radius: 6px;
+    padding: 8px;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 9px;
+    color: #38bdf8;
+    line-height: 1.4;
+    white-space: pre;
+    overflow: hidden;
+  }
+
+  /* Slide 1 Cover specific */
+  .cover-container {
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    height: 100%;
+    padding: 10mm 15mm;
+    gap: 16px;
+  }
+
+  .cover-tag {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 11px;
+    color: #10b981;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    font-weight: 700;
+  }
+
+  .cover-title {
+    font-size: 34px;
+    font-weight: 900;
+    line-height: 1.15;
+    letter-spacing: -1px;
+    color: #ffffff;
+  }
+
+  .cover-desc {
+    font-size: 13.5px;
+    color: #94a3b8;
+    line-height: 1.6;
+    max-width: 850px;
+  }
+</style>
+</head>
+<body>
+
+<!-- SLIDE 1: COVER -->
+<div class="slide">
+  <div class="slide-header">
+    <span class="badge badge-cyan">DOKÜMAN REF: BOM-SPEC-ALPINE-GNSS-REV3.0</span>
+    <span class="badge badge-emerald">DURUM: %100 GEÇTİ & ÜRETİME HAZIR</span>
+  </div>
+
+  <div class="cover-container">
+    <div class="cover-tag">SAVUNMA & DAĞCILIK ELEKTRONİĞİ SİSTEM MİMARİSİ</div>
+    <div class="cover-title">
+      EKSTREM ORTAM AYRIK GÖVDE <br>
+      <span style="color:#38bdf8;">TAKTIK GNSS & HİBRİT UYDU TERMİNALİ</span>
+    </div>
+    <div class="cover-desc">
+      -30°C ... +50°C Aralığında Sıfır Dinamik Bellek (Zero-Heap C99) Güvencesi, 
+      Güneş Altında Yansıtıcı Sharp 2.7" Memory-in-Pixel (MIP), 
+      Tier-1 1W (30dBm) LoRa ve Tier-2 Iridium SBD Küresel Yedeklilik Mimarisi.
+    </div>
+
+    <div class="stat-grid" style="margin-top: 15px;">
+      <div class="stat-box">
+        <div class="val">-30°C .. +50°C</div>
+        <div class="lbl">Çalışma Sıcaklığı</div>
+      </div>
+      <div class="stat-box">
+        <div class="val">4-6 B/Nokta</div>
+        <div class="lbl">CGPX Sıkıştırma Oranı</div>
+      </div>
+      <div class="stat-box">
+        <div class="val">%99.55</div>
+        <div class="lbl">SPI DMA Bant Tasarrufu</div>
+      </div>
+      <div class="stat-box">
+        <div class="val">40 - 60+ km</div>
+        <div class="lbl">1W LoRa & Küresel Iridium</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="slide-footer">
+    <span>GİZLİLİK DERECESİ: TEKNİK DOKÜMANTASYON & MÜHENDİSLİK ŞARTNAMESİ</span>
+    <span>SAYFA 1 / 10</span>
+  </div>
+</div>
+
+<!-- SLIDE 2: PHYSICAL CONSTRAINTS & SPLIT-NODE -->
+<div class="slide">
+  <div class="slide-header">
+    <div class="title-area">
+      <h2>01. FİZİKSEL SINIRLAR & <span class="accent">AYRIK GÖVDE (SPLIT-NODE) MİMARİSİ</span></h2>
+      <div class="subtitle">Standart Tüketici Cihazlarının ve Akıllı Saatlerin Sahada Çökme Nedenleri</div>
+    </div>
+    <span class="badge badge-amber">ÇEVRESEL SINIRLAR</span>
+  </div>
+
+  <div class="content">
+    <div class="grid-2">
+      <div class="card" style="border-left: 3px solid #ef4444;">
+        <div class="card-header" style="color:#f87171;">❌ Neden Standart Saat / TFT Ekranlar -30°C'de İflas Eder?</div>
+        <ul>
+          <li><strong>Sıvı Kristal Donması:</strong> TFT panellerdeki sıvı kristal molekülleri -10°C altında aşırı viskozlaşır, ekran tepkisi 2 saniyeye çıkar, -20°C'de donarak tamamen kararır.</li>
+          <li><strong>Buzul Güneş Körlüğü:</strong> 100.000 lüks kar yansımasında arka aydınlatmalı TFT'ler yetersiz kalır. Ekranı görmek için ışığı açmak pili 2 saatte bitirir.</li>
+          <li><strong>Soğukta Batarya Çökmesi (Cold-Soak):</strong> -30°C'de pilin iç direnci (ESR) 10 kat artar; telsiz/GPS yayını anlık 1-2A çektiğinde pil voltajı 2V'a çöker ve cihaz kapanır.</li>
+          <li><strong>GNSS LNA Körleşmesi:</strong> 10 MHz yüksek hızlı SPI hatları kablodan geçerse GNSS antenini kör eder; uydu kilidi kopar.</li>
+        </ul>
+      </div>
+
+      <div class="card" style="border-left: 3px solid #10b981;">
+        <div class="card-header" style="color:#34d399;">✓ Ayrık Gövde (Split-Node) Mühendislik Çözümümüz</div>
+        <ul>
+          <li><strong>Göğüs HMI Podu (Hafif & Ergonomik):</strong>
+            Sadece Sharp 2.7" MIP ekran, 4 taktik buton ve barometre barındırır. Vücut ısısıyla temas eder; madeni para kadar XIAO ESP32-C3 tarafından sürülür.</li>
+          <li><strong>Çanta Ana Podu (Güç & Radyo Merkezi):</strong>
+            Lityum batarya, süperkapasitör bankası, PTC ısıtıcı, 1W LoRa, Quectel GNSS ve Iridium uydu alıcı-vericisi güvenle çantada taşınır.</li>
+          <li><strong>Korumalı 1m PUR Bağlantı Kablosu:</strong>
+            -40°C kırılmaz poliüretan kılıflı diferansiyel hat. Gürültü üreten yüksek hızlı hatlar göğse taşınmaz; LNA hassasiyeti korunur.</li>
+        </ul>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-header">Topoloji: Göğüs Podu $\leftrightarrow$ 1m Taktik Kablo $\leftrightarrow$ Çanta Ana Podu</div>
+      <div class="code-block">[GÖĞÜS: XIAO ESP32-C3]                                    [ÇANTA: ESP32 + GÜÇ BEYNİ]
+ ├─ Sharp 2.7" MIP (50 µW)                                ├─ Molicel P42A Batarya + 5.5V 1.5F Süperkapasitör
+ ├─ 4x 650 gf Taktik Switch ──(1m PUR Kablo)─────────────> ├─ EBYTE E22 1W LoRa (868MHz, 40-60km)
+ └─ BMP581 Barometre (50Hz)                               ├─ RockBLOCK 9603 Iridium (1621MHz Uydu SBD)
+                                                          └─ Quectel LC29H Çift Bant GNSS + Donanımsal SAES</div>
+    </div>
+  </div>
+
+  <div class="slide-footer">
+    <span>AYRIK GÖVDE MİMARİSİ VE ELEKTRO-MEKANİK İZOLASYON</span>
+    <span>SAYFA 2 / 10</span>
+  </div>
+</div>
+
+<!-- SLIDE 3: DISPLAY ENGINEERING -->
+<div class="slide">
+  <div class="slide-header">
+    <div class="title-area">
+      <h2>02. EKRAN MİMARİSİ: <span class="accent">SHARP 2.7" MEMORY-IN-PIXEL (MIP)</span></h2>
+      <div class="subtitle">Sıvı Kristal Akışkanlığı Olmayan Katı-Hal Yansıtıcı Panel & İki Aşamalı Beyaz Halo</div>
+    </div>
+    <span class="badge badge-cyan">400x240 MONOKROM</span>
+  </div>
+
+  <div class="content">
+    <div class="grid-2">
+      <div class="card">
+        <div class="card-header">Neden Sharp LS027B7DH01A?</div>
+        <p>Sharp MIP panelinde her pikselin arkasında dahili 1-bit SRAM hücresi bulunur. Sıvı kristal akışkanlığına bağımlı değildir; mikromekanik yansıtıcı aynalar kullanır.</p>
+        <ul style="margin-top:6px;">
+          <li><strong>Sıfır Donma (-30°C):</strong> Sıvı donması veya hayalet izi (ghosting) kesinlikle yoktur.</li>
+          <li><strong>Transflektif Parlaklık:</strong> Güneş ne kadar dik gelirse kontrast o kadar artar.</li>
+          <li><strong>Ultra-Düşük Güç:</strong> Statik ekranda yalnızca <strong>50 µW</strong> çeker (TFT'den 10.000 kat az!).</li>
+          <li><strong>Dirty-Line DMA:</strong> 240 satırlık dirty-mask tutularak yalnızca değişen pikseller basılır (%99.55 SPI hat tasarrufu).</li>
+        </ul>
+
+        <div class="card-header" style="margin-top:8px;">İki Aşamalı Beyaz Halo (Two-Pass Inverted Outline)</div>
+        <p>1-bit ekranda siyah izohipsler üzerinde siyah rotanın kaybolmasını (kamuflaj etkisi) önleyen patentli mühendislik tekniğimiz:</p>
+        <div class="code-block">Pass 1: Rotanın geçtiği 4px koridoru BEYAZ (0) temizle.
+Pass 2: Merkezdeki 2px çekirdeği SİYAH (1) çek.
+Piksel: [BEYAZ 1px] [SİYAH 1px] [SİYAH 1px] [BEYAZ 1px]
+Sonuç: Rota dağ yamaçlarını kesen parlak bir koridor gibi parlar!</div>
+      </div>
+
+      <div class="img-frame">
+        <img src="data:image/png;base64,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" alt="MIP Framebuffer Out">
+        <div class="img-label">Şekil 1: Sharp 2.7" MIP (400x240) - 500m Makro LOD, 2-Pass Beyaz Halo & 7x7 Chevron HUD Çıktısı</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="slide-footer">
+    <span>OPTİK KONTRAST VE DİNAMİK LEVEL-OF-DETAIL (LOD) MOTORU</span>
+    <span>SAYFA 3 / 10</span>
+  </div>
+</div>
+
+<!-- SLIDE 4: PHASES 1-6 OVERVIEW -->
+<div class="slide">
+  <div class="slide-header">
+    <div class="title-area">
+      <h2>03. TAMAMLANAN 6 FAZIN <span class="accent">MÜHENDİSLİK ÖZETİ</span></h2>
+      <div class="subtitle">ANSI C99 Standartlarında Sıfır-Heap (CONFIG_HEAP_MEM_POOL_SIZE = 0) İcra</div>
+    </div>
+    <span class="badge badge-emerald">6/6 FAZ DOĞRULANDI</span>
+  </div>
+
+  <div class="content">
+    <div class="grid-3">
+      <div class="card">
+        <div class="card-header"><span class="badge badge-cyan">FAZ 1</span> CGPX Kripto Motoru</div>
+        <p>DPCM türevleri, ZigZag kodlama ve LEB128 Varint ile 1.11 cm geodezik kuantalama. Ham XML GPX boyutunu <strong>%94.7 küçülterek 4-6 bayt/noktaya</strong> indirir. AES-128-CTR ile şifreler.</p>
+      </div>
+
+      <div class="card">
+        <div class="card-header"><span class="badge badge-cyan">FAZ 2</span> MIP Sürücü & Chording</div>
+        <p>Dirty-Line SPI DMA motoru ile 50ms hat meşguliyetini 0.22ms'ye indirir (%99.55 tasarruf). Kalın dağcı eldiveni için 4-buton temporal debouncing (50ms kararlılık, 800ms uzun basış).</p>
+      </div>
+
+      <div class="card">
+        <div class="card-header"><span class="badge badge-cyan">FAZ 3</span> Split-Node CAN-FD</div>
+        <p>100.000 baytlık rastgele bit hatası, bayt düşmesi ve çerçeve kesilmesine maruz bırakılan testte <strong>%100 CRC tespiti ve <= 2 çerçevede resenkronizasyon</strong> ispatlandı.</p>
+      </div>
+
+      <div class="card">
+        <div class="card-header"><span class="badge badge-cyan">FAZ 4</span> LC29H GNSS & Baro-TRN</div>
+        <p>115200 baud dairesel DMA tokenizer. 64-bin kutupsal Skymask ile kanyon ardındaki 5 sahte (NLOS) uyduyu eler. BMP581 barometresi ile 40m multipath sıçramasını %99.7 bastırır.</p>
+      </div>
+
+      <div class="card">
+        <div class="card-header"><span class="badge badge-cyan">FAZ 5</span> Sub-Zero Güç & TPL5010</div>
+        <p>-30°C elektrokimyasal lityum kaplama koruması (0°C kesme, +2.5°C histerezis). PTC ön ısıtıcı kontrolü, süperkapasitör 500mA yük dengeleme ve 30sn TPL5010 donanımsal watchdog.</p>
+      </div>
+
+      <div class="card">
+        <div class="card-header"><span class="badge badge-cyan">FAZ 6</span> Topoğrafik Arazi Motoru</div>
+        <p>Bayer 4x4 yarı-ton gölgelendirme (NW 315°), Marching Squares izohips izolasyonu, İki Aşamalı Beyaz Halo rota çizgisi, Dinamik LOD (500m/100m) ve dinamik 7x7 Chevron yön oku.</p>
+      </div>
+    </div>
+  </div>
+
+  <div class="slide-footer">
+    <span>MODÜLER YAZILIM MİMARİSİ VE SIFIR-DİNAMİK BELLEK GÜVENCESİ</span>
+    <span>SAYFA 4 / 10</span>
+  </div>
+</div>
+
+<!-- SLIDE 5: HYBRID LORA + IRIDIUM -->
+<div class="slide">
+  <div class="slide-header">
+    <div class="title-area">
+      <h2>04. HİBRİT TELEMETRİ: <span class="accent">1W LoRa + IRIDIUM UYDU MİMARİSİ</span></h2>
+      <div class="subtitle">Pil Ömrünü 1.5 Günden 25+ Güne Çıkaran Kademeli Yönlendirme (Tiered Routing)</div>
+    </div>
+    <span class="badge badge-purple">ENERJİ & RF OPTİMİZASYONU</span>
+  </div>
+
+  <div class="content">
+    <div class="grid-2">
+      <div class="card">
+        <div class="card-header">Enerji Fiziği & Kademeli Karar Mekanizması</div>
+        <table class="tactical-table" style="margin-bottom:8px;">
+          <tr><th>Metrik</th><th>EBYTE E22 (1W LoRa)</th><th>Iridium SBD (RockBLOCK)</th></tr>
+          <tr><td>Frekans</td><td>868 MHz (ISM Band)</td><td>1621 MHz (L-Band Uydu)</td></tr>
+          <tr><td>İletim Akımı</td><td>~600 mA (30 dBm Tepe)</td><td>~2000 mA (2A Tepe Darbe)</td></tr>
+          <tr><td>Paket Enerjisi</td><td><strong>0.1 Joule</strong> (Bedava)</td><td><strong>150 Joule</strong> (Ücretli)</td></tr>
+          <tr><td>Kapsama</td><td>40 - 60+ km (Görüş Hattı)</td><td>Tüm Dünya (%100 Küresel)</td></tr>
+        </table>
+
+        <div class="code-block">HİBRİT İLETİM STRATEJİSİ:
+1. Normal Seyir: 1W LoRa ile her 30 sn'de bir ücretsiz telemetri atılır.
+   Iridium P-MOSFET ile tamamen KAPALIDIR (0.0 µA Kaçak Akım!).
+2. Dağın Arkasına Geçildiğinde (LoRa ACK yok / 3 deneme):
+   Sistem "Kör Noktadayım" der; son 1 saatlik 60 noktayı tek bir 
+   340 baytlık CGPX paketinde toplar (Aggregation).
+3. Acil Durumda (SOS Butonu veya Kritik Batarya):
+   Iridium anında uyandırılır; süperkapasitörden 2A çekerek uydudan fırlatır!</div>
+      </div>
+
+      <div class="card" style="border-left: 3px solid #c084fc;">
+        <div class="card-header">Donanımsal Güç Kapılama (Power Gating) Şeması</div>
+        <p>Iridium modülü boştayken bile 15 mA çeker. -30°C'de pili korumak için donanımsal P-MOSFET anahtarlama devresi entegre edilmiştir:</p>
+        <div class="code-block" style="margin: 8px 0;">
++5V Rail ───────[ S  AO3401A (P-FET)  D ]───────> RockBLOCK 5V Girişi
+                      | Gate
+                     [R1: 100kΩ Pull-Up]
+                      |
+                     [Collector / Drain]
+                     2N7002 / 2N3904
+                     [Base / Gate] <─── 10kΩ <─── ESP32 GPIO 25 (ENABLE)
+                     [Emitter / Source] ───────── GND
+        </div>
+        <ul>
+          <li><strong>GPIO 25 = LOW:</strong> P-MOSFET kapalı. Iridium voltajı 0V, kaçak akım <strong>0.00 µA</strong>.</li>
+          <li><strong>GPIO 25 = HIGH:</strong> P-MOSFET açılır, süperkapasitör dolar, mesaj fırlatılır ve tekrar kapanır.</li>
+        </ul>
+      </div>
+    </div>
+  </div>
+
+  <div class="slide-footer">
+    <span>KADEMELİ HİBRİT HABERLEŞME VE DONANIMSAL GÜÇ KAPILAMA</span>
+    <span>SAYFA 5 / 10</span>
+  </div>
+</div>
+
+<!-- SLIDE 6: SUB-ZERO BATTERY & POWER -->
+<div class="slide">
+  <div class="slide-header">
+    <div class="title-area">
+      <h2>05. AŞIRI SOĞUK GÜÇ & TERMAL MİMARİ <span class="accent">(-30°C ELEKTROKİMYA)</span></h2>
+      <div class="subtitle">Lityum Kaplama (Dendrite) Önleme, Süperkapasitör Yük Tamponu & PTC Ön Isıtıcı</div>
+    </div>
+    <span class="badge badge-amber">TERMAL GÜVENLİK</span>
+  </div>
+
+  <div class="content">
+    <div class="grid-2">
+      <div class="card">
+        <div class="card-header">Soğukta Voltaj Çökmesi (Cold-Soak Sag) & Süperkapasitör Çözümü</div>
+        <p>-30°C'de lityum pilin iç direnci $R_R_int = 0.8 &Omega; seviyesine fırlar. Iridium yayına girip pilden 2A çektiğinde:</p>
+        <div class="code-block">Voltaj Düşüşü: ΔV = I * R = 2.0A * 0.8Ω = 1.6 Volt!
+3.7V olan pil gerilimi anında 2.1V'a çöker ve BMS sistemi kapatır!</div>
+        <p style="margin-top:6px;"><strong>Mühendislik Çözümümüz:</strong> Çantaya yerleştirilen <strong>5.5V 1.5F Düşük ESR (< 80 mΩ) Süperkapasitör</strong>, pilden yavaşça (150 mA) dolar. 2A'lik uydu patlaması ve 600mA'lik LoRa darbesi doğrudan süperkapasitörden karşılanır; pil voltajı asla çökmez.</p>
+      </div>
+
+      <div class="card">
+        <div class="card-header">Kapton PTC Ön Isıtıcı & Histerezis Durum Makinesi</div>
+        <p>Lityum hücreler 0°C altında şarj/ağır deşarj edilirse lityum iyonları metalik lityuma dönüşerek patlama riski yaratır (Lithium Plating).</p>
+        <ul>
+          <li><strong>10k NTC Sensörü:</strong> Batarya gövdesine termal macun ile yapışıktır; hücre sıcaklığını her 100ms'de ölçer.</li>
+          <li><strong>Kapton Poliimid Film (5V 2.5W):</strong> Pil kılıfına sarılıdır; IRLML2502 Logic-Level N-MOSFET ile sürülür.</li>
+          <li><strong>Histerezis Kontrolü:</strong> Sıcaklık $TT &le; 0°C olduğunda yüksek akım çekimi durdurulur ve ısıtıcı devreye girer. Sıcaklık +2.5°C üzerine çıkana kadar güvenli bölgeye geçilmez.</li>
+        </ul>
+      </div>
+    </div>
+
+    <div class="stat-grid">
+      <div class="stat-box"><div class="val">5.5V 1.5F</div><div class="lbl">Süperkapasitör</div></div>
+      <div class="stat-box"><div class="val">&lt; 80 mΩ</div><div class="lbl">Süperkapasitör ESR</div></div>
+      <div class="stat-box"><div class="val">0°C / +2.5°C</div><div class="lbl">Termal Histerezis</div></div>
+      <div class="stat-box"><div class="val">30 Saniye</div><div class="lbl">TPL5010 Donanımsal Watchdog</div></div>
+    </div>
+  </div>
+
+  <div class="slide-footer">
+    <span>ELEKTROKİMYASAL PİL KORUMA VE HARİCİ HARDWARE WATCHDOG</span>
+    <span>SAYFA 6 / 10</span>
+  </div>
+</div>
+
+<!-- SLIDE 7: BLUEPRINT BOM TABLE -->
+<div class="slide">
+  <div class="slide-header">
+    <div class="title-area">
+      <h2>06. RESMİ ÜRETİM ŞARTNAMESİ: <span class="accent">BLUEPRINT BILL OF MATERIALS (BOM)</span></h2>
+      <div class="subtitle">Eksiksiz Üretici Parça Numaraları (MPN), Paketler ve Elektriksel Toleranslar</div>
+    </div>
+    <span class="badge badge-emerald">DONANIM ŞARTNAMESİ</span>
+  </div>
+
+  <div class="content">
+    <table class="tactical-table">
+      <thead>
+        <tr>
+          <th>Ref Des</th>
+          <th>Bileşen Tanımı</th>
+          <th>Üretici / Model / MPN</th>
+          <th>Paket / Kılıf</th>
+          <th>Elektriksel Değerler / Tolerans</th>
+          <th>Kritik Fonksiyon & Sahasal Gereksinim</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td><strong>U101</strong></td>
+          <td>HMI Kontrolcü</td>
+          <td>Seeed Studio XIAO ESP32-C3</td>
+          <td>21x17.5 mm Modül</td>
+          <td>3.3V, 160MHz RISC-V, 400KB SRAM</td>
+          <td>Göğüs HMI Podu: Sharp MIP DMA, Chording FSM, 1Hz EXTCOMIN.</td>
+        </tr>
+        <tr>
+          <td><strong>DISP1</strong></td>
+          <td>MIP Taktik Ekran</td>
+          <td>Sharp LS027B7DH01A</td>
+          <td>2.7" FPC (10-Pin)</td>
+          <td>400x240, 1-bit Monokrom, 3.3V, 50 µW</td>
+          <td>-30°C..+70°C. Güneş altında yansıtıcı, donma ve sıvı viskozitesi sıfır.</td>
+        </tr>
+        <tr>
+          <td><strong>SW101-104</strong></td>
+          <td>4x Taktik Switch</td>
+          <td>Omron B3F-4055 / TL1100F260Q</td>
+          <td>12x12 mm Through-Hole</td>
+          <td>650 gf basma kuvveti, 24V 50mA</td>
+          <td>Kalın dağcı eldiveniyle hissedilen sert geri bildirim; kazara basılmaz.</td>
+        </tr>
+        <tr>
+          <td><strong>U201</strong></td>
+          <td>Ana Sistem Beyni</td>
+          <td>ESP32-WROOM-32E</td>
+          <td>38-Pin Modül</td>
+          <td>3.3V, 240MHz Dual Core, 520KB SRAM</td>
+          <td>Çanta Podu: GNSS DMA, SAES Kripto, CGPX motoru, Hibrit Karar FSM.</td>
+        </tr>
+        <tr>
+          <td><strong>MOD201</strong></td>
+          <td>1W LoRa Modülü</td>
+          <td>EBYTE E22-900T30D</td>
+          <td>DIP Modül (SMA)</td>
+          <td>868MHz, 30 dBm (1.0W), ~620 mA Tepe</td>
+          <td>Tier-1 Birincil İletişim. Açık arazide 40-60 km menzil, 0 gecikme, bedava.</td>
+        </tr>
+        <tr>
+          <td><strong>MOD202</strong></td>
+          <td>Iridium Uydu SBD</td>
+          <td>RockBLOCK 9603 (Iridium 9603N)</td>
+          <td>Breakout Modül</td>
+          <td>5V, 1621MHz L-Band, 2.0A Tepe Darbe</td>
+          <td>Tier-2 Küresel Acil Durum / Kör Vadi Uydu Fırlatıcısı (340 bayt MO-SBD).</td>
+        </tr>
+        <tr>
+          <td><strong>Q201</strong></td>
+          <td>Iridium Güç Kapısı</td>
+          <td>Alpha & Omega AO3401A</td>
+          <td>SOT-23</td>
+          <td>P-Kanal, -30V, -4.0A, RDS &lt; 44 mΩ</td>
+          <td>0.0 µA Kaçak Akım. LoRa devredeyken Iridium beslemesini kökten keser.</td>
+        </tr>
+        <tr>
+          <td><strong>SC201</strong></td>
+          <td>Süperkapasitör</td>
+          <td>Eaton / Maxwell / Kamcap</td>
+          <td>Radyal Through-Hole</td>
+          <td>5.5V, 1.5F, Düşük ESR (&lt; 80 mΩ)</td>
+          <td>-40°C soğuk voltaj çökme önleyici. 2A ve 600mA darbelerini pilden izole eder.</td>
+        </tr>
+        <tr>
+          <td><strong>HTR201</strong></td>
+          <td>PTC Ön Isıtıcı</td>
+          <td>Kapton Poliimid Isıtıcı Pad</td>
+          <td>50x50 mm Esnek Film</td>
+          <td>5V, 2.5W (10 Ω İç Direnç)</td>
+          <td>-30°C'de pili +5°C'ye ısıtarak lityum dendrite kaplamasını engeller.</td>
+        </tr>
+        <tr>
+          <td><strong>TH201</strong></td>
+          <td>Pil NTC Sensörü</td>
+          <td>TDK B57861S0103F040</td>
+          <td>Boncuk Tip (Kablolu)</td>
+          <td>10 kΩ ± 1%, Beta = 3988K</td>
+          <td>Batarya hücresiyle doğrudan temas eden sıcaklık geribildirim hattı.</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+
+  <div class="slide-footer">
+    <span>RESMİ ÜRETİM VE PARÇA ŞARTNAMESİ (BILL OF MATERIALS)</span>
+    <span>SAYFA 7 / 10</span>
+  </div>
+</div>
+
+<!-- SLIDE 8: PINOUT & NETLIST -->
+<div class="slide">
+  <div class="slide-header">
+    <div class="title-area">
+      <h2>07. KESİN BACAK BAĞLANTI HARİTASI <span class="accent">(ELECTRICAL NETLIST)</span></h2>
+      <div class="subtitle">Göğüs Podu (XIAO ESP32-C3) ve Çanta Podu (ESP32) Fiziksel Pin Eşleşmeleri</div>
+    </div>
+    <span class="badge badge-cyan">NETLIST ŞEMASI</span>
+  </div>
+
+  <div class="content">
+    <div class="grid-2">
+      <div class="card">
+        <div class="card-header">Göğüs Podu: Seeed Studio XIAO ESP32-C3</div>
+        <div class="code-block">XIAO Pin D0 (GPIO 2)   <── SW101 (Yukarı / Zoom In) ── GND
+XIAO Pin D1 (GPIO 3)   <── SW102 (Aşağı / Zoom Out)  ── GND
+XIAO Pin D2 (GPIO 4)   <── SW103 (Mod / Seçim)       ── GND
+XIAO Pin D4 (GPIO 6)   <── SW104 (Acil Durum / SOS)  ── GND
+
+XIAO Pin D8 (GPIO 8)   ──> Sharp MIP Pin 2 (SCLK / SPI Clock)
+XIAO Pin D10 (GPIO 10) ──> Sharp MIP Pin 3 (SI / MOSI)
+XIAO Pin D7 (GPIO 20)  ──> Sharp MIP Pin 4 (SCS / Chip Select, HIGH!)
+XIAO Pin D3 (GPIO 5)   ──> Sharp MIP Pin 5 (EXTCOMIN / 1Hz Sinyal)
+XIAO Pin D6 (GPIO 21)  ──> Sharp MIP Pin 6 (DISP / Ekran Açık)
+
+XIAO 3.3V (LDO Çıkış)  ──> Sharp MIP Pin 7 (VDDA) + Pin 8 (VDD)
+XIAO GND               ──> Sharp MIP Pin 1 + 9 + 10 (GND)
+
+XIAO Pin TX (GPIO 21)  ──> Ayrık Gövde Kablosu Pin 3 (TX_LINK)
+XIAO Pin RX (GPIO 20)  <── Ayrık Gövde Kablosu Pin 4 (RX_LINK)</div>
+      </div>
+
+      <div class="card">
+        <div class="card-header">Çanta Podu: ESP32 Standart</div>
+        <div class="code-block">ESP32 GPIO 16 (RX2)    <── RockBLOCK Pin 4 (TXD)
+ESP32 GPIO 17 (TX2)    ──> RockBLOCK Pin 3 (RXD)
+ESP32 GPIO 25          ──> Q202 Gate (Iridium Güç Kapısı)
+ESP32 GPIO 15          <── RockBLOCK Pin 6 (NET_AVAIL)
+
+ESP32 GPIO 26 (RXD_LOR)<── EBYTE E22 Pin 3 (TXD / LoRa)
+ESP32 GPIO 27 (TXD_LOR)──> EBYTE E22 Pin 4 (RXD / LoRa)
+ESP32 GPIO 14 (AUX)    <── EBYTE E22 Pin 5 (AUX / Meşgul)
+ESP32 GPIO 12 (M0)     ──> GND (Şeffaf İletim Modu)
+ESP32 GPIO 13 (M1)     ──> GND (Şeffaf İletim Modu)
+
+ESP32 GPIO 18 (RX1)    <── Kablo Pin 3 (Göğüsten Gelen TX)
+ESP32 GPIO 19 (TX1)    ──> Kablo Pin 4 (Göğüse Giden RX)
+
+ESP32 GPIO 34 (ADC1_6) <── TH201 & R203 (Pil NTC Bölücü)
+ESP32 GPIO 32          ──> Q203 Gate (Pil PTC Isıtıcı)
+ESP32 GPIO 35 (ADC1_7) <── SC201 Süperkapasitör Voltajı</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="slide-footer">
+    <span>DONANIM BİLEŞENLERİ KESİN BACAK BAĞLANTILARI (WIRING PINOUT)</span>
+    <span>SAYFA 8 / 10</span>
+  </div>
+</div>
+
+<!-- SLIDE 9: V&V TEST MATRIX -->
+<div class="slide">
+  <div class="slide-header">
+    <div class="title-area">
+      <h2>08. DOĞRULAMA & GEÇERLEME (V&V) <span class="accent">TEST MATRİSİ</span></h2>
+      <div class="subtitle">MinGW GCC ve Python 3.10 Otomatik Master Test Koşusu Sonuçları</div>
+    </div>
+    <span class="badge badge-emerald">6/6 FAZ GEÇTİ</span>
+  </div>
+
+  <div class="content">
+    <div class="grid-2">
+      <div class="card">
+        <div class="card-header">Otomatik Test Süiti (test_phases_all.py) Logu</div>
+        <div class="code-block">Ran 6 tests in 7.883s — OK
+
+[PASS] Faz 1: 9/9 test geçti. Geodezik sapma &lt; 1.11 cm.
+       Sıkıştırma oranı: 6.00 bayt/nokta.
+[PASS] Faz 2: Dirty-Line DMA doğrulandı (%99.55 hat tasarrufu).
+       4-buton akordeon FSM sıfır sekme ile doğrulandı.
+[PASS] Faz 3: 100.000 bayt hata enjeksiyonu: %100 CRC tespiti
+       ve &lt;= 2 çerçevede SOF resenkronizasyonu ispatlandı.
+[PASS] Faz 4: 16 uydu çift bant L1/L5 SNR tablosu doğrulandı.
+       64-bin Skymask ile kanyon ardındaki 5 NLOS uydu elendi.
+       Baro-TRN ile 40m sıçrama %99.7 bastırıldı (&lt; 0.15m kalıntı).
+[PASS] Faz 5: 0°C kesme, +2.5°C histerezis lityum koruması.
+       500mA süperkapasitör tamponu (ray &gt;= 3.15V) doğrulandı.
+       TPL5010 30s donanımsal açlık resetlemesi doğrulandı.
+[PASS] Faz 6: 1-bit NW 315° Bayer 4x4 gölgelendirme, 50m/100m
+       vektör izohipsler, İki Aşamalı Beyaz Halo rota ve
+       7x7 Chevron HUD doğrulandı.</div>
+      </div>
+
+      <div class="img-frame">
+        <img src="data:image/png;base64,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" alt="C Output PBM">
+        <div class="img-label">Şekil 2: C99 Bare-Metal Test Donanımı (test_harness_topo.c) 12 KB MIP Çerçeve Çıktısı</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="slide-footer">
+    <span>OTOMATİK REGRESYON VE DOĞRULAMA TEST RAPORU</span>
+    <span>SAYFA 9 / 10</span>
+  </div>
+</div>
+
+<!-- SLIDE 10: ROADMAP & READINESS -->
+<div class="slide">
+  <div class="slide-header">
+    <div class="title-area">
+      <h2>09. SAHA HAZIRLIK KONTROL LİSTESİ & <span class="accent">YOL HARİTASI</span></h2>
+      <div class="subtitle">Fiziksel Montaj, RF İzolasyonu ve Entegrasyon Adımları</div>
+    </div>
+    <span class="badge badge-cyan">SAHA HAZIRLIK</span>
+  </div>
+
+  <div class="content">
+    <div class="grid-2">
+      <div class="card" style="border-left: 3px solid #38bdf8;">
+        <div class="card-header" style="color:#38bdf8;">Fiziksel Montaj & RF Ayrım Kuralları</div>
+        <ul>
+          <li><strong>20 cm Anten Ayrımı:</strong> Iridium anteni (1621 MHz) ile GNSS L1 anteni (1575 MHz) arasında çantada en az 20 cm yatay mesafe bırakılmalıdır.</li>
+          <li><strong>LoRa Anten Yerleşimi:</strong> 868 MHz anteni çantanın yan yüzeyine dikey monte edilmelidir.</li>
+          <li><strong>Süperkapasitör İlk Şarjı:</strong> RockBLOCK ilk açılışta 30 saniye süperkapasitör doldurur; bu süre bitmeden uyduya fırlatma komutu verilmemelidir.</li>
+          <li><strong>PUR Kablo Girişleri:</strong> Göğüs ve çanta podu kablo girişlerinde IP68 su geçirmez Weipu konnektörler ve PESD5V ESD baskılayıcılar kullanılmalıdır.</li>
+        </ul>
+      </div>
+
+      <div class="card" style="border-left: 3px solid #10b981;">
+        <div class="card-header" style="color:#34d399;">Yazılımı Çalıştırma ve Test Adımları</div>
+        <ul>
+          <li><strong>Master Test Koşusu:</strong>
+            <code>py -3.10 test_phases_all.py</code> komutuyla tüm C99 ikililerini derleyip 6 fazı doğrulayın.</li>
+          <li><strong>Web Stüdyosunu Başlatma:</strong>
+            <code>py -3.10 web/open_studio.py</code> komutuyla tarayıcınızda canlı harita ve kripto stüdyosunu açın. Kendi GPX dosyalarınızı yükleyip inceleyin.</li>
+          <li><strong>Raspberry Pi 4B Simülatörü:</strong>
+            Fiziksel GNSS modülü gelene kadar Pi 4B'nin UART portundan 115200 baud ile saniyede 10 kez gerçek NMEA akışı fırlatılabilir.</li>
+        </ul>
+      </div>
+    </div>
+
+    <div class="card" style="text-align:center; padding: 14px; background: rgba(30, 41, 59, 0.4);">
+      <div style="font-size: 13px; font-weight: 800; color: #f8fafc;">SİSTEM ŞARTNAMESİ VE DOKÜMANTASYON TAMAMLANMIŞTIR</div>
+      <div style="font-size: 11px; color: #94a3b8; margin-top: 4px;">
+        Tüm kaynak kodlar <code>src/</code>, başlıklar <code>include/</code>, testler <code>tests/</code>, araçlar <code>tools/</code> ve web arayüzü <code>web/</code> altında organize edilmiştir.
+      </div>
+    </div>
+  </div>
+
+  <div class="slide-footer">
+    <span>EKSTREM ORTAM TAKTİK GNSS & UYDU TERMİNALİ — SON</span>
+    <span>SAYFA 10 / 10</span>
+  </div>
+</div>
+
+</body>
+</html>

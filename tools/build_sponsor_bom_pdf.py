@@ -1,0 +1,982 @@
+#!/usr/bin/env python3
+"""
+build_sponsor_bom_pdf.py
+Sponsor ve Yatırımcı Görüşmeleri İçin Yönetici Düzeyinde
+Taktik GNSS & Uydu Terminali Malzeme Listesi, Bütçe ve Tedarik Şartnamesi PDF Oluşturucu.
+"""
+
+import os
+import sys
+import subprocess
+
+ROOT_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+DOCS_DIR = os.path.join(ROOT_DIR, "docs")
+os.makedirs(DOCS_DIR, exist_ok=True)
+
+html_path = os.path.join(DOCS_DIR, "SPONSORLUK_MALZEME_LISTESI_VE_BUTCESI.html")
+pdf_path = os.path.join(DOCS_DIR, "SPONSORLUK_MALZEME_LISTESI_VE_BUTCESI.pdf")
+
+parts = []
+
+parts.append("""<!DOCTYPE html>
+<html lang="tr">
+<head>
+<meta charset="UTF-8">
+<title>Sponsorluk ve Tedarik Dosyası: Malzeme Listesi ve Bütçe Planı</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&family=JetBrains+Mono:wght@400;500;600;700&display=swap');
+
+  @page {
+    size: A4 portrait;
+    margin: 12mm 12mm 14mm 12mm;
+  }
+
+  * {
+    box-sizing: border-box;
+    margin: 0;
+    padding: 0;
+  }
+
+  body {
+    font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+    background: #ffffff;
+    color: #1e293b;
+    font-size: 10px;
+    line-height: 1.45;
+    -webkit-print-color-adjust: exact;
+    print-color-adjust: exact;
+  }
+
+  .mono {
+    font-family: 'JetBrains Mono', Consolas, monospace;
+  }
+
+  /* Executive Cover & Header */
+  .doc-header {
+    border-bottom: 3px solid #0f172a;
+    padding-bottom: 12px;
+    margin-bottom: 14px;
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-end;
+  }
+
+  .org-title {
+    font-size: 8.5px;
+    font-weight: 800;
+    letter-spacing: 2px;
+    color: #0284c7;
+    text-transform: uppercase;
+    margin-bottom: 3px;
+  }
+
+  .doc-main-title {
+    font-size: 17px;
+    font-weight: 900;
+    color: #0f172a;
+    letter-spacing: -0.4px;
+    line-height: 1.2;
+  }
+
+  .doc-subtitle {
+    font-size: 10.5px;
+    color: #475569;
+    font-weight: 500;
+    margin-top: 3px;
+  }
+
+  .header-meta {
+    text-align: right;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 8.5px;
+    line-height: 1.5;
+    color: #64748b;
+  }
+
+  .header-meta strong {
+    color: #0f172a;
+  }
+
+  .pill-badge {
+    display: inline-block;
+    background: #e0f2fe;
+    color: #0369a1;
+    font-weight: 700;
+    padding: 2px 8px;
+    border-radius: 4px;
+    font-size: 8.5px;
+    margin-top: 4px;
+  }
+
+  /* Executive Summary Box */
+  .summary-box {
+    background: #f8fafc;
+    border: 1px solid #e2e8f0;
+    border-left: 4px solid #0284c7;
+    border-radius: 6px;
+    padding: 10px 14px;
+    margin-bottom: 14px;
+    font-size: 9.5px;
+  }
+
+  .summary-title {
+    font-weight: 800;
+    color: #0f172a;
+    font-size: 10.5px;
+    text-transform: uppercase;
+    margin-bottom: 4px;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+  }
+
+  /* Metrics Grid */
+  .kpi-grid {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 8px;
+    margin-bottom: 14px;
+  }
+
+  .kpi-card {
+    background: #f1f5f9;
+    border: 1px solid #cbd5e1;
+    border-radius: 6px;
+    padding: 8px 10px;
+    text-align: center;
+  }
+
+  .kpi-val {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 14px;
+    font-weight: 800;
+    color: #0f172a;
+  }
+
+  .kpi-label {
+    font-size: 8px;
+    font-weight: 700;
+    color: #64748b;
+    text-transform: uppercase;
+    margin-top: 2px;
+  }
+
+  /* Section Titles */
+  .section-title {
+    font-size: 11px;
+    font-weight: 800;
+    color: #0f172a;
+    text-transform: uppercase;
+    letter-spacing: 0.8px;
+    margin: 14px 0 6px 0;
+    padding-bottom: 3px;
+    border-bottom: 1.5px solid #cbd5e1;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+  }
+
+  .section-badge {
+    background: #0f172a;
+    color: #ffffff;
+    font-size: 8px;
+    font-weight: 700;
+    padding: 1px 6px;
+    border-radius: 3px;
+    font-family: 'JetBrains Mono', monospace;
+  }
+
+  /* BOM Tables */
+  table.bom-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 8.8px;
+    margin-bottom: 10px;
+    page-break-inside: avoid;
+  }
+
+  table.bom-table thead tr {
+    background: #0f172a;
+    color: #ffffff;
+  }
+
+  table.bom-table th {
+    padding: 5px 6px;
+    font-weight: 700;
+    text-align: left;
+    font-size: 8.5px;
+    letter-spacing: 0.3px;
+  }
+
+  table.bom-table td {
+    padding: 5px 6px;
+    border-bottom: 1px solid #e2e8f0;
+    vertical-align: middle;
+    color: #334155;
+  }
+
+  table.bom-table tbody tr:nth-child(even) {
+    background: #f8fafc;
+  }
+
+  .mpn {
+    font-family: 'JetBrains Mono', monospace;
+    font-weight: 700;
+    color: #0f172a;
+    font-size: 8.5px;
+  }
+
+  .vendor {
+    font-weight: 600;
+    color: #0369a1;
+  }
+
+  .desc-note {
+    font-size: 8px;
+    color: #64748b;
+    display: block;
+    line-height: 1.3;
+    margin-top: 1px;
+  }
+
+  .price {
+    font-family: 'JetBrains Mono', monospace;
+    font-weight: 700;
+    text-align: right;
+    color: #0f172a;
+    white-space: nowrap;
+  }
+
+  .subtotal-row {
+    background: #e2e8f0 !important;
+    font-weight: 800;
+    color: #0f172a !important;
+  }
+
+  .subtotal-row td {
+    border-top: 1.5px solid #94a3b8;
+    border-bottom: 1.5px solid #94a3b8;
+  }
+
+  /* Critical Hardware Alert */
+  .why-box {
+    background: #fffbeb;
+    border: 1px solid #fef3c7;
+    border-left: 3px solid #f59e0b;
+    padding: 6px 10px;
+    border-radius: 4px;
+    font-size: 8.5px;
+    margin: 6px 0 10px 0;
+    color: #92400e;
+  }
+
+  /* Budget Summary Box */
+  .budget-card {
+    border: 1.5px solid #0f172a;
+    border-radius: 6px;
+    overflow: hidden;
+    margin: 12px 0;
+    page-break-inside: avoid;
+  }
+
+  .budget-header {
+    background: #0f172a;
+    color: #ffffff;
+    padding: 8px 12px;
+    font-weight: 800;
+    font-size: 10.5px;
+    display: flex;
+    justify-content: space-between;
+  }
+
+  .budget-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 9px;
+  }
+
+  .budget-table td {
+    padding: 6px 10px;
+    border-bottom: 1px solid #e2e8f0;
+  }
+
+  .budget-table tr:nth-child(even) {
+    background: #f8fafc;
+  }
+
+  .total-highlight {
+    background: #0284c7 !important;
+    color: #ffffff !important;
+    font-weight: 900;
+    font-size: 11px;
+  }
+
+  .total-highlight td {
+    color: #ffffff !important;
+    padding: 8px 10px;
+  }
+
+  /* Sponsorship Models */
+  .sponsor-tier-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 8px;
+    margin-top: 10px;
+    page-break-inside: avoid;
+  }
+
+  .tier-card {
+    border: 1px solid #cbd5e1;
+    border-radius: 6px;
+    padding: 10px;
+    background: #ffffff;
+  }
+
+  .tier-card.featured {
+    border: 2px solid #0284c7;
+    background: #f0f9ff;
+  }
+
+  .tier-name {
+    font-weight: 800;
+    font-size: 10px;
+    color: #0f172a;
+    text-transform: uppercase;
+    margin-bottom: 2px;
+  }
+
+  .tier-cost {
+    font-family: 'JetBrains Mono', monospace;
+    font-weight: 800;
+    font-size: 13px;
+    color: #0284c7;
+    margin-bottom: 6px;
+  }
+
+  .tier-desc {
+    font-size: 8px;
+    color: #475569;
+    line-height: 1.4;
+  }
+
+  .page-break {
+    page-break-before: always;
+  }
+
+  .footer-sig {
+    margin-top: 14px;
+    border-top: 1px solid #cbd5e1;
+    padding-top: 10px;
+    display: flex;
+    justify-content: space-between;
+    font-size: 8.5px;
+    color: #64748b;
+    page-break-inside: avoid;
+  }
+
+  .sig-block {
+    width: 45%;
+  }
+
+  .sig-line {
+    border-bottom: 1px solid #94a3b8;
+    height: 25px;
+    margin-top: 4px;
+    margin-bottom: 2px;
+  }
+</style>
+</head>
+<body>
+""")
+
+# Cover & Header
+parts.append("""
+<div class="doc-header">
+  <div>
+    <div class="org-title">AR-GE PROJE PROPOZİSYONU & TEDARİK PLANI</div>
+    <div class="doc-main-title">EKSTREM ORTAM TAKTİK GNSS & UYDU TERMİNALİ</div>
+    <div class="doc-subtitle">Sponsorluk, Komponent Tedariği ve Bütçe Şartnamesi (BOM)</div>
+    <span class="pill-badge">HEDEF ÇALIŞMA ZARFI: -30°C ... +50°C | SIFIR DİNAMİK BELLEK (C99 ZERO-HEAP)</span>
+  </div>
+  <div class="header-meta">
+    <div>DOKÜMAN NO: <strong>SPON-BOM-2026-V1</strong></div>
+    <div>TARİH: <strong>19 EYLÜL 2026</strong></div>
+    <div>REVİZYON: <strong>3.2 (ÜRETİM ONAYLI)</strong></div>
+    <div>DERECE: <strong>SPONSOR & TEDARİKÇİ ÖZEL</strong></div>
+  </div>
+</div>
+
+<div class="summary-box">
+  <div class="summary-title">
+    <span>📌 YÖNETİCİ ÖZETİ (EXECUTIVE SUMMARY)</span>
+  </div>
+  Bu doküman, yüksek irtifa Alp ve kutup koşullarında ($-30^\circ\text{C}$ dondurucu soğuk, 100.000 lux kar parlaması, kanyonlarda GPS yankılanması) kesintisiz seyrüsefer ve telemetri sağlayan <strong>Ayrık Gövde Taktik GNSS & Uydu Terminali</strong>'nin prototip üretim bütçesini ve malzeme gereksinimlerini listeler.
+  Sistem; <strong>Sharp 2.7" Memory-in-Pixel (MIP)</strong> yansıtıcı ekran, <strong>Quectel LC29H Çift Bant GNSS</strong>, <strong>1W LoRa + Iridium 9603 SBD Hibrit Uydu</strong> mimarisi ve sıfır-dinamik bellekli (MISRA-C uyumlu) gömülü yazılım üzerine kurulmuştur.
+  Sponsor veya çözüm ortağı olarak projeye <strong>ayni bağış (doğrudan komponent temini)</strong> veya <strong>finansal destek (prototip üretim paketi)</strong> ile katkı sağlanabilmektedir.
+</div>
+
+<div class="kpi-grid">
+  <div class="kpi-card">
+    <div class="kpi-val">$720.00</div>
+    <div class="kpi-label">1 Prototip Malzeme Bütçesi</div>
+  </div>
+  <div class="kpi-card">
+    <div class="kpi-val">25+ Gün</div>
+    <div class="kpi-label">Hibrit Batarya Ömrü (1x 21700)</div>
+  </div>
+  <div class="kpi-card">
+    <div class="kpi-val">-30°C ... +70°C</div>
+    <div class="kpi-label">Ekran & Sistem Donma Direnci</div>
+  </div>
+  <div class="kpi-card">
+    <div class="kpi-val">%100 Test Onayı</div>
+    <div class="kpi-label">6 Fazlı Doğrulanmış C99 Firmware</div>
+  </div>
+</div>
+
+<div class="why-box">
+  <strong>MÜHENDİSLİK HASSASİYETİ (TFT EKRAN YASAKTIR):</strong>
+  Standart TFT/OLED ekranlar sıvı kristal viskozite artışı nedeniyle $-10^\circ\text{C}$ altında donmakta ve 80 mA çekerek pili tüketmektedir.
+  Bu nedenle malzeme listemizde yalnızca <strong>Sharp 2.7" MIP (50 &mu;W, donmaz katı-hal bellek hücreli)</strong> ekran onaylanmıştır.
+</div>
+""")
+
+# BOM Tables - Page 1
+parts.append("""
+<div class="section-title">
+  <span>1. EKRAN, KONTROL VE KULLANICI GİRİŞ ÜNİTELERİ (HMI)</span>
+  <span class="section-badge">GRUP A</span>
+</div>
+
+<table class="bom-table">
+  <thead>
+    <tr>
+      <th style="width:7%;">Ref</th>
+      <th style="width:25%;">Komponent & Teknik Açıklama</th>
+      <th style="width:20%;">Üretici Parça No (MPN)</th>
+      <th style="width:18%;">Tedarik Kanalı</th>
+      <th style="width:8%; text-align:center;">Adet</th>
+      <th style="width:11%; text-align:right;">Birim ($)</th>
+      <th style="width:11%; text-align:right;">Tutar ($)</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td><strong>DISP-1</strong></td>
+      <td>Sharp 2.7" Memory-in-Pixel (MIP) 400x240 LCD
+        <span class="desc-note">1-Bit Monokrom, 50 &mu;W statik, -30°C donmaz katı-hal SRAM</span>
+      </td>
+      <td><span class="mpn">LS027B7DH01A</span> (Sharp)</td>
+      <td><span class="vendor">Mouser / DigiKey</span></td>
+      <td style="text-align:center;">1</td>
+      <td class="price">$48.00</td>
+      <td class="price">$48.00</td>
+    </tr>
+    <tr>
+      <td><strong>CONN-1</strong></td>
+      <td>10-Pin 0.5mm Pitch R/A Kilitli FPC Ekran Konnektörü
+        <span class="desc-note">Alt kontak, altın kaplama, -40°C ... +85°C</span>
+      </td>
+      <td><span class="mpn">0545501071</span> (Molex)</td>
+      <td><span class="vendor">Özdisan / Mouser</span></td>
+      <td style="text-align:center;">1</td>
+      <td class="price">$1.80</td>
+      <td class="price">$1.80</td>
+    </tr>
+    <tr>
+      <td><strong>SW-1..4</strong></td>
+      <td>Omron Taktik Eldiven Butonu (650 gf Aktivasyon Gücü)
+        <span class="desc-note">IP67 sızdırmaz, kalın eldivenle yanlış basmayı önleyen yay</span>
+      </td>
+      <td><span class="mpn">B3F-4055</span> (Omron)</td>
+      <td><span class="vendor">Özdisan / Direnç.net</span></td>
+      <td style="text-align:center;">4</td>
+      <td class="price">$1.20</td>
+      <td class="price">$4.80</td>
+    </tr>
+    <tr>
+      <td><strong>MCU-WRIST</strong></td>
+      <td>Bilek Ekran Düğümü Mikrodenetleyicisi
+        <span class="desc-note">Düşük güç ESP32-S3 / STM32G0, SPI DMA ve CAN-FD yönetimi</span>
+      </td>
+      <td><span class="mpn">Seeed XIAO ESP32-S3</span></td>
+      <td><span class="vendor">Robotistan / Samm</span></td>
+      <td style="text-align:center;">1</td>
+      <td class="price">$7.50</td>
+      <td class="price">$7.50</td>
+    </tr>
+    <tr class="subtotal-row">
+      <td colspan="6">GRUP A TOPLAMI (EKRAN & HMI):</td>
+      <td class="price">$62.10</td>
+    </tr>
+  </tbody>
+</table>
+
+<div class="section-title">
+  <span>2. HESAPLAMA, KRİPTO VE NAVİGASYON SENSÖRLERİ</span>
+  <span class="section-badge">GRUP B</span>
+</div>
+
+<table class="bom-table">
+  <thead>
+    <tr>
+      <th style="width:7%;">Ref</th>
+      <th style="width:25%;">Komponent & Teknik Açıklama</th>
+      <th style="width:20%;">Üretici Parça No (MPN)</th>
+      <th style="width:18%;">Tedarik Kanalı</th>
+      <th style="width:8%; text-align:center;">Adet</th>
+      <th style="width:11%; text-align:right;">Birim ($)</th>
+      <th style="width:11%; text-align:right;">Tutar ($)</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td><strong>MCU-MAIN</strong></td>
+      <td>Master Sistem İşlemcisi (Dual 240MHz, 8MB PSRAM)
+        <span class="desc-note">Endüstriyel sınıf (-40°C ... +85°C), DPCM ve Topo harita motoru</span>
+      </td>
+      <td><span class="mpn">ESP32-S3-WROOM-1-N8R8</span></td>
+      <td><span class="vendor">Özdisan / Robotistan</span></td>
+      <td style="text-align:center;">1</td>
+      <td class="price">$5.20</td>
+      <td class="price">$5.20</td>
+    </tr>
+    <tr>
+      <td><strong>FRAM-1</strong></td>
+      <td>4 Mbit Ekstrem Sıcaklık SPI FRAM Bellek
+        <span class="desc-note">Çökme kara-kutusu, sınırsız yazma ömrü, 0 &mu;A bekleme akımı</span>
+      </td>
+      <td><span class="mpn">CY15B104Q-SXI</span> (Infineon)</td>
+      <td><span class="vendor">Mouser / DigiKey</span></td>
+      <td style="text-align:center;">1</td>
+      <td class="price">$8.50</td>
+      <td class="price">$8.50</td>
+    </tr>
+    <tr>
+      <td><strong>GNSS-1</strong></td>
+      <td>Çift Bant (L1+L5) Multi-GNSS RTK/Dead-Reckoning Alıcı
+        <span class="desc-note">Quectel LC29H, 16 uydu eşzamanlı izleme, dairesel DMA akışı</span>
+      </td>
+      <td><span class="mpn">LC29H(EA)</span> (Quectel)</td>
+      <td><span class="vendor">Özdisan / Quectel TR</span></td>
+      <td style="text-align:center;">1</td>
+      <td class="price">$34.00</td>
+      <td class="price">$34.00</td>
+    </tr>
+    <tr>
+      <td><strong>ANT-GNSS</strong></td>
+      <td>Aktif Çift Bant L1/L5 Helisel Seramik Anten
+        <span class="desc-note">28 dB dahili LNA, RHCP polarizasyon, IP67 su geçirmez</span>
+      </td>
+      <td><span class="mpn">B3G02G</span> (Tallysman)</td>
+      <td><span class="vendor">Mouser / DigiKey</span></td>
+      <td style="text-align:center;">1</td>
+      <td class="price">$65.00</td>
+      <td class="price">$65.00</td>
+    </tr>
+    <tr>
+      <td><strong>BARO-1</strong></td>
+      <td>Ultra Hassas Dijital Barometrik Altimetre
+        <span class="desc-note">Bosch BMP581, &plusmn;0.06 hPa hassasiyet, kanyon yankı filtresi (Baro-TRN)</span>
+      </td>
+      <td><span class="mpn">BMP581</span> (Bosch)</td>
+      <td><span class="vendor">Özdisan / Mouser</span></td>
+      <td style="text-align:center;">1</td>
+      <td class="price">$4.20</td>
+      <td class="price">$4.20</td>
+    </tr>
+    <tr>
+      <td><strong>CRYPTO-1</strong></td>
+      <td>Donanımsal Kriptografik Güvenlik Elemanı
+        <span class="desc-note">Microchip ATECC608B, AES-128-CTR ve ECDSA donanımsal hızlandırma</span>
+      </td>
+      <td><span class="mpn">ATECC608B-TNGHA</span></td>
+      <td><span class="vendor">Mouser / Microchip</span></td>
+      <td style="text-align:center;">1</td>
+      <td class="price">$2.10</td>
+      <td class="price">$2.10</td>
+    </tr>
+    <tr class="subtotal-row">
+      <td colspan="6">GRUP B TOPLAMI (HESAPLAMA & SENSÖR):</td>
+      <td class="price">$119.00</td>
+    </tr>
+  </tbody>
+</table>
+""")
+
+# Page 2: RF/Satellite, Power, Bus and Mechanics
+parts.append("""
+<div class="page-break"></div>
+
+<div class="section-title">
+  <span>3. HİBRİT RF & UYDU TELEMETRİ HABERLEŞME DONANIMLARI</span>
+  <span class="section-badge">GRUP C</span>
+</div>
+
+<table class="bom-table">
+  <thead>
+    <tr>
+      <th style="width:7%;">Ref</th>
+      <th style="width:25%;">Komponent & Teknik Açıklama</th>
+      <th style="width:20%;">Üretici Parça No (MPN)</th>
+      <th style="width:18%;">Tedarik Kanalı</th>
+      <th style="width:8%; text-align:center;">Adet</th>
+      <th style="width:11%; text-align:right;">Birim ($)</th>
+      <th style="width:11%; text-align:right;">Tutar ($)</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td><strong>RF-LORA</strong></td>
+      <td>1W (+30 dBm) Uzun Menzilli SX1262 LoRa Modülü
+        <span class="desc-note">868 MHz, 40-60 km dağ hattı menzili, paket başı sadece 0.1 Joule</span>
+      </td>
+      <td><span class="mpn">E22-900T30D</span> (CDEBYTE)</td>
+      <td><span class="vendor">Direnç.net / Robotistan</span></td>
+      <td style="text-align:center;">1</td>
+      <td class="price">$18.50</td>
+      <td class="price">$18.50</td>
+    </tr>
+    <tr>
+      <td><strong>ANT-LORA</strong></td>
+      <td>868 MHz 5 dBi Askeri Esnek Kauçuk Taktik Anten
+        <span class="desc-note">SMA Erkek, 50 &Omega;, VSWR &le; 1.5, kırılmaya dayanıklı yaylı mafsal</span>
+      </td>
+      <td><span class="mpn">TX868-JK-20</span> (CDEBYTE)</td>
+      <td><span class="vendor">Direnç.net / Ebyte TR</span></td>
+      <td style="text-align:center;">1</td>
+      <td class="price">$7.80</td>
+      <td class="price">$7.80</td>
+    </tr>
+    <tr>
+      <td><strong>SAT-SBD</strong></td>
+      <td>Iridium 9603 SBD Çift Yönlü Uydu Transceiver Modülü
+        <span class="desc-note">Kutup-kutup global kapsama, LoRa çekmediğinde veya SOS anında devreye girer</span>
+      </td>
+      <td><span class="mpn">RockBLOCK 9603</span></td>
+      <td><span class="vendor">GroundControl / ArduSimple</span></td>
+      <td style="text-align:center;">1</td>
+      <td class="price">$255.00</td>
+      <td class="price">$255.00</td>
+    </tr>
+    <tr>
+      <td><strong>ANT-SBD</strong></td>
+      <td>Iridium Sertifikalı Yüksek Kazançlı Patch Anten
+        <span class="desc-note">1616 - 1626.5 MHz, RHCP, IP67 su ve toz sızdırmaz</span>
+      </td>
+      <td><span class="mpn">M1621HCT-P-SMA</span> (Maxtena)</td>
+      <td><span class="vendor">Mouser / DigiKey</span></td>
+      <td style="text-align:center;">1</td>
+      <td class="price">$74.00</td>
+      <td class="price">$74.00</td>
+    </tr>
+    <tr class="subtotal-row">
+      <td colspan="6">GRUP C TOPLAMI (HİBRİT RF & UYDU):</td>
+      <td class="price">$355.30</td>
+    </tr>
+  </tbody>
+</table>
+
+<div class="section-title">
+  <span>4. EKSTREM SOĞUK GÜÇ SİSTEMİ, TERMAL YÖNETİM VE VERİYOLU</span>
+  <span class="section-badge">GRUP D</span>
+</div>
+
+<table class="bom-table">
+  <thead>
+    <tr>
+      <th style="width:7%;">Ref</th>
+      <th style="width:25%;">Komponent & Teknik Açıklama</th>
+      <th style="width:20%;">Üretici Parça No (MPN)</th>
+      <th style="width:18%;">Tedarik Kanalı</th>
+      <th style="width:8%; text-align:center;">Adet</th>
+      <th style="width:11%; text-align:right;">Birim ($)</th>
+      <th style="width:11%; text-align:right;">Tutar ($)</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td><strong>BAT-CELL</strong></td>
+      <td>Yüksek Akımlı 21700 Li-Ion Hücre (4200 mAh, 45A Deşarj)
+        <span class="desc-note">Molicel P42A, -40°C deşarj kabiliyeti, düşük iç direnç (R_int &le; 10m&Omega;)</span>
+      </td>
+      <td><span class="mpn">INR-21700-P42A</span> (Molicel)</td>
+      <td><span class="vendor">Pilburada / NKON</span></td>
+      <td style="text-align:center;">1</td>
+      <td class="price">$9.50</td>
+      <td class="price">$9.50</td>
+    </tr>
+    <tr>
+      <td><strong>HEATER-PTC</strong></td>
+      <td>Polimid Esnek Isıtıcı Film Ceket (5V / 3.5W)
+        <span class="desc-note">Batarya çevresi ön-ısıtma; lityum kaplama (dendrit) patlamasını önler</span>
+      </td>
+      <td><span class="mpn">KHLVP-102/10-P</span> (Omega)</td>
+      <td><span class="vendor">Omega TR / Isıtıcı Market</span></td>
+      <td style="text-align:center;">1</td>
+      <td class="price">$22.00</td>
+      <td class="price">$22.00</td>
+    </tr>
+    <tr>
+      <td><strong>CAP-SUPERCAP</strong></td>
+      <td>5.0 Farad 3.0V EDLC Düşük ESR Süperkapasitör
+        <span class="desc-note">ESR &le; 35 m&Omega;, Iridium 2A uydu iletim darbesini pilden bağımsız tamponlar</span>
+      </td>
+      <td><span class="mpn">TV1030-3R0505-R</span> (Eaton)</td>
+      <td><span class="vendor">Mouser / DigiKey</span></td>
+      <td style="text-align:center;">1</td>
+      <td class="price">$11.50</td>
+      <td class="price">$11.50</td>
+    </tr>
+    <tr>
+      <td><strong>PWR-ICS</strong></td>
+      <td>Güç Yönetimi & Kapılama Yarıiletken Paketi
+        <span class="desc-note">BQ24075 şarj kontrol + TPS63020 3.3V buck + Si2301 P-MOSFET (0.0&mu;A)</span>
+      </td>
+      <td><span class="mpn">TI BQ24075 / TPS63020</span></td>
+      <td><span class="vendor">Özdisan / TI TR</span></td>
+      <td style="text-align:center;">1 set</td>
+      <td class="price">$16.80</td>
+      <td class="price">$16.80</td>
+    </tr>
+    <tr>
+      <td><strong>CAN-BUS</strong></td>
+      <td>3.3V CAN-FD 5 Mbps Alıcı/Verici Entegresi (&plusmn;70V Korumalı)
+        <span class="desc-note">Bilek ekranı ile sırt çantası arasındaki ISO 11898-2 veriyolu köprüsü</span>
+      </td>
+      <td><span class="mpn">TCAN337GDR</span> (TI)</td>
+      <td><span class="vendor">Özdisan / TI TR</span></td>
+      <td style="text-align:center;">2</td>
+      <td class="price">$2.40</td>
+      <td class="price">$4.80</td>
+    </tr>
+    <tr>
+      <td><strong>WDG-NANO</strong></td>
+      <td>35 nA Harici Donanımsal Watchdog Zamanlayıcı
+        <span class="desc-note">TI TPL5010, 30 sn görev kilitlenme koruması ve donanımsal reset</span>
+      </td>
+      <td><span class="mpn">TPL5010DDCR</span> (TI)</td>
+      <td><span class="vendor">Özdisan / Mouser</span></td>
+      <td style="text-align:center;">1</td>
+      <td class="price">$1.80</td>
+      <td class="price">$1.80</td>
+    </tr>
+    <tr class="subtotal-row">
+      <td colspan="6">GRUP D TOPLAMI (GÜÇ, TERMAL & VERİYOLU):</td>
+      <td class="price">$66.40</td>
+    </tr>
+  </tbody>
+</table>
+
+<div class="section-title">
+  <span>5. MEKANİK GÖVDE, KABLOLAMA VE KONFORMAL YALITIM</span>
+  <span class="section-badge">GRUP E</span>
+</div>
+
+<table class="bom-table">
+  <thead>
+    <tr>
+      <th style="width:7%;">Ref</th>
+      <th style="width:25%;">Komponent & Teknik Açıklama</th>
+      <th style="width:20%;">Üretici Parça No (MPN)</th>
+      <th style="width:18%;">Tedarik Kanalı</th>
+      <th style="width:8%; text-align:center;">Adet</th>
+      <th style="width:11%; text-align:right;">Birim ($)</th>
+      <th style="width:11%; text-align:right;">Tutar ($)</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td><strong>MECH-CNC</strong></td>
+      <td>CNC İşlenmiş 6061-T6 Alüminyum IP67 Koruyucu Kasa
+        <span class="desc-note">Optik polikarbonat ön cam, silikon O-ring conta, eloksallı mat siyah kaplama</span>
+      </td>
+      <td><span class="mpn">Özel İmalat / PCBWay</span></td>
+      <td><span class="vendor">Yerel Sanayi / PCBWay</span></td>
+      <td style="text-align:center;">1</td>
+      <td class="price">$68.00</td>
+      <td class="price">$68.00</td>
+    </tr>
+    <tr>
+      <td><strong>CONN-MIL</strong></td>
+      <td>Askeri Dairesel IP68 Ayrık Gövde Konnektör & Spiral Kablo
+        <span class="desc-note">4-pin altın kontak (VDD, GND, CAN_H, CAN_L), kırılmaya dayanıklı PUR kablo</span>
+      </td>
+      <td><span class="mpn">Amphenol PT06A / GX12</span></td>
+      <td><span class="vendor">Mouser / Karaköy</span></td>
+      <td style="text-align:center;">1 set</td>
+      <td class="price">$26.00</td>
+      <td class="price">$26.00</td>
+    </tr>
+    <tr>
+      <td><strong>PCB-FAB</strong></td>
+      <td>4-Katmanlı ENIG Askeri Sınıf PCB İmalatı & Dizgisi
+        <span class="desc-note">TG170 yüksek sıcaklık FR4 taban, empedans kontrollü RF hatları</span>
+      </td>
+      <td><span class="mpn">Custom 4-Layer PCB</span></td>
+      <td><span class="vendor">Özdisan PCB / JLCPCB</span></td>
+      <td style="text-align:center;">1 set</td>
+      <td class="price">$14.00</td>
+      <td class="price">$14.00</td>
+    </tr>
+    <tr>
+      <td><strong>COAT-HUMI</strong></td>
+      <td>Poliüretan Bazlı Askeri Konformal Kaplama (Nem & Buz İzolasyonu)
+        <span class="desc-note">MIL-I-46058C onaylı HumiSeal 1A33, yoğuşma ve oksitlenmeyi %100 engeller</span>
+      </td>
+      <td><span class="mpn">HumiSeal 1A33 Aerosol</span></td>
+      <td><span class="vendor">Özdisan / Farnell</span></td>
+      <td style="text-align:center;">1</td>
+      <td class="price">$9.00</td>
+      <td class="price">$9.00</td>
+    </tr>
+    <tr class="subtotal-row">
+      <td colspan="6">GRUP E TOPLAMI (MEKANİK, KABLO & PCB):</td>
+      <td class="price">$117.00</td>
+    </tr>
+  </tbody>
+</table>
+""")
+
+# Page 3: Budget Synthesis, Sponsorship Packages and Signature
+parts.append("""
+<div class="page-break"></div>
+
+<div class="section-title">
+  <span>6. PROJE BÜTÇE KONSOLİDASYONU VE MALİYET DAĞILIMI</span>
+  <span class="section-badge">BÜTÇE ANALİZİ</span>
+</div>
+
+<div class="budget-card">
+  <div class="budget-header">
+    <span>FON VE MALİYET KALEMLERİ ÖZETİ (1 ADET PROTOTİP İÇİN)</span>
+    <span class="mono">USD ($) VE TRY (&plusmn;%5 KUR DÖNÜŞÜMÜ)</span>
+  </div>
+  <table class="budget-table">
+    <tbody>
+      <tr>
+        <td><strong>Grup A:</strong> Ekran, HMI ve Taktik Giriş (Sharp 2.7" MIP, Omron 650gf)</td>
+        <td class="mono" style="text-align:right; font-weight:700;">$62.10</td>
+        <td class="mono" style="text-align:right; color:#64748b;">₺2,235.00</td>
+      </tr>
+      <tr>
+        <td><strong>Grup B:</strong> Hesaplama, Güvenlik ve GNSS (Quectel LC29H, Tallysman, BMP581)</td>
+        <td class="mono" style="text-align:right; font-weight:700;">$119.00</td>
+        <td class="mono" style="text-align:right; color:#64748b;">₺4,284.00</td>
+      </tr>
+      <tr>
+        <td><strong>Grup C:</strong> Hibrit RF & Uydu Telemetrisi (EBYTE 1W LoRa + RockBLOCK 9603)</td>
+        <td class="mono" style="text-align:right; font-weight:700;">$355.30</td>
+        <td class="mono" style="text-align:right; color:#64748b;">₺12,790.00</td>
+      </tr>
+      <tr>
+        <td><strong>Grup D:</strong> Ekstrem Soğuk Güç & Termal Yönetim (Molicel P42A, PTC, Süperkapasitör)</td>
+        <td class="mono" style="text-align:right; font-weight:700;">$66.40</td>
+        <td class="mono" style="text-align:right; color:#64748b;">₺2,390.00</td>
+      </tr>
+      <tr>
+        <td><strong>Grup E:</strong> Mekanik Kasa, Askeri Kablo, 4-Katman PCB ve Konformal Kaplama</td>
+        <td class="mono" style="text-align:right; font-weight:700;">$117.00</td>
+        <td class="mono" style="text-align:right; color:#64748b;">₺4,212.00</td>
+      </tr>
+      <tr>
+        <td><strong>Genel Sarf Malzemesi & Rezerv:</strong> Lehim alaşımı (Sn62/Pb36/Ag2), vida/conta (%5 Pay)</td>
+        <td class="mono" style="text-align:right; font-weight:700;">$35.20</td>
+        <td class="mono" style="text-align:right; color:#64748b;">₺1,267.00</td>
+      </tr>
+      <tr class="total-highlight">
+        <td>TOPLAM PROTOTİP DONANIM MALİYETİ (1 ÜNİTE TAM SİSTEM):</td>
+        <td class="mono" style="text-align:right; font-size:12px;">$755.00</td>
+        <td class="mono" style="text-align:right; font-size:12px;">₺27,180.00</td>
+      </tr>
+    </tbody>
+  </table>
+</div>
+
+<div class="section-title">
+  <span>7. SPONSORLUK VE DESTEK MODELLERİ (PARTNERSHIP OPTIONS)</span>
+  <span class="section-badge">DESTEK MODELLERİ</span>
+</div>
+
+<div class="sponsor-tier-grid">
+  <div class="tier-card">
+    <div class="tier-name">1. AYNİ KOMPONENT SPONSORLUĞU</div>
+    <div class="tier-cost">Parça Temini</div>
+    <div class="tier-desc">
+      Şirketiniz veya distribütörlüğünüz bünyesinden listede belirtilen kritik bileşenlerin (Sharp MIP ekran, Quectel modül, EBYTE LoRa veya RockBLOCK uydu modülü) doğrudan numune/stok olarak sağlanması modelidir.
+    </div>
+  </div>
+
+  <div class="tier-card featured">
+    <div class="tier-name">2. TEKİL PROTOTİP SPONSORLUĞU</div>
+    <div class="tier-cost">$755.00 / ₺27.180</div>
+    <div class="tier-desc">
+      1 adet tam fonksiyonel, askeri CNC kasalı, IP67 sızdırmaz ve $-30^\circ\text{C}$ Alp sahasında test edilecek prototipin tüm komponent, PCB ve mekanik masraflarının karşılanması modelidir.
+    </div>
+  </div>
+
+  <div class="tier-card">
+    <div class="tier-name">3. FİLO TEST & PİLOT ÜRETİM (5 ADET)</div>
+    <div class="tier-cost">$3,400.00 / ₺122.400</div>
+    <div class="tier-desc">
+      Arama-kurtarma ekipleri ve taktik operasyon timleri için 5 adetlik pilot test filosunun üretilmesini ve zorlu kış şartlarında gerçek zamanlı telemetri testlerinin fonlanmasını kapsar.
+    </div>
+  </div>
+</div>
+
+<div class="summary-box" style="margin-top:12px;">
+  <div class="summary-title">🤝 SPONSORLUK KAZANIMLARI VE TAAHHÜTLER</div>
+  <ul style="padding-left:16px; font-size:9px; line-height:1.6; color:#334155;">
+    <li><strong>Logo ve Marka Görünürlüğü:</strong> Prototip cihazın arka CNC gövdesinde lazer kazıma sponsor logosu ve web stüdyosu açılış ekranında kurumsal sponsor künyesi.</li>
+    <li><strong>Test ve Saha Doğrulama Raporları:</strong> Uludağ / Erciyes / Alpler yüksek irtifa kış tatbikatlarında elde edilen termal performans, GNSS hassasiyet ve LoRa/Uydu veri loglarının tam teknik raporu.</li>
+    <li><strong>Yerli ve Milli Mühendislik Katkısı:</strong> Ağır doğa şartlarında arama-kurtarma ve savunma alanında kullanılabilir taktik bir sistemin hayata geçirilmesinde öncü rol.</li>
+  </ul>
+</div>
+
+<div class="footer-sig">
+  <div class="sig-block">
+    <strong>PROJE GELİŞTİRİCİSİ / MÜHENDİSLİK EKİBİ:</strong>
+    <div class="sig-line"></div>
+    <div>İmza / Tarih: _____________________________</div>
+  </div>
+  <div class="sig-block">
+    <strong>SPONSOR / YATIRIMCI ONAYI:</strong>
+    <div class="sig-line"></div>
+    <div>Kurum Adı / Yetkili İmza: ____________________</div>
+  </div>
+</div>
+
+</body>
+</html>
+""")
+
+html_content = "".join(parts)
+
+with open(html_path, "w", encoding="utf-8") as f:
+    f.write(html_content)
+
+print(f"[*] Generated Sponsor BOM HTML: {html_path}")
+
+edge_path = r"C:\Program Files (x86)\Microsoft\Edge\Application\msedge.exe"
+if not os.path.exists(edge_path):
+    edge_path = r"C:\Program Files\Microsoft\Edge\Application\msedge.exe"
+
+if os.path.exists(edge_path):
+    print(f"[*] Compiling to PDF via Edge Headless ({edge_path})...")
+    cmd = [
+        edge_path,
+        "--headless=new",
+        "--disable-gpu",
+        "--no-margins",
+        "--run-all-compositor-stages-before-draw",
+        f"--print-to-pdf={pdf_path}",
+        html_path
+    ]
+    res = subprocess.run(cmd, capture_output=True, text=True)
+    if os.path.exists(pdf_path):
+        size_kb = os.path.getsize(pdf_path) / 1024
+        print(f"[+] Sponsor BOM PDF Successfully Created: {pdf_path} ({size_kb:.1f} KB)")
+    else:
+        print(f"[-] Error generating PDF: {res.stderr}")
+else:
+    print("[-] Edge not found.")

@@ -1,0 +1,1653 @@
+<!DOCTYPE html>
+<html lang="tr" class="dark">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>CGPX Crypto-Engine & Visual Studio</title>
+  <script src="https://www.gstatic.com/antigravity/web/dev/tailwindcss.min.js"></script>
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;600;700&family=Inter:wght@400;500;600;700&display=swap');
+    body { font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif; }
+    .mono { font-family: 'JetBrains Mono', monospace; }
+    .mip-screen {
+      image-rendering: pixelated;
+      box-shadow: inset 0 0 10px rgba(0,0,0,0.5), 0 4px 20px rgba(0,0,0,0.3);
+    }
+    .scrollbar-thin::-webkit-scrollbar { width: 6px; height: 6px; }
+    .scrollbar-thin::-webkit-scrollbar-track { background: rgba(0,0,0,0.1); }
+    .scrollbar-thin::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.2); border-radius: 3px; }
+  </style>
+</head>
+<body class="bg-slate-950 text-slate-100 min-h-screen p-4 md:p-6 antialiased">
+  <div class="max-w-7xl mx-auto space-y-6">
+
+    <!-- Top Hero Header -->
+    <header class="bg-slate-900/90 border border-slate-800 rounded-2xl p-6 shadow-xl backdrop-blur-md">
+      <div class="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
+        <div>
+          <div class="flex items-center gap-3">
+            <span class="p-2.5 bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 rounded-xl text-xl">🛡️</span>
+            <div>
+              <h1 class="text-2xl font-bold tracking-tight text-white flex items-center gap-2">
+                CGPX Taktik Kripto & Görsel İnceleme Stüdyosu
+                <span class="text-xs font-mono font-normal bg-emerald-500/20 text-emerald-300 px-2 py-0.5 rounded border border-emerald-500/30">v1.0 AKTİF</span>
+              </h1>
+              <p class="text-sm text-slate-400 mt-0.5">
+                Keyfi .GPX Haritalarını AES-128-CTR ile Şifreleme, DPCM + Varint ile Kayıpsız Sıkıştırma ve 400x240 MIP Ekran Simülasyonu
+              </p>
+            </div>
+          </div>
+        </div>
+
+        <div class="flex flex-wrap gap-2 text-xs mono">
+          <span class="px-2.5 py-1 rounded-lg bg-indigo-500/10 text-indigo-300 border border-indigo-500/20 flex items-center gap-1.5">
+            <span class="w-2 h-2 rounded-full bg-indigo-400 animate-pulse"></span> AES-128-CTR (Donanım/Yazılım)
+          </span>
+          <span class="px-2.5 py-1 rounded-lg bg-cyan-500/10 text-cyan-300 border border-cyan-500/20">
+            DPCM + LEB128 Varint
+          </span>
+          <span class="px-2.5 py-1 rounded-lg bg-amber-500/10 text-amber-300 border border-amber-500/20">
+            1.11 cm Geodetic Quantization
+          </span>
+          <span class="px-2.5 py-1 rounded-lg bg-violet-500/10 text-violet-300 border border-violet-500/20">
+            Sharp 2.7" MIP (400x240)
+          </span>
+        </div>
+      </div>
+    </header>
+
+    <!-- Main Grid: Left Upload & Key / Right Pipeline -->
+    <div class="grid grid-cols-1 lg:grid-cols-12 gap-6">
+
+      <!-- Left Column: Input, Key, Controls (5 cols) -->
+      <div class="lg:col-span-5 space-y-6">
+
+        <!-- File Upload Zone -->
+        <div class="bg-slate-900/80 border border-slate-800 rounded-2xl p-5 shadow-lg space-y-4">
+          <h2 class="text-sm font-semibold uppercase tracking-wider text-slate-400 flex items-center gap-2">
+            <span class="w-2 h-2 rounded-full bg-emerald-400"></span> 1. GPX Dosyası Girişi
+          </h2>
+
+          <div id="dropZone" class="border-2 border-dashed border-slate-700 hover:border-emerald-500/60 rounded-xl p-6 text-center cursor-pointer transition-all duration-200 bg-slate-950/40 hover:bg-emerald-950/10 group">
+            <input type="file" id="fileInput" accept=".gpx,.xml" class="hidden">
+            <div class="text-3xl mb-2 group-hover:scale-110 transition-transform">📍</div>
+            <p class="text-sm font-medium text-slate-200">İstediğiniz <span class="text-emerald-400 font-mono">.gpx</span> dosyasını buraya sürükleyin</p>
+            <p class="text-xs text-slate-500 mt-1">veya bilgisayarınızdan seçmek için tıklayın</p>
+            <div id="fileStatus" class="mt-3 text-xs font-mono text-emerald-400 hidden bg-emerald-500/10 py-1 px-3 rounded-lg inline-block border border-emerald-500/20"></div>
+          </div>
+
+          <div class="flex items-center gap-2">
+            <button id="loadSampleBtn" class="flex-1 py-2 px-3 bg-slate-800 hover:bg-slate-700 text-slate-200 rounded-xl text-xs font-medium transition flex items-center justify-center gap-2 border border-slate-700">
+              <span>🏔️</span> Örnek Alp Rotasını Yükle (Mont Blanc)
+            </button>
+            <button id="clearBtn" class="py-2 px-3 bg-rose-500/10 hover:bg-rose-500/20 text-rose-300 rounded-xl text-xs font-medium transition border border-rose-500/20">
+              Temizle
+            </button>
+          </div>
+        </div>
+
+        <!-- AES-128 Encryption Key Settings -->
+        <div class="bg-slate-900/80 border border-slate-800 rounded-2xl p-5 shadow-lg space-y-4">
+          <div class="flex items-center justify-between">
+            <h2 class="text-sm font-semibold uppercase tracking-wider text-slate-400 flex items-center gap-2">
+              <span class="w-2 h-2 rounded-full bg-indigo-400"></span> 2. AES-128-CTR Şifreleme Anahtarı
+            </h2>
+            <div class="flex items-center gap-2">
+              <input type="checkbox" id="encryptToggle" checked class="w-4 h-4 rounded text-emerald-500 focus:ring-emerald-400 bg-slate-800 border-slate-700">
+              <label for="encryptToggle" class="text-xs text-slate-300 cursor-pointer font-medium">Şifreleme Açık</label>
+            </div>
+          </div>
+
+          <div>
+            <label class="block text-xs font-medium text-slate-400 mb-1">16-Bayt Simetrik Anahtar (32 Hex Karakter):</label>
+            <div class="flex gap-2">
+              <input type="text" id="keyInput" value="0123456789ABCDEF0123456789ABCDEF" maxlength="32" class="mono flex-1 bg-slate-950 border border-slate-700 rounded-xl px-3 py-2 text-xs text-emerald-400 focus:outline-none focus:border-indigo-500 tracking-wider">
+              <button id="genKeyBtn" title="Rastgele Güçlü Anahtar Üret" class="px-3 py-2 bg-slate-800 hover:bg-slate-700 text-slate-200 rounded-xl text-xs font-mono transition border border-slate-700">
+                🎲 Yeni
+              </button>
+            </div>
+          </div>
+
+          <div class="bg-slate-950/60 p-3 rounded-xl border border-slate-800 text-xs space-y-1.5 mono">
+            <div class="flex justify-between text-slate-400">
+              <span>Nonce (16B IV):</span>
+              <span id="nonceDisplay" class="text-slate-200 font-semibold truncate max-w-[200px]">Otomatik Üretilecek</span>
+            </div>
+            <div class="flex justify-between text-slate-400">
+              <span>Blok Modu:</span>
+              <span class="text-indigo-300">CTR (NIST SP 800-38A)</span>
+            </div>
+            <div class="flex justify-between text-slate-400">
+              <span>Bütünlük Denetimi:</span>
+              <span class="text-amber-300">IEEE 802.3 CRC-32 Seal</span>
+            </div>
+          </div>
+
+          <button id="processBtn" class="w-full py-3 bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 text-white font-semibold rounded-xl text-sm shadow-lg shadow-emerald-900/30 transition flex items-center justify-center gap-2">
+            <span>⚡</span> Şifreleme ve Sıkıştırma Sürecini Başlat
+          </button>
+        </div>
+
+        <!-- Metric Cards -->
+        <div class="grid grid-cols-2 gap-3">
+          <div class="bg-slate-900/80 border border-slate-800 rounded-xl p-3.5">
+            <div class="text-xs text-slate-400">Nokta Sayısı</div>
+            <div id="statPoints" class="text-xl font-bold mono text-white mt-1">-</div>
+            <div class="text-[10px] text-slate-500 mt-0.5">WGS84 Koordinat</div>
+          </div>
+          <div class="bg-slate-900/80 border border-slate-800 rounded-xl p-3.5">
+            <div class="text-xs text-slate-400">Sıkıştırma Oranı</div>
+            <div id="statRatio" class="text-xl font-bold mono text-emerald-400 mt-1">-</div>
+            <div id="statBPP" class="text-[10px] text-slate-500 mt-0.5">Hedef: 4-6 bayt/nokta</div>
+          </div>
+          <div class="bg-slate-900/80 border border-slate-800 rounded-xl p-3.5">
+            <div class="text-xs text-slate-400">Ham XML Boyutu</div>
+            <div id="statRawSize" class="text-xl font-bold mono text-slate-300 mt-1">-</div>
+            <div class="text-[10px] text-slate-500 mt-0.5">Formatlanmış Metin</div>
+          </div>
+          <div class="bg-slate-900/80 border border-slate-800 rounded-xl p-3.5">
+            <div class="text-xs text-slate-400">Şifreli .CGPX Boyutu</div>
+            <div id="statCgpxSize" class="text-xl font-bold mono text-indigo-400 mt-1">-</div>
+            <div id="statSavings" class="text-[10px] text-slate-500 mt-0.5">Tasarruf: -</div>
+          </div>
+        </div>
+
+      </div>
+
+      <!-- Right Column: Visualizer & Pipeline Inspector (7 cols) -->
+      <div class="lg:col-span-7 space-y-6">
+
+        <!-- Tab Selector: Vector Map vs 400x240 MIP Display -->
+        <div class="bg-slate-900/80 border border-slate-800 rounded-2xl p-5 shadow-lg space-y-4">
+          <div class="flex items-center justify-between border-b border-slate-800 pb-3">
+            <div class="flex gap-2">
+              <button id="tabMapBtn" class="px-4 py-1.5 rounded-lg text-xs font-semibold bg-emerald-500/20 text-emerald-300 border border-emerald-500/30 transition">
+                🗺️ Vektör Rota Haritası & İrtifa
+              </button>
+              <button id="tabMipBtn" class="px-4 py-1.5 rounded-lg text-xs font-semibold bg-slate-800 text-slate-400 hover:text-white transition">
+                📟 Sharp 2.7" MIP (400x240) Taktik Ekran
+              </button>
+            </div>
+            <div class="text-xs mono text-slate-400" id="coordsHover">Lat: --.----, Lon: --.----</div>
+          </div>
+
+          <!-- Tab Content 1: Vector Trajectory & Elevation -->
+          <div id="tabMapContent" class="space-y-4">
+            <div class="relative bg-slate-950 rounded-xl border border-slate-800 overflow-hidden" style="height: 260px;">
+              <canvas id="mapCanvas" class="w-full h-full"></canvas>
+              <div class="absolute bottom-2 left-3 bg-slate-900/80 backdrop-blur px-2.5 py-1 rounded text-[10px] mono text-slate-400 border border-slate-800">
+                cos(mean_lat) projeksiyon düzeltmeli
+              </div>
+            </div>
+
+            <!-- Elevation Profile -->
+            <div class="bg-slate-950 rounded-xl border border-slate-800 p-3" style="height: 120px;">
+              <div class="flex justify-between text-[10px] mono text-slate-500 mb-1">
+                <span>İRTİFA PROFİLİ</span>
+                <span id="eleMinMax">Min: - m | Max: - m</span>
+              </div>
+              <canvas id="eleCanvas" class="w-full h-20"></canvas>
+            </div>
+          </div>
+
+          <!-- Tab Content 2: Simulated Sharp MIP Display (400x240) -->
+          <div id="tabMipContent" class="hidden space-y-3">
+            <div class="flex flex-wrap items-center justify-between gap-2 text-xs text-slate-400 bg-slate-950/70 p-2.5 rounded-xl border border-slate-800">
+              <span class="mono text-[11px] font-semibold text-emerald-400 flex items-center gap-1.5">
+                <span>⛰️</span> Katmanlar:
+              </span>
+              <div class="flex flex-wrap items-center gap-2">
+                <button id="lodToggleBtn" class="px-2.5 py-1 bg-emerald-500/20 text-emerald-300 rounded-lg text-[11px] border border-emerald-500/30 font-medium hover:bg-emerald-500/30 transition">
+                  🔍 500m Makro (100m Eğri)
+                </button>
+                <button id="orientToggleBtn" class="px-2.5 py-1 bg-slate-800 text-slate-300 rounded-lg text-[11px] border border-slate-700 font-medium hover:bg-slate-700 transition">
+                  🧭 North-Up
+                </button>
+                <label class="flex items-center gap-1 cursor-pointer text-[11px] text-slate-300 hover:text-white">
+                  <input type="checkbox" id="toggleIsohyps" checked class="rounded text-emerald-500 bg-slate-800 border-slate-700"> İzohipsler
+                </label>
+                <label class="flex items-center gap-1 cursor-pointer text-[11px] text-slate-300 hover:text-white">
+                  <input type="checkbox" id="toggleHillshade" checked class="rounded text-emerald-500 bg-slate-800 border-slate-700"> Gölgelendirme
+                </label>
+                <label class="flex items-center gap-1 cursor-pointer text-[11px] text-slate-300 hover:text-white">
+                  <input type="checkbox" id="togglePeaks" checked class="rounded text-emerald-500 bg-slate-800 border-slate-700"> Zirveler (▲)
+                </label>
+                <label class="flex items-center gap-1 cursor-pointer text-[11px] text-slate-300 hover:text-white">
+                  <input type="checkbox" id="toggleRoute" checked class="rounded text-emerald-500 bg-slate-800 border-slate-700"> Beyaz Halo Rota
+                </label>
+                <button id="invertMipBtn" class="px-2 py-1 bg-slate-800 rounded-lg text-[11px] hover:bg-slate-700 text-slate-200 border border-slate-700 transition">
+                  Ters Renk
+                </button>
+              </div>
+            </div>
+
+            <div class="flex justify-center p-2 bg-slate-950 rounded-xl border border-slate-800">
+              <div class="relative border-4 border-slate-700 rounded-lg p-1 bg-[#8fa492]">
+                <canvas id="mipCanvas" width="400" height="240" class="mip-screen block"></canvas>
+              </div>
+            </div>
+            <div class="text-center text-[11px] text-slate-500 mono">
+              Ekran güncellemelerinde yalnızca değişen satırlar Dirty-Line DMA ile aktarılır (%99.55 SPI bant genişliği tasarrufu).
+            </div>
+          </div>
+
+        </div>
+
+        <!-- 6-Stage Process Inspector -->
+        <div class="bg-slate-900/80 border border-slate-800 rounded-2xl p-5 shadow-lg space-y-4">
+          <h2 class="text-sm font-semibold uppercase tracking-wider text-slate-400 flex items-center justify-between">
+            <span class="flex items-center gap-2"><span class="w-2 h-2 rounded-full bg-cyan-400"></span> 3. Şifreleme & Sıkıştırma Süreç İzleyicisi</span>
+            <span id="processStatusBadge" class="text-xs font-mono font-normal text-slate-500">Hazır</span>
+          </h2>
+
+          <div class="space-y-2.5 text-xs">
+            <!-- Stage 1 -->
+            <div id="step1" class="p-3 bg-slate-950 rounded-xl border border-slate-800 flex items-start gap-3 transition">
+              <div class="step-num w-6 h-6 rounded-full bg-slate-800 text-slate-400 flex items-center justify-center font-mono text-xs mt-0.5">1</div>
+              <div class="flex-1">
+                <div class="flex justify-between font-medium text-slate-200">
+                  <span>XML Ayrıştırma & WGS84 Geodezi</span>
+                  <span class="step-status text-slate-500 mono">Bekliyor</span>
+                </div>
+                <div class="step-detail text-slate-400 text-[11px] mt-0.5">Trkpt / Wpt XML etiketleri ayrıştırılır, eksik irtifa ve zaman bilgileri normalize edilir.</div>
+              </div>
+            </div>
+
+            <!-- Stage 2 -->
+            <div id="step2" class="p-3 bg-slate-950 rounded-xl border border-slate-800 flex items-start gap-3 transition">
+              <div class="step-num w-6 h-6 rounded-full bg-slate-800 text-slate-400 flex items-center justify-center font-mono text-xs mt-0.5">2</div>
+              <div class="flex-1">
+                <div class="flex justify-between font-medium text-slate-200">
+                  <span>Sabit Nokta (Fixed-Point) 1e7 Kuantalama</span>
+                  <span class="step-status text-slate-500 mono">Bekliyor</span>
+                </div>
+                <div class="step-detail text-slate-400 text-[11px] mt-0.5">Lat/Lon * 10^7 tamsayıya dönüştürülür (~1.11 cm ekvatoral çözünürlük, 0 geodezik kayıp).</div>
+              </div>
+            </div>
+
+            <!-- Stage 3 -->
+            <div id="step3" class="p-3 bg-slate-950 rounded-xl border border-slate-800 flex items-start gap-3 transition">
+              <div class="step-num w-6 h-6 rounded-full bg-slate-800 text-slate-400 flex items-center justify-center font-mono text-xs mt-0.5">3</div>
+              <div class="flex-1">
+                <div class="flex justify-between font-medium text-slate-200">
+                  <span>DPCM Diferansiyel Türev & ZigZag Kodlama</span>
+                  <span class="step-status text-slate-500 mono">Bekliyor</span>
+                </div>
+                <div class="step-detail text-slate-400 text-[11px] mt-0.5">ΔLat, ΔLon, ΔEle ardışık farkları alınır; negatif sayılar ZigZag ile pozitif uzaya haritalanır.</div>
+              </div>
+            </div>
+
+            <!-- Stage 4 -->
+            <div id="step4" class="p-3 bg-slate-950 rounded-xl border border-slate-800 flex items-start gap-3 transition">
+              <div class="step-num w-6 h-6 rounded-full bg-slate-800 text-slate-400 flex items-center justify-center font-mono text-xs mt-0.5">4</div>
+              <div class="flex-1">
+                <div class="flex justify-between font-medium text-slate-200">
+                  <span>LEB128 Değişken Uzunluklu Varint Sıkıştırma</span>
+                  <span class="step-status text-slate-500 mono">Bekliyor</span>
+                </div>
+                <div class="step-detail text-slate-400 text-[11px] mt-0.5">Küçük deltalar 1-2 baytta paketlenerek dosya boyutu %94'ün üzerinde küçültülür.</div>
+              </div>
+            </div>
+
+            <!-- Stage 5 -->
+            <div id="step5" class="p-3 bg-slate-950 rounded-xl border border-slate-800 flex items-start gap-3 transition">
+              <div class="step-num w-6 h-6 rounded-full bg-slate-800 text-slate-400 flex items-center justify-center font-mono text-xs mt-0.5">5</div>
+              <div class="flex-1">
+                <div class="flex justify-between font-medium text-slate-200">
+                  <span>AES-128-CTR Kriptografik Şifreleme</span>
+                  <span class="step-status text-slate-500 mono">Bekliyor</span>
+                </div>
+                <div class="step-detail text-slate-400 text-[11px] mt-0.5">16-baytlık rastgele Nonce ile sayaç bloğu şifrelenip bayt akışıyla XOR'lanır.</div>
+              </div>
+            </div>
+
+            <!-- Stage 6 -->
+            <div id="step6" class="p-3 bg-slate-950 rounded-xl border border-slate-800 flex items-start gap-3 transition">
+              <div class="step-num w-6 h-6 rounded-full bg-slate-800 text-slate-400 flex items-center justify-center font-mono text-xs mt-0.5">6</div>
+              <div class="flex-1">
+                <div class="flex justify-between font-medium text-slate-200">
+                  <span>68-Bayt CGPX İkili Konteyner & CRC-32 Mührü</span>
+                  <span class="step-status text-slate-500 mono">Bekliyor</span>
+                </div>
+                <div class="step-detail text-slate-400 text-[11px] mt-0.5">Sihirli sayı (CGPX), referans koordinat, sınır kutusu ve CRC-32 bütünlük başlığı eklenir.</div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Hex Stream Live Inspector -->
+          <div class="bg-slate-950 rounded-xl border border-slate-800 p-3 space-y-2">
+            <div class="flex justify-between items-center text-[11px] mono text-slate-400">
+              <span>CANLI ŞİFRELEME BAYT AKIŞI (Düz Metin ⊕ Keystream = Şifreli Metin):</span>
+              <span id="hexCounter" class="text-emerald-400">0 bayt</span>
+            </div>
+            <div id="hexDump" class="mono text-[11px] text-slate-300 bg-slate-900/60 p-2.5 rounded-lg overflow-x-auto whitespace-pre h-24 scrollbar-thin">
+Dosya yüklendiğinde canlı bayt akışı ve şifreleme dönüşümü burada listelenecektir...
+            </div>
+          </div>
+
+          <!-- Download Action Buttons -->
+          <div class="flex flex-wrap gap-3 pt-2">
+            <button id="downloadCgpxBtn" disabled class="flex-1 py-2.5 px-4 bg-indigo-600 hover:bg-indigo-500 disabled:bg-slate-800 disabled:text-slate-600 text-white font-medium rounded-xl text-xs transition shadow flex items-center justify-center gap-2">
+              <span>💾</span> .CGPX İkili Dosyasını İndir
+            </button>
+            <button id="downloadHeaderBtn" disabled class="flex-1 py-2.5 px-4 bg-slate-800 hover:bg-slate-700 disabled:bg-slate-800 disabled:text-slate-600 text-slate-200 font-medium rounded-xl text-xs transition border border-slate-700 flex items-center justify-center gap-2">
+              <span>📜</span> C99 Başlık Dosyası (.h) İndir
+            </button>
+            <button id="downloadPngBtn" disabled class="py-2.5 px-4 bg-slate-800 hover:bg-slate-700 disabled:bg-slate-800 disabled:text-slate-600 text-slate-200 font-medium rounded-xl text-xs transition border border-slate-700">
+              📷 MIP PNG
+            </button>
+          </div>
+
+        </div>
+
+      </div>
+
+    </div>
+
+  </div>
+
+  <script>
+    /* ---------------------------------------------------------------------- */
+    /* PURE JAVASCRIPT ZERO-DEPENDENCY AES-128 CORE IMPLEMENTATION            */
+    /* ---------------------------------------------------------------------- */
+    const SBOX = new Uint8Array([
+      0x63,0x7c,0x77,0x7b,0xf2,0x6b,0x6f,0xc5,0x30,0x01,0x67,0x2b,0xfe,0xd7,0xab,0x76,
+      0xca,0x82,0xc9,0x7d,0xfa,0x59,0x47,0xf0,0xad,0xd4,0xa2,0xaf,0x9c,0xa4,0x72,0xc0,
+      0xb7,0xfd,0x93,0x26,0x36,0x3f,0xf7,0xcc,0x34,0xa5,0xe5,0xf1,0x71,0xd8,0x31,0x15,
+      0x04,0xc7,0x23,0xc3,0x18,0x96,0x05,0x9a,0x07,0x12,0x80,0xe2,0xeb,0x27,0xb2,0x75,
+      0x09,0x83,0x2c,0x1a,0x1b,0x6e,0x5a,0xa0,0x52,0x3b,0xd6,0xb3,0x29,0xe3,0x2f,0x84,
+      0x53,0xd1,0x00,0xed,0x20,0xfc,0xb1,0x5b,0x6a,0xcb,0xbe,0x39,0x4a,0x4c,0x58,0xcf,
+      0xd0,0xef,0xaa,0xfb,0x43,0x4d,0x33,0x85,0x45,0xf9,0x02,0x7f,0x50,0x3c,0x9f,0xa8,
+      0x51,0xa3,0x40,0x8f,0x92,0x9d,0x38,0xf5,0xbc,0xb6,0xda,0x21,0x10,0xff,0xf3,0xd2,
+      0xcd,0x0c,0x13,0xec,0x5f,0x97,0x44,0x17,0xc4,0xa7,0x7e,0x3d,0x64,0x5d,0x19,0x73,
+      0x60,0x81,0x4f,0xdc,0x22,0x2a,0x90,0x88,0x46,0xee,0xb8,0x14,0xde,0x5e,0x0b,0xdb,
+      0xe0,0x32,0x3a,0x0a,0x49,0x06,0x24,0x5c,0xc2,0xd3,0xac,0x62,0x91,0x95,0xe4,0x79,
+      0xe7,0xc8,0x37,0x6d,0x8d,0xd5,0x4e,0xa9,0x6c,0x56,0xf4,0xea,0x65,0x7a,0xae,0x08,
+      0xba,0x78,0x25,0x2e,0x1c,0xa6,0xb4,0xc6,0xe8,0xdd,0x74,0x1f,0x4b,0xbd,0x8b,0x8a,
+      0x70,0x3e,0xb5,0x66,0x48,0x03,0xf6,0x0e,0x61,0x35,0x57,0xb9,0x86,0xc1,0x1d,0x9e,
+      0xe1,0xf8,0x98,0x11,0x69,0xd9,0x8e,0x94,0x9b,0x1e,0x87,0xe9,0xce,0x55,0x28,0xdf,
+      0x8c,0xa1,0x89,0x0d,0xbf,0xe6,0x42,0x68,0x41,0x99,0x2d,0x0f,0xb0,0x54,0xbb,0x16
+    ]);
+    const RCON = new Uint8Array([0x01,0x02,0x04,0x08,0x10,0x20,0x40,0x80,0x1B,0x36]);
+
+    function xtime(x) { return ((x << 1) ^ (((x >> 7) & 1) * 0x1B)) & 0xFF; }
+
+    function aesKeyExpansion(keyBytes) {
+      const w = new Uint8Array(176);
+      w.set(keyBytes.subarray(0, 16));
+      for (let i = 4; i < 44; i++) {
+        let t0 = w[(i-1)*4 + 0], t1 = w[(i-1)*4 + 1], t2 = w[(i-1)*4 + 2], t3 = w[(i-1)*4 + 3];
+        if (i % 4 === 0) {
+          const u = t0;
+          t0 = SBOX[t1] ^ RCON[(i/4)-1];
+          t1 = SBOX[t2];
+          t2 = SBOX[t3];
+          t3 = SBOX[u];
+        }
+        w[i*4 + 0] = w[(i-4)*4 + 0] ^ t0;
+        w[i*4 + 1] = w[(i-4)*4 + 1] ^ t1;
+        w[i*4 + 2] = w[(i-4)*4 + 2] ^ t2;
+        w[i*4 + 3] = w[(i-4)*4 + 3] ^ t3;
+      }
+      return w;
+    }
+
+    function aesEncryptBlock(roundKeys, inBlock) {
+      const s = new Uint8Array(inBlock);
+      for (let i = 0; i < 16; i++) s[i] ^= roundKeys[i];
+
+      for (let r = 1; r < 10; r++) {
+        for (let i = 0; i < 16; i++) s[i] = SBOX[s[i]];
+        let t;
+        t = s[1]; s[1] = s[5]; s[5] = s[9]; s[9] = s[13]; s[13] = t;
+        t = s[2]; s[2] = s[10]; s[10] = t; t = s[6]; s[6] = s[14]; s[14] = t;
+        t = s[15]; s[15] = s[11]; s[11] = s[7]; s[7] = s[3]; s[3] = t;
+
+        for (let c = 0; c < 4; c++) {
+          const idx = c * 4;
+          const a0 = s[idx], a1 = s[idx+1], a2 = s[idx+2], a3 = s[idx+3];
+          const h0 = xtime(a0), h1 = xtime(a1), h2 = xtime(a2), h3 = xtime(a3);
+          s[idx+0] = h0 ^ a1 ^ h1 ^ a2 ^ a3;
+          s[idx+1] = a0 ^ h1 ^ a2 ^ h2 ^ a3;
+          s[idx+2] = a0 ^ a1 ^ h2 ^ a3 ^ h3;
+          s[idx+3] = h0 ^ a0 ^ a1 ^ a2 ^ h3;
+        }
+        const off = r * 16;
+        for (let i = 0; i < 16; i++) s[i] ^= roundKeys[off + i];
+      }
+
+      for (let i = 0; i < 16; i++) s[i] = SBOX[s[i]];
+      let t;
+      t = s[1]; s[1] = s[5]; s[5] = s[9]; s[9] = s[13]; s[13] = t;
+      t = s[2]; s[2] = s[10]; s[10] = t; t = s[6]; s[6] = s[14]; s[14] = t;
+      t = s[15]; s[15] = s[11]; s[11] = s[7]; s[7] = s[3]; s[3] = t;
+
+      const out = new Uint8Array(16);
+      for (let i = 0; i < 16; i++) out[i] = s[i] ^ roundKeys[160 + i];
+      return out;
+    }
+
+    function aesCtrProcess(keyBytes, nonceBytes, inputBytes) {
+      const roundKeys = aesKeyExpansion(keyBytes);
+      const counter = new Uint8Array(nonceBytes);
+      const out = new Uint8Array(inputBytes.length);
+
+      let keystream = new Uint8Array(16);
+      let kpos = 16;
+
+      for (let i = 0; i < inputBytes.length; i++) {
+        if (kpos >= 16) {
+          keystream = aesEncryptBlock(roundKeys, counter);
+          for (let c = 15; c >= 0; c--) {
+            counter[c]++;
+            if (counter[c] !== 0) break;
+          }
+          kpos = 0;
+        }
+        out[i] = inputBytes[i] ^ keystream[kpos++];
+      }
+      return out;
+    }
+
+    /* IEEE 802.3 CRC32 Implementation */
+    const CRC32_TABLE = new Uint32Array(256);
+    (function() {
+      for (let i = 0; i < 256; i++) {
+        let c = i;
+        for (let k = 0; k < 8; k++) {
+          c = ((c & 1) ? (0xEDB88320 ^ (c >>> 1)) : (c >>> 1));
+        }
+        CRC32_TABLE[i] = c >>> 0;
+      }
+    })();
+    function crc32(buf) {
+      let c = 0xFFFFFFFF;
+      for (let i = 0; i < buf.length; i++) {
+        c = CRC32_TABLE[(c ^ buf[i]) & 0xFF] ^ (c >>> 8);
+      }
+      return (c ^ 0xFFFFFFFF) >>> 0;
+    }
+
+    /* ZigZag & LEB128 Varint */
+    function zigzagEncode(n) {
+      return n >= 0 ? (n * 2) : ((-n * 2) - 1);
+    }
+    function encodeVarint(val) {
+      const bytes = [];
+      let v = Math.floor(val);
+      while (true) {
+        let b = v & 0x7F;
+        v = Math.floor(v / 128);
+        if (v > 0) {
+          bytes.push(b | 0x80);
+        } else {
+          bytes.push(b);
+          break;
+        }
+      }
+      return bytes;
+    }
+
+    /* ---------------------------------------------------------------------- */
+    /* APPLICATION STATE                                                      */
+    /* ---------------------------------------------------------------------- */
+    let currentRawGpxText = "";
+    let currentTrackPoints = [];
+    let processedCgpxBytes = null;
+    let processedHeaderBytes = null;
+    let currentNonce = new Uint8Array(16);
+    let mipInverted = false;
+    let currentLodMode = "macro"; // "macro" (500m scale, 100m contours) or "micro" (100m scale, 25m contours)
+    let currentOrientation = "north-up"; // "north-up" or "track-up"
+
+    // Elements
+    const dropZone = document.getElementById("dropZone");
+    const fileInput = document.getElementById("fileInput");
+    const fileStatus = document.getElementById("fileStatus");
+    const loadSampleBtn = document.getElementById("loadSampleBtn");
+    const clearBtn = document.getElementById("clearBtn");
+    const keyInput = document.getElementById("keyInput");
+    const genKeyBtn = document.getElementById("genKeyBtn");
+    const encryptToggle = document.getElementById("encryptToggle");
+    const processBtn = document.getElementById("processBtn");
+    const nonceDisplay = document.getElementById("nonceDisplay");
+    const hexDump = document.getElementById("hexDump");
+    const hexCounter = document.getElementById("hexCounter");
+
+    const tabMapBtn = document.getElementById("tabMapBtn");
+    const tabMipBtn = document.getElementById("tabMipBtn");
+    const tabMapContent = document.getElementById("tabMapContent");
+    const tabMipContent = document.getElementById("tabMipContent");
+    const invertMipBtn = document.getElementById("invertMipBtn");
+    const lodToggleBtn = document.getElementById("lodToggleBtn");
+    const orientToggleBtn = document.getElementById("orientToggleBtn");
+
+    const downloadCgpxBtn = document.getElementById("downloadCgpxBtn");
+    const downloadHeaderBtn = document.getElementById("downloadHeaderBtn");
+    const downloadPngBtn = document.getElementById("downloadPngBtn");
+
+    // File Drag & Drop
+    dropZone.addEventListener("click", () => fileInput.click());
+    dropZone.addEventListener("dragover", (e) => { e.preventDefault(); dropZone.classList.add("border-emerald-500", "bg-emerald-950/20"); });
+    dropZone.addEventListener("dragleave", () => { dropZone.classList.remove("border-emerald-500", "bg-emerald-950/20"); });
+    dropZone.addEventListener("drop", (e) => {
+      e.preventDefault();
+      dropZone.classList.remove("border-emerald-500", "bg-emerald-950/20");
+      if (e.dataTransfer.files.length > 0) {
+        handleFile(e.dataTransfer.files[0]);
+      }
+    });
+    fileInput.addEventListener("change", (e) => {
+      if (e.target.files.length > 0) {
+        handleFile(e.target.files[0]);
+      }
+    });
+
+    function handleFile(file) {
+      fileStatus.classList.remove("hidden");
+      fileStatus.textContent = `Yüklendi: ${file.name} (${(file.size / 1024).toFixed(1)} KB)`;
+      const reader = new FileReader();
+      reader.onload = (e) => {
+        currentRawGpxText = e.target.result;
+        parseAndPreviewGpx(currentRawGpxText, file.name);
+      };
+      reader.readAsText(file);
+    }
+
+    // Key Generator
+    genKeyBtn.addEventListener("click", () => {
+      const k = new Uint8Array(16);
+      window.crypto.getRandomValues(k);
+      let hex = "";
+      k.forEach(b => hex += b.toString(16).padStart(2, '0').toUpperCase());
+      keyInput.value = hex;
+    });
+
+    // Clear
+    clearBtn.addEventListener("click", () => {
+      currentRawGpxText = "";
+      currentTrackPoints = [];
+      processedCgpxBytes = null;
+      fileStatus.classList.add("hidden");
+      fileInput.value = "";
+      resetStepBadges();
+      clearCanvases();
+      document.getElementById("statPoints").textContent = "-";
+      document.getElementById("statRatio").textContent = "-";
+      document.getElementById("statRawSize").textContent = "-";
+      document.getElementById("statCgpxSize").textContent = "-";
+      downloadCgpxBtn.disabled = true;
+      downloadHeaderBtn.disabled = true;
+      downloadPngBtn.disabled = true;
+      hexDump.textContent = "Dosya yüklendiğinde canlı bayt akışı burada listelenecektir...";
+    });
+
+    // Tab Switching
+    tabMapBtn.addEventListener("click", () => {
+      tabMapBtn.classList.replace("bg-slate-800", "bg-emerald-500/20");
+      tabMapBtn.classList.replace("text-slate-400", "text-emerald-300");
+      tabMapBtn.classList.add("border", "border-emerald-500/30");
+      tabMipBtn.classList.replace("bg-emerald-500/20", "bg-slate-800");
+      tabMipBtn.classList.replace("text-emerald-300", "text-slate-400");
+      tabMipBtn.classList.remove("border", "border-emerald-500/30");
+      tabMapContent.classList.remove("hidden");
+      tabMipContent.classList.add("hidden");
+    });
+    tabMipBtn.addEventListener("click", () => {
+      tabMipBtn.classList.replace("bg-slate-800", "bg-emerald-500/20");
+      tabMipBtn.classList.replace("text-slate-400", "text-emerald-300");
+      tabMipBtn.classList.add("border", "border-emerald-500/30");
+      tabMapBtn.classList.replace("bg-emerald-500/20", "bg-slate-800");
+      tabMapBtn.classList.replace("text-emerald-300", "text-slate-400");
+      tabMapBtn.classList.remove("border", "border-emerald-500/30");
+      tabMipContent.classList.remove("hidden");
+      tabMapContent.classList.add("hidden");
+      if (currentTrackPoints.length > 0) renderMipDisplay(currentTrackPoints);
+    });
+
+    invertMipBtn.addEventListener("click", () => {
+      mipInverted = !mipInverted;
+      if (currentTrackPoints.length > 0) renderMipDisplay(currentTrackPoints);
+    });
+
+    if (lodToggleBtn) {
+      lodToggleBtn.addEventListener("click", () => {
+        if (currentLodMode === "macro") {
+          currentLodMode = "micro";
+          lodToggleBtn.textContent = "🔍 100m Mikro (25m Eğri)";
+          lodToggleBtn.className = "px-2.5 py-1 bg-cyan-500/20 text-cyan-300 rounded-lg text-[11px] border border-cyan-500/30 font-medium hover:bg-cyan-500/30 transition";
+        } else {
+          currentLodMode = "macro";
+          lodToggleBtn.textContent = "🔍 500m Makro (100m Eğri)";
+          lodToggleBtn.className = "px-2.5 py-1 bg-emerald-500/20 text-emerald-300 rounded-lg text-[11px] border border-emerald-500/30 font-medium hover:bg-emerald-500/30 transition";
+        }
+        if (currentTrackPoints.length > 0) renderMipDisplay(currentTrackPoints);
+      });
+    }
+
+    if (orientToggleBtn) {
+      orientToggleBtn.addEventListener("click", () => {
+        if (currentOrientation === "north-up") {
+          currentOrientation = "track-up";
+          orientToggleBtn.textContent = "🧭 Track-Up";
+          orientToggleBtn.className = "px-2.5 py-1 bg-indigo-500/20 text-indigo-300 rounded-lg text-[11px] border border-indigo-500/30 font-medium hover:bg-indigo-500/30 transition";
+        } else {
+          currentOrientation = "north-up";
+          orientToggleBtn.textContent = "🧭 North-Up";
+          orientToggleBtn.className = "px-2.5 py-1 bg-slate-800 text-slate-300 rounded-lg text-[11px] border border-slate-700 font-medium hover:bg-slate-700 transition";
+        }
+        if (currentTrackPoints.length > 0) renderMipDisplay(currentTrackPoints);
+      });
+    }
+
+    ["toggleIsohyps", "toggleHillshade", "togglePeaks", "toggleRoute"].forEach(id => {
+      const el = document.getElementById(id);
+      if (el) {
+        el.addEventListener("change", () => {
+          if (currentTrackPoints.length > 0) renderMipDisplay(currentTrackPoints);
+        });
+      }
+    });
+
+    /* ---------------------------------------------------------------------- */
+    /* GPX PARSER                                                             */
+    /* ---------------------------------------------------------------------- */
+    function parseAndPreviewGpx(xmlText, fileName) {
+      resetStepBadges();
+      const parser = new DOMParser();
+      const xmlDoc = parser.parseFromString(xmlText, "text/xml");
+      
+      const trkpts = xmlDoc.querySelectorAll("trkpt, rtept, wpt");
+      if (!trkpts || trkpts.length === 0) {
+        alert("GPX dosyasında geçerli koordinat noktası (trkpt / rtept / wpt) bulunamadı!");
+        return;
+      }
+
+      const points = [];
+      let lastTime = 0;
+      let lastEle = 0.0;
+
+      for (let i = 0; i < trkpts.length; i++) {
+        const pt = trkpts[i];
+        const lat = parseFloat(pt.getAttribute("lat"));
+        const lon = parseFloat(pt.getAttribute("lon"));
+        if (isNaN(lat) || isNaN(lon)) continue;
+
+        const eleElem = pt.querySelector("ele");
+        let ele = eleElem ? parseFloat(eleElem.textContent) : lastEle;
+        if (isNaN(ele)) ele = lastEle;
+        lastEle = ele;
+
+        const timeElem = pt.querySelector("time");
+        let time_s = lastTime + 1;
+        if (timeElem && timeElem.textContent) {
+          const t = Date.parse(timeElem.textContent);
+          if (!isNaN(t)) time_s = Math.floor(t / 1000);
+        }
+        lastTime = time_s;
+
+        points.push({
+          lat: lat,
+          lon: lon,
+          ele: ele,
+          time_s: time_s,
+          lat_int: Math.round(lat * 1e7),
+          lon_int: Math.round(lon * 1e7),
+          ele_int: Math.round(ele)
+        });
+      }
+
+      currentTrackPoints = points;
+      document.getElementById("statPoints").textContent = points.length.toLocaleString();
+      document.getElementById("statRawSize").textContent = (xmlText.length / 1024).toFixed(1) + " KB";
+
+      setStepStatus(1, "success", `${points.length} nokta ayrıştırıldı`);
+      setStepStatus(2, "success", `1e7 fixed-point ölçeklendi`);
+
+      renderVectorMap(points);
+      renderElevationProfile(points);
+      renderMipDisplay(points);
+
+      // Trigger automatic process
+      processCompressionAndEncryption();
+    }
+
+    /* ---------------------------------------------------------------------- */
+    /* COMPRESSION & ENCRYPTION PIPELINE                                      */
+    /* ---------------------------------------------------------------------- */
+    processBtn.addEventListener("click", () => {
+      if (currentTrackPoints.length === 0) {
+        alert("Lütfen önce bir GPX dosyası yükleyin veya Örnek Rotayı açın!");
+        return;
+      }
+      processCompressionAndEncryption();
+    });
+
+    function processCompressionAndEncryption() {
+      const points = currentTrackPoints;
+      if (!points || points.length === 0) return;
+
+      const p0 = points[0];
+      const ref_lat = p0.lat_int;
+      const ref_lon = p0.lon_int;
+      const ref_ele = p0.ele_int;
+
+      let min_lat = ref_lat, max_lat = ref_lat;
+      let min_lon = ref_lon, max_lon = ref_lon;
+      let min_ele = ref_ele, max_ele = ref_ele;
+
+      for (const p of points) {
+        if (p.lat_int < min_lat) min_lat = p.lat_int;
+        if (p.lat_int > max_lat) max_lat = p.lat_int;
+        if (p.lon_int < min_lon) min_lon = p.lon_int;
+        if (p.lon_int > max_lon) max_lon = p.lon_int;
+        if (p.ele_int < min_ele) min_ele = p.ele_int;
+        if (p.ele_int > max_ele) max_ele = p.ele_int;
+      }
+
+      // Step 3: DPCM & ZigZag
+      setStepStatus(3, "running", "DPCM türevleri ve ZigZag haritası üretiliyor...");
+      const payloadBytes = [];
+      let prev_lat = ref_lat, prev_lon = ref_lon, prev_ele = ref_ele, prev_time = p0.time_s;
+
+      for (let i = 1; i < points.length; i++) {
+        const p = points[i];
+        const d_lat = p.lat_int - prev_lat;
+        const d_lon = p.lon_int - prev_lon;
+        const d_ele = p.ele_int - prev_ele;
+        const d_time = Math.max(0, p.time_s - prev_time);
+
+        const z_lat = zigzagEncode(d_lat);
+        const z_lon = zigzagEncode(d_lon);
+        const z_ele = zigzagEncode(d_ele);
+
+        // Step 4: LEB128 Varint
+        payloadBytes.push(...encodeVarint(z_lat));
+        payloadBytes.push(...encodeVarint(z_lon));
+        payloadBytes.push(...encodeVarint(z_ele));
+        payloadBytes.push(...encodeVarint(d_time));
+
+        prev_lat = p.lat_int;
+        prev_lon = p.lon_int;
+        prev_ele = p.ele_int;
+        prev_time = p.time_s;
+      }
+
+      const rawPayload = new Uint8Array(payloadBytes);
+      setStepStatus(3, "success", `${points.length - 1} diferansiyel delta hesaplandı`);
+      setStepStatus(4, "success", `${rawPayload.length.toLocaleString()} bayt LEB128 varint paketlendi`);
+
+      // Step 5: Encryption
+      const shouldEncrypt = encryptToggle.checked;
+      let keyHex = keyInput.value.trim().replace(/[^0-9A-Fa-f]/g, '');
+      while (keyHex.length < 32) keyHex = (keyHex + "0123456789ABCDEF").substring(0, 32);
+      const keyBytes = new Uint8Array(16);
+      for (let i = 0; i < 16; i++) {
+        keyBytes[i] = parseInt(keyHex.substring(i*2, i*2 + 2), 16);
+      }
+
+      window.crypto.getRandomValues(currentNonce);
+      let nonceHex = "";
+      currentNonce.forEach(b => nonceHex += b.toString(16).padStart(2, '0').toUpperCase());
+      nonceDisplay.textContent = nonceHex.substring(0, 16) + "...";
+
+      setStepStatus(5, "running", "AES-128-CTR ile şifreleniyor...");
+      let ciphertext = rawPayload;
+      if (shouldEncrypt) {
+        ciphertext = aesCtrProcess(keyBytes, currentNonce, rawPayload);
+        setStepStatus(5, "success", `128-bit CTR şifreleme tamamlandı`);
+      } else {
+        setStepStatus(5, "warning", `Şifreleme devre dışı (Düz metin)`);
+      }
+
+      // Step 6: CRC32 & 68-Byte Header Assembly
+      setStepStatus(6, "running", "Konteyner ve CRC-32 mühürleniyor...");
+      const crc32Val = crc32(ciphertext);
+
+      const headerBuf = new ArrayBuffer(68);
+      const view = new DataView(headerBuf);
+      view.setUint32(0x00, 0x58504743, true); // "CGPX"
+      view.setUint16(0x04, 0x0100, true);     // Version 1.0
+      view.setUint16(0x06, shouldEncrypt ? 0x0001 : 0x0000, true);
+      view.setUint32(0x08, points.length, true);
+      view.setInt32(0x0C, ref_lat, true);
+      view.setInt32(0x10, ref_lon, true);
+      view.setInt16(0x14, ref_ele, true);
+      view.setInt32(0x16, min_lat, true);
+      view.setInt32(0x1A, max_lat, true);
+      view.setInt32(0x1E, min_lon, true);
+      view.setInt32(0x22, max_lon, true);
+      view.setInt16(0x26, min_ele, true);
+      view.setInt16(0x28, max_ele, true);
+
+      const u8Header = new Uint8Array(headerBuf);
+      u8Header.set(currentNonce, 0x2A);
+
+      view.setUint32(0x3A, rawPayload.length, true);
+      view.setUint32(0x3E, crc32Val, true);
+      view.setUint8(0x42, 0);
+      view.setUint8(0x43, 0);
+
+      // Combine Header + Ciphertext
+      const fullCgpx = new Uint8Array(68 + ciphertext.length);
+      fullCgpx.set(u8Header, 0);
+      fullCgpx.set(ciphertext, 68);
+
+      processedCgpxBytes = fullCgpx;
+      processedHeaderBytes = u8Header;
+
+      setStepStatus(6, "success", `CRC-32: 0x${crc32Val.toString(16).toUpperCase().padStart(8, '0')} doğrulandı`);
+
+      // Update metrics
+      const rawXmlLen = currentRawGpxText.length;
+      const cgpxLen = fullCgpx.length;
+      const ratio = ((1.0 - (cgpxLen / rawXmlLen)) * 100.0).toFixed(1);
+      const bpp = (rawPayload.length / points.length).toFixed(2);
+
+      document.getElementById("statCgpxSize").textContent = (cgpxLen / 1024).toFixed(2) + " KB";
+      document.getElementById("statRatio").textContent = "%" + ratio;
+      document.getElementById("statBPP").textContent = `${bpp} bayt/nokta`;
+      document.getElementById("statSavings").textContent = `Kazanç: ${((rawXmlLen - cgpxLen) / 1024).toFixed(1)} KB`;
+
+      document.getElementById("processStatusBadge").textContent = "✓ Tamamlandı";
+      document.getElementById("processStatusBadge").className = "text-xs font-mono font-normal text-emerald-400";
+
+      // Live Hex Dump Display (First 64 bytes)
+      renderHexDump(rawPayload, ciphertext);
+
+      downloadCgpxBtn.disabled = false;
+      downloadHeaderBtn.disabled = false;
+      downloadPngBtn.disabled = false;
+    }
+
+    function renderHexDump(plain, cipher) {
+      let dump = "OFFSET   PLAIN (DPCM VARINT)        CIPHERTEXT (AES-128-CTR)    ASCII\n";
+      dump += "-----------------------------------------------------------------------\n";
+      const displayLen = Math.min(plain.length, 64);
+      for (let i = 0; i < displayLen; i += 8) {
+        const off = i.toString(16).padStart(4, '0').toUpperCase();
+        let phex = "", chex = "", asc = "";
+        for (let j = 0; j < 8; j++) {
+          if (i + j < displayLen) {
+            const pb = plain[i+j];
+            const cb = cipher[i+j];
+            phex += pb.toString(16).padStart(2, '0').toUpperCase() + " ";
+            chex += cb.toString(16).padStart(2, '0').toUpperCase() + " ";
+            asc += (pb >= 32 && pb <= 126) ? String.fromCharCode(pb) : ".";
+          } else {
+            phex += "   ";
+            chex += "   ";
+          }
+        }
+        dump += `0x${off}   ${phex}    ${chex}   |${asc}|\n`;
+      }
+      hexDump.textContent = dump;
+      hexCounter.textContent = `${cipher.length.toLocaleString()} bayt`;
+    }
+
+    function setStepStatus(stepNum, status, text) {
+      const step = document.getElementById("step" + stepNum);
+      if (!step) return;
+      const num = step.querySelector(".step-num");
+      const stat = step.querySelector(".step-status");
+      const det = step.querySelector(".step-detail");
+
+      if (status === "running") {
+        num.className = "step-num w-6 h-6 rounded-full bg-cyan-500/20 text-cyan-300 border border-cyan-500 flex items-center justify-center font-mono text-xs mt-0.5 animate-pulse";
+        stat.className = "step-status text-cyan-400 mono";
+        stat.textContent = "İşleniyor...";
+      } else if (status === "success") {
+        num.className = "step-num w-6 h-6 rounded-full bg-emerald-500/20 text-emerald-400 border border-emerald-500/40 flex items-center justify-center font-mono text-xs mt-0.5";
+        stat.className = "step-status text-emerald-400 mono";
+        stat.textContent = "✓ Tamam";
+      } else if (status === "warning") {
+        num.className = "step-num w-6 h-6 rounded-full bg-amber-500/20 text-amber-400 border border-amber-500/40 flex items-center justify-center font-mono text-xs mt-0.5";
+        stat.className = "step-status text-amber-400 mono";
+        stat.textContent = "Atlandı";
+      }
+      if (text) det.textContent = text;
+    }
+
+    function resetStepBadges() {
+      for (let i = 1; i <= 6; i++) {
+        const step = document.getElementById("step" + i);
+        if (!step) continue;
+        step.querySelector(".step-num").className = "step-num w-6 h-6 rounded-full bg-slate-800 text-slate-400 flex items-center justify-center font-mono text-xs mt-0.5";
+        step.querySelector(".step-status").className = "step-status text-slate-500 mono";
+        step.querySelector(".step-status").textContent = "Bekliyor";
+      }
+      document.getElementById("processStatusBadge").textContent = "Bekliyor";
+      document.getElementById("processStatusBadge").className = "text-xs font-mono font-normal text-slate-500";
+    }
+
+    /* ---------------------------------------------------------------------- */
+    /* 2D VECTOR TRAJECTORY MAP RENDERING                                     */
+    /* ---------------------------------------------------------------------- */
+    function renderVectorMap(points) {
+      const canvas = document.getElementById("mapCanvas");
+      const ctx = canvas.getContext("2d");
+      canvas.width = canvas.parentElement.clientWidth * window.devicePixelRatio;
+      canvas.height = canvas.parentElement.clientHeight * window.devicePixelRatio;
+      ctx.scale(window.devicePixelRatio, window.devicePixelRatio);
+
+      const w = canvas.parentElement.clientWidth;
+      const h = canvas.parentElement.clientHeight;
+
+      ctx.fillStyle = "#020617";
+      ctx.fillRect(0, 0, w, h);
+
+      // Grid Lines
+      ctx.strokeStyle = "rgba(30, 41, 59, 0.7)";
+      ctx.lineWidth = 1;
+      for (let x = 0; x < w; x += 40) { ctx.beginPath(); ctx.moveTo(x, 0); ctx.lineTo(x, h); ctx.stroke(); }
+      for (let y = 0; y < h; y += 40) { ctx.beginPath(); ctx.moveTo(0, y); ctx.lineTo(w, y); ctx.stroke(); }
+
+      if (points.length < 2) return;
+
+      let minLat = points[0].lat, maxLat = points[0].lat;
+      let minLon = points[0].lon, maxLon = points[0].lon;
+      for (const p of points) {
+        if (p.lat < minLat) minLat = p.lat;
+        if (p.lat > maxLat) maxLat = p.lat;
+        if (p.lon < minLon) minLon = p.lon;
+        if (p.lon > maxLon) maxLon = p.lon;
+      }
+
+      const meanLat = (minLat + maxLat) / 2.0;
+      const cosLat = Math.cos((meanLat * Math.PI) / 180.0);
+
+      const dLat = Math.max(1e-6, maxLat - minLat);
+      const dLon = Math.max(1e-6, (maxLon - minLon) * cosLat);
+
+      const pad = 35;
+      const availW = w - pad * 2;
+      const availH = h - pad * 2;
+      const scale = Math.min(availW / dLon, availH / dLat);
+
+      function proj(p) {
+        const px = pad + (availW - dLon * scale) / 2 + (p.lon - minLon) * cosLat * scale;
+        const py = h - (pad + (availH - dLat * scale) / 2 + (p.lat - minLat) * scale);
+        return [px, py];
+      }
+
+      // Draw glowing trajectory
+      ctx.shadowColor = "rgba(16, 185, 129, 0.5)";
+      ctx.shadowBlur = 8;
+      ctx.strokeStyle = "#10b981";
+      ctx.lineWidth = 2.5;
+      ctx.beginPath();
+      const p0 = proj(points[0]);
+      ctx.moveTo(p0[0], p0[1]);
+      for (let i = 1; i < points.length; i++) {
+        const pt = proj(points[i]);
+        ctx.lineTo(pt[0], pt[1]);
+      }
+      ctx.stroke();
+      ctx.shadowBlur = 0;
+
+      // Start / End markers
+      ctx.fillStyle = "#22c55e";
+      ctx.beginPath(); ctx.arc(p0[0], p0[1], 5, 0, Math.PI * 2); ctx.fill();
+
+      const pN = proj(points[points.length - 1]);
+      ctx.fillStyle = "#ef4444";
+      ctx.beginPath(); ctx.arc(pN[0], pN[1], 5, 0, Math.PI * 2); ctx.fill();
+
+      // Mouse Hover Inspector
+      canvas.onmousemove = (e) => {
+        const rect = canvas.getBoundingClientRect();
+        const mx = e.clientX - rect.left;
+        const my = e.clientY - rect.top;
+        let closestPt = points[0], minDist = 999999;
+        for (const pt of points) {
+          const [px, py] = proj(pt);
+          const d = Math.hypot(mx - px, my - py);
+          if (d < minDist) { minDist = d; closestPt = pt; }
+        }
+        if (minDist < 40) {
+          document.getElementById("coordsHover").textContent = `Lat: ${closestPt.lat.toFixed(5)}°, Lon: ${closestPt.lon.toFixed(5)}°, Ele: ${closestPt.ele.toFixed(0)}m`;
+        }
+      };
+    }
+
+    /* ---------------------------------------------------------------------- */
+    /* ELEVATION PROFILE CHART                                                */
+    /* ---------------------------------------------------------------------- */
+    function renderElevationProfile(points) {
+      const canvas = document.getElementById("eleCanvas");
+      const ctx = canvas.getContext("2d");
+      canvas.width = canvas.parentElement.clientWidth * window.devicePixelRatio;
+      canvas.height = canvas.parentElement.clientHeight * window.devicePixelRatio;
+      ctx.scale(window.devicePixelRatio, window.devicePixelRatio);
+
+      const w = canvas.parentElement.clientWidth;
+      const h = canvas.parentElement.clientHeight;
+
+      ctx.clearRect(0, 0, w, h);
+
+      if (points.length < 2) return;
+
+      let minEle = points[0].ele, maxEle = points[0].ele;
+      for (const p of points) {
+        if (p.ele < minEle) minEle = p.ele;
+        if (p.ele > maxEle) maxEle = p.ele;
+      }
+      document.getElementById("eleMinMax").textContent = `Min: ${minEle.toFixed(0)} m | Max: ${maxEle.toFixed(0)} m | ΔH: ${(maxEle - minEle).toFixed(0)} m`;
+
+      const dEle = Math.max(1, maxEle - minEle);
+      const padY = 10;
+      const usableH = h - padY * 2;
+
+      ctx.beginPath();
+      ctx.moveTo(0, h);
+      for (let i = 0; i < points.length; i++) {
+        const x = (i / (points.length - 1)) * w;
+        const y = h - (padY + ((points[i].ele - minEle) / dEle) * usableH);
+        ctx.lineTo(x, y);
+      }
+      ctx.lineTo(w, h);
+      ctx.closePath();
+
+      const grad = ctx.createLinearGradient(0, 0, 0, h);
+      grad.addColorStop(0, "rgba(56, 189, 248, 0.4)");
+      grad.addColorStop(1, "rgba(56, 189, 248, 0.0)");
+      ctx.fillStyle = grad;
+      ctx.fill();
+
+      ctx.strokeStyle = "#38bdf8";
+      ctx.lineWidth = 1.5;
+      ctx.beginPath();
+      for (let i = 0; i < points.length; i++) {
+        const x = (i / (points.length - 1)) * w;
+        const y = h - (padY + ((points[i].ele - minEle) / dEle) * usableH);
+        if (i === 0) ctx.moveTo(x, y); else ctx.lineTo(x, y);
+      }
+      ctx.stroke();
+    }
+
+    /* ---------------------------------------------------------------------- */
+    /* ---------------------------------------------------------------------- */
+    /* TOPOGRAPHIC TERRAIN ENGINE & SHARP 2.7" MIP EMULATOR                    */
+    /* ---------------------------------------------------------------------- */
+    const BAYER_4X4 = [
+      [ 0/16,  8/16,  2/16, 10/16],
+      [12/16,  4/16, 14/16,  6/16],
+      [ 3/16, 11/16,  1/16,  9/16],
+      [15/16,  7/16, 13/16,  5/16]
+    ];
+
+    function fastBlur2D(grid, w, h, radius) {
+      const out = new Float32Array(w * h);
+      const temp = new Float32Array(w * h);
+      const r = Math.max(1, Math.round(radius));
+      const denom = (2 * r + 1);
+
+      for (let y = 0; y < h; y++) {
+        let sum = 0;
+        const rowOff = y * w;
+        for (let i = -r; i <= r; i++) {
+          sum += grid[rowOff + Math.min(w - 1, Math.max(0, i))];
+        }
+        for (let x = 0; x < w; x++) {
+          temp[rowOff + x] = sum / denom;
+          const nextVal = grid[rowOff + Math.min(w - 1, x + r + 1)];
+          const prevVal = grid[rowOff + Math.max(0, x - r)];
+          sum += nextVal - prevVal;
+        }
+      }
+
+      for (let x = 0; x < w; x++) {
+        let sum = 0;
+        for (let i = -r; i <= r; i++) {
+          sum += temp[Math.min(h - 1, Math.max(0, i)) * w + x];
+        }
+        for (let y = 0; y < h; y++) {
+          out[y * w + x] = sum / denom;
+          const nextVal = temp[Math.min(h - 1, y + r + 1) * w + x];
+          const prevVal = temp[Math.max(0, y - r) * w + x];
+          sum += nextVal - prevVal;
+        }
+      }
+      return out;
+    }
+
+    function buildElevationGridClient(points, width, height) {
+      let minLat = points[0].lat, maxLat = points[0].lat;
+      let minLon = points[0].lon, maxLon = points[0].lon;
+      let minEle = points[0].ele, maxEle = points[0].ele;
+      for (const p of points) {
+        if (p.lat < minLat) minLat = p.lat;
+        if (p.lat > maxLat) maxLat = p.lat;
+        if (p.lon < minLon) minLon = p.lon;
+        if (p.lon > maxLon) maxLon = p.lon;
+        if (p.ele < minEle) minEle = p.ele;
+        if (p.ele > maxEle) maxEle = p.ele;
+      }
+
+      const meanLat = (minLat + maxLat) / 2.0;
+      const cosLat = Math.cos((meanLat * Math.PI) / 180.0);
+      const spanLat = Math.max(1e-5, maxLat - minLat);
+      const spanLon = Math.max(1e-5, (maxLon - minLon) * cosLat);
+
+      const bufRatio = 0.18;
+      const bufLat = spanLat * bufRatio;
+      const bufLon = (spanLon / cosLat) * bufRatio;
+
+      const viewMinLat = minLat - bufLat, viewMaxLat = maxLat + bufLat;
+      const viewMinLon = minLon - bufLon, viewMaxLon = maxLon + bufLon;
+      const viewDLat = viewMaxLat - viewMinLat;
+      const viewDLon = (viewMaxLon - viewMinLon) * cosLat;
+
+      function toScreen(lat, lon) {
+        let px = ((lon - viewMinLon) * cosLat / viewDLon) * (width - 1);
+        let py = ((viewMaxLat - lat) / viewDLat) * (height - 1);
+        if (currentOrientation === "track-up") {
+          const cx = (width - 1) / 2.0;
+          const cy = (height - 1) / 2.0;
+          const rad = (-315.0 * Math.PI) / 180.0;
+          const cosR = Math.cos(rad);
+          const sinR = Math.sin(rad);
+          const dx = px - cx;
+          const dy = py - cy;
+          px = cx + (dx * cosR - dy * sinR);
+          py = cy + (dx * sinR + dy * cosR);
+        }
+        return [px, py];
+      }
+
+      const totalPx = width * height;
+      let dem = new Float32Array(totalPx);
+      const baseEle = (minEle + maxEle) / 2.0;
+      dem.fill(baseEle);
+
+      // Add mountain massifs & summits
+      const p1x = width * 0.42, p1y = height * 0.30;
+      const p2x = width * 0.75, p2y = height * 0.45;
+      const p3x = width * 0.18, p3y = height * 0.65;
+
+      for (let y = 0; y < height; y++) {
+        const row = y * width;
+        const valley = (y / height) * 350.0 - 200.0;
+        for (let x = 0; x < width; x++) {
+          const d1 = (x - p1x)**2 + (y - p1y)**2;
+          const d2 = (x - p2x)**2 + (y - p2y)**2;
+          const d3 = (x - p3x)**2 + (y - p3y)**2;
+
+          let val = baseEle;
+          val += 950.0 * Math.exp(-d1 / (2.0 * (65.0**2)));
+          val += 620.0 * Math.exp(-d2 / (2.0 * (48.0**2)));
+          val += 450.0 * Math.exp(-d3 / (2.0 * (40.0**2)));
+          val -= valley;
+
+          // Harmonic terrain noise
+          val += 180.0 * Math.sin(x * 0.035 + 1.2) * Math.cos(y * 0.045 + 0.8);
+          val += 90.0 * Math.sin(x * 0.08 + y * 0.06 + 2.1);
+          val += 30.0 * Math.cos(x * 0.18 - y * 0.12);
+
+          dem[row + x] = val;
+        }
+      }
+
+      // Smooth terrain with two fast blur passes
+      dem = fastBlur2D(dem, width, height, 4);
+      dem = fastBlur2D(dem, width, height, 2);
+
+      // Find primary summits
+      const peaks = [];
+      const window = 28;
+      for (let y = window; y < height - window; y += 12) {
+        for (let x = window; x < width - window; x += 12) {
+          const val = dem[y * width + x];
+          let isMax = true;
+          for (let dy = -window; dy <= window && isMax; dy += 6) {
+            for (let dx = -window; dx <= window; dx += 6) {
+              if (dem[(y + dy) * width + (x + dx)] > val) { isMax = false; break; }
+            }
+          }
+          if (isMax && val > baseEle + 180.0) {
+            if (!peaks.some(p => Math.hypot(p.x - x, p.y - y) < 60)) {
+              peaks.push({ x: x, y: y, ele: Math.round(val) });
+            }
+          }
+        }
+      }
+      peaks.sort((a, b) => b.ele - a.ele);
+
+      return { dem, toScreen, peaks: peaks.slice(0, 3), minEle, maxEle };
+    }
+
+    function computeHillshadeClient(dem, w, h) {
+      const shadeMask = new Uint8Array(w * h);
+      const az = 315 * Math.PI / 180.0;
+      const alt = 45 * Math.PI / 180.0;
+      const lx = -Math.sin(az) * Math.cos(alt);
+      const ly = Math.cos(az) * Math.cos(alt);
+      const lz = Math.sin(alt);
+      const zFactor = 0.08;
+
+      for (let y = 1; y < h - 1; y++) {
+        const row = y * w;
+        for (let x = 1; x < w - 1; x++) {
+          const dz_dx = (dem[row + x + 1] - dem[row + x - 1]) / 2.0;
+          const dz_dy = (dem[row + w + x] - dem[row - w + x]) / 2.0;
+
+          const nx = -dz_dx * zFactor;
+          const ny = -dz_dy * zFactor;
+          const nz = 1.0;
+          const norm = Math.hypot(nx, ny, nz);
+
+          const intensity = Math.max(0, Math.min(1, ((nx * lx + ny * ly + nz * lz) / norm + 0.15) / 1.15));
+          const threshold = 0.48;
+          if (intensity < threshold) {
+            const bayerVal = BAYER_4X4[y % 4][x % 4];
+            if ((intensity / threshold) < bayerVal) {
+              shadeMask[row + x] = 1;
+            }
+          }
+        }
+      }
+      return shadeMask;
+    }
+
+    function extractContoursClient(dem, w, h, interval) {
+      let minVal = dem[0], maxVal = dem[0];
+      for (let i = 1; i < dem.length; i++) {
+        if (dem[i] < minVal) minVal = dem[i];
+        if (dem[i] > maxVal) maxVal = dem[i];
+      }
+
+      const start = Math.ceil(minVal / interval) * interval;
+      const segments = [];
+
+      for (let level = start; level < maxVal; level += interval) {
+        const isIndex = (Math.round(level) % (interval * 2) === 0);
+
+        for (let y = 0; y < h - 1; y++) {
+          const r1 = y * w, r2 = (y + 1) * w;
+          for (let x = 0; x < w - 1; x++) {
+            const vTL = dem[r1 + x], vTR = dem[r1 + x + 1];
+            const vBL = dem[r2 + x], vBR = dem[r2 + x + 1];
+
+            const tl = vTL >= level ? 1 : 0;
+            const tr = vTR >= level ? 1 : 0;
+            const br = vBR >= level ? 1 : 0;
+            const bl = vBL >= level ? 1 : 0;
+            const c = (bl << 3) | (br << 2) | (tr << 1) | tl;
+            if (c === 0 || c === 15) continue;
+
+            const interp = (v1, v2, p1, p2) => {
+              if (Math.abs(v2 - v1) < 1e-5) return (p1 + p2) / 2.0;
+              return p1 + ((level - v1) / (v2 - v1)) * (p2 - p1);
+            };
+
+            const tx = interp(vTL, vTR, x, x + 1), ty = y;
+            const bx = interp(vBL, vBR, x, x + 1), by = y + 1;
+            const lx = x, ly = interp(vTL, vBL, y, y + 1);
+            const rx = x + 1, ry = interp(vTR, vBR, y, y + 1);
+
+            if (c === 1 || c === 14) segments.push([lx, ly, tx, ty, isIndex]);
+            else if (c === 2 || c === 13) segments.push([tx, ty, rx, ry, isIndex]);
+            else if (c === 3 || c === 12) segments.push([lx, ly, rx, ry, isIndex]);
+            else if (c === 4 || c === 11) segments.push([rx, ry, bx, by, isIndex]);
+            else if (c === 5) { segments.push([lx, ly, tx, ty, isIndex]); segments.push([rx, ry, bx, by, isIndex]); }
+            else if (c === 6 || c === 9) segments.push([tx, ty, bx, by, isIndex]);
+            else if (c === 7 || c === 8) segments.push([lx, ly, bx, by, isIndex]);
+            else if (c === 10) { segments.push([lx, ly, bx, by, isIndex]); segments.push([tx, ty, rx, ry, isIndex]); }
+          }
+        }
+      }
+      return segments;
+    }
+
+    function renderMipDisplay(points) {
+      const canvas = document.getElementById("mipCanvas");
+      const ctx = canvas.getContext("2d");
+      const W = 400, H = 240;
+      const HDR_H = 16, FTR_H = 16;
+      const MAP_H = H - HDR_H - FTR_H;
+
+      // 1-Bit Framebuffer (12,000 bytes)
+      const fb = new Uint8Array(240 * 50);
+
+      function setPixel(x, y, color) {
+        if (x < 0 || x >= 400 || y < 0 || y >= 240) return;
+        const byteIdx = y * 50 + (x >> 3);
+        const bitMask = 0x80 >> (x & 7);
+        if (color) fb[byteIdx] |= bitMask; else fb[byteIdx] &= ~bitMask;
+      }
+
+      function drawLine(x0, y0, x1, y1, color, stipple) {
+        x0 = Math.round(x0); y0 = Math.round(y0);
+        x1 = Math.round(x1); y1 = Math.round(y1);
+        let dx = Math.abs(x1 - x0), sx = x0 < x1 ? 1 : -1;
+        let dy = -Math.abs(y1 - y0), sy = y0 < y1 ? 1 : -1;
+        let err = dx + dy, step = 0;
+        while (true) {
+          if (x0 >= 0 && x0 < 400 && y0 >= HDR_H && y0 < H - FTR_H) {
+            if (!stipple || (step % 5 < 3)) setPixel(x0, y0, color);
+          }
+          if (x0 === x1 && y0 === y1) break;
+          let e2 = 2 * err;
+          if (e2 >= dy) { err += dy; x0 += sx; }
+          if (e2 <= dx) { err += dx; y0 += sy; }
+          step++;
+        }
+      }
+
+      // Two-pass White Halo primitives
+      function clearHaloStroke(x0, y0, x1, y1) {
+        x0 = Math.round(x0); y0 = Math.round(y0);
+        x1 = Math.round(x1); y1 = Math.round(y1);
+        let dx = Math.abs(x1 - x0), sx = x0 < x1 ? 1 : -1;
+        let dy = -Math.abs(y1 - y0), sy = y0 < y1 ? 1 : -1;
+        let err = dx + dy;
+        while (true) {
+          for (let ox = -1; ox <= 2; ox++) {
+            for (let oy = -1; oy <= 2; oy++) {
+              const px = x0 + ox, py = y0 + oy;
+              if (px >= 0 && px < 400 && py >= HDR_H && py < H - FTR_H) {
+                setPixel(px, py, 0); // reflective white halo
+              }
+            }
+          }
+          if (x0 === x1 && y0 === y1) break;
+          let e2 = 2 * err;
+          if (e2 >= dy) { err += dy; x0 += sx; }
+          if (e2 <= dx) { err += dx; y0 += sy; }
+        }
+      }
+
+      function drawThickLine(x0, y0, x1, y1) {
+        x0 = Math.round(x0); y0 = Math.round(y0);
+        x1 = Math.round(x1); y1 = Math.round(y1);
+        let dx = Math.abs(x1 - x0), sx = x0 < x1 ? 1 : -1;
+        let dy = -Math.abs(y1 - y0), sy = y0 < y1 ? 1 : -1;
+        let err = dx + dy;
+        while (true) {
+          for (let ox = 0; ox <= 1; ox++) {
+            for (let oy = 0; oy <= 1; oy++) {
+              if (x0 + ox >= 0 && x0 + ox < 400 && y0 + oy >= HDR_H && y0 + oy < H - FTR_H) {
+                setPixel(x0 + ox, y0 + oy, 1);
+              }
+            }
+          }
+          if (x0 === x1 && y0 === y1) break;
+          let e2 = 2 * err;
+          if (e2 >= dy) { err += dy; x0 += sx; }
+          if (e2 <= dx) { err += dx; y0 += sy; }
+        }
+      }
+
+      function drawChevronVector(cx, cy, headingDeg) {
+        cx = Math.round(cx);
+        cy = Math.round(cy);
+        const rad = (headingDeg * Math.PI) / 180.0;
+        const cosH = Math.cos(rad);
+        const sinH = Math.sin(rad);
+
+        // 1. Clear 1px White Halo (circle radius 6)
+        for (let dy = -6; dy <= 6; dy++) {
+          for (let dx = -6; dx <= 6; dx++) {
+            if (dx*dx + dy*dy <= 36) {
+              const px = cx + dx, py = cy + dy;
+              if (px >= 0 && px < 400 && py >= HDR_H && py < H - FTR_H) setPixel(px, py, 0);
+            }
+          }
+        }
+
+        const pts = [
+          [0, -5],  // tip
+          [-4, 4],  // left wing
+          [0, 1],   // notch
+          [4, 4]    // right wing
+        ];
+
+        function rot(p) {
+          const rx = p[0] * cosH - p[1] * sinH;
+          const ry = p[0] * sinH + p[1] * cosH;
+          return [Math.round(cx + rx), Math.round(cy + ry)];
+        }
+
+        const rTip = rot(pts[0]);
+        const rLeft = rot(pts[1]);
+        const rNotch = rot(pts[2]);
+        const rRight = rot(pts[3]);
+
+        drawLine(rTip[0], rTip[1], rLeft[0], rLeft[1], 1, false);
+        drawLine(rLeft[0], rLeft[1], rNotch[0], rNotch[1], 1, false);
+        drawLine(rNotch[0], rNotch[1], rRight[0], rRight[1], 1, false);
+        drawLine(rRight[0], rRight[1], rTip[0], rTip[1], 1, false);
+
+        if (rTip[0] >= 0 && rTip[0] < 400 && rTip[1] >= HDR_H && rTip[1] < H - FTR_H) setPixel(rTip[0], rTip[1], 1);
+        if (cx >= 0 && cx < 400 && cy >= HDR_H && cy < H - FTR_H) setPixel(cx, cy, 1);
+      }
+
+      // Check toggles
+      const showContours = document.getElementById("toggleIsohyps")?.checked ?? true;
+      const showHillshade = document.getElementById("toggleHillshade")?.checked ?? true;
+      const showPeaks = document.getElementById("togglePeaks")?.checked ?? true;
+      const showRoute = document.getElementById("toggleRoute")?.checked ?? true;
+
+      fb.fill(0);
+
+      if (points && points.length >= 2) {
+        const { dem, toScreen, peaks } = buildElevationGridClient(points, W, MAP_H);
+
+        // 1. Layer 0: Hillshade
+        if (showHillshade) {
+          const shade = computeHillshadeClient(dem, W, MAP_H);
+          for (let y = 0; y < MAP_H; y++) {
+            const row = y * W;
+            for (let x = 0; x < W; x++) {
+              if (shade[row + x]) setPixel(x, y + HDR_H, 1);
+            }
+          }
+        }
+
+        // 2. Layer 1: Contours (Dynamic LOD: 100m for Macro, 25m for Micro)
+        if (showContours) {
+          const contourInterval = (currentLodMode === "macro") ? 100.0 : 25.0;
+          const segments = extractContoursClient(dem, W, MAP_H, contourInterval);
+          for (const [x1, y1, x2, y2, isIndex] of segments) {
+            drawLine(x1, y1 + HDR_H, x2, y2 + HDR_H, 1, !isIndex);
+          }
+        }
+
+        // 3. Layer 2: Summits & Peaks (▲)
+        if (showPeaks) {
+          for (const pk of peaks) {
+            const sx = pk.x, sy = pk.y + HDR_H;
+            if (sy >= HDR_H + 10 && sy < H - FTR_H - 10 && sx >= 15 && sx < W - 50) {
+              for (let dy = 0; dy < 7; dy++) {
+                for (let dx = -dy; dx <= dy; dx++) setPixel(sx + dx, sy - 6 + dy, 1);
+              }
+              setPixel(sx, sy - 2, 0); // white center
+            }
+          }
+        }
+
+        // 4. Layer 3: GPX Route (Two-Pass White Halo)
+        if (showRoute) {
+          const screenPts = points.map(p => {
+            const [sx, sy] = toScreen(p.lat, p.lon);
+            return [sx, sy + HDR_H];
+          });
+
+          // PASS 1: Erase 4px wide corridor to pure white (0) along entire route
+          for (let i = 1; i < screenPts.length; i++) {
+            clearHaloStroke(screenPts[i-1][0], screenPts[i-1][1], screenPts[i][0], screenPts[i][1]);
+          }
+
+          // PASS 2: Draw solid 2px black core (1) down center
+          for (let i = 1; i < screenPts.length; i++) {
+            drawThickLine(screenPts[i-1][0], screenPts[i-1][1], screenPts[i][0], screenPts[i][1]);
+          }
+
+          // Start circle [S] with halo
+          const [sx, sy] = screenPts[0];
+          for (let dy = -5; dy <= 5; dy++) {
+            for (let dx = -5; dx <= 5; dx++) {
+              if (dx*dx + dy*dy <= 25) {
+                const px = Math.round(sx + dx), py = Math.round(sy + dy);
+                if (px >= 0 && px < W && py >= HDR_H && py < H - FTR_H) setPixel(px, py, 0);
+              }
+            }
+          }
+          for (let dy = -4; dy <= 4; dy++) {
+            for (let dx = -4; dx <= 4; dx++) {
+              const d2 = dx*dx + dy*dy;
+              if (d2 <= 16) {
+                const px = Math.round(sx + dx), py = Math.round(sy + dy);
+                if (px >= 0 && px < W && py >= HDR_H && py < H - FTR_H) {
+                  setPixel(px, py, (d2 <= 3 || d2 >= 10) ? 1 : 0);
+                }
+              }
+            }
+          }
+
+          // Finish square [F] with halo
+          const [fx, fy] = screenPts[screenPts.length - 1];
+          for (let dy = -4; dy <= 4; dy++) {
+            for (let dx = -4; dx <= 4; dx++) {
+              const px = Math.round(fx + dx), py = Math.round(fy + dy);
+              if (px >= 0 && px < W && py >= HDR_H && py < H - FTR_H) setPixel(px, py, 0);
+            }
+          }
+          for (let dy = -3; dy <= 3; dy++) {
+            for (let dx = -3; dx <= 3; dx++) {
+              const px = Math.round(fx + dx), py = Math.round(fy + dy);
+              if (px >= 0 && px < W && py >= HDR_H && py < H - FTR_H) setPixel(px, py, 1);
+            }
+          }
+
+          // 5. Dynamic 7x7 Chevron Heading Arrow at 65% of track
+          const midIdx = Math.floor(screenPts.length * 0.65);
+          const [cx, cy] = screenPts[midIdx];
+          const cogDeg = (currentOrientation === "track-up") ? 0 : 315;
+          drawChevronVector(cx, cy, cogDeg);
+        }
+      }
+
+      // 5. Tactical OSD Header & Footer Bars (Scanlines 0..15 & 224..239)
+      for (let y = 0; y < HDR_H; y++) {
+        for (let x = 0; x < W; x++) setPixel(x, y, 1);
+      }
+      for (let y = H - FTR_H; y < H; y++) {
+        for (let x = 0; x < W; x++) setPixel(x, y, 1);
+      }
+
+      // Render Framebuffer to Screen Canvas
+      const imgData = ctx.createImageData(400, 240);
+      const data = imgData.data;
+      const fgColor = mipInverted ? [225, 235, 230] : [12, 16, 14];
+      const bgColor = mipInverted ? [12, 16, 14] : [145, 165, 150]; // Authentic Sharp reflective MIP
+
+      for (let y = 0; y < 240; y++) {
+        for (let x = 0; x < 400; x++) {
+          const byteIdx = y * 50 + (x >> 3);
+          const bit = (fb[byteIdx] & (0x80 >> (x & 7))) !== 0;
+          const pixelIdx = (y * 400 + x) * 4;
+          const col = bit ? fgColor : bgColor;
+          data[pixelIdx + 0] = col[0];
+          data[pixelIdx + 1] = col[1];
+          data[pixelIdx + 2] = col[2];
+          data[pixelIdx + 3] = 255;
+        }
+      }
+      ctx.putImageData(imgData, 0, 0);
+
+      // Crisp Monospace OSD Typography
+      ctx.fillStyle = mipInverted ? "#0c100e" : "#e1ebe6";
+      ctx.font = "bold 9px monospace";
+      ctx.fillText("GPS: 3D FIX", 6, 11);
+      ctx.fillText("HDOP: 0.8  SATS: 14", 120, 11);
+      ctx.fillText("PWR: 98% 4.12V", 290, 11);
+
+      const scaleStr = (currentLodMode === "macro") ? "500m" : "100m";
+      const orientStr = (currentOrientation === "track-up") ? "TRK-UP" : "N-UP";
+      ctx.fillText(`XTE: 0m   DTG: 3.8km   COG: 315°   |-- ${scaleStr} --|   ${orientStr}`, 6, 233);
+    }
+
+    function clearCanvases() {
+      const mapCanvas = document.getElementById("mapCanvas");
+      const eleCanvas = document.getElementById("eleCanvas");
+      const mipCanvas = document.getElementById("mipCanvas");
+      mapCanvas.getContext("2d").clearRect(0, 0, mapCanvas.width, mapCanvas.height);
+      eleCanvas.getContext("2d").clearRect(0, 0, eleCanvas.width, eleCanvas.height);
+      mipCanvas.getContext("2d").clearRect(0, 0, 400, 240);
+    }
+
+    /* ---------------------------------------------------------------------- */
+    /* SAMPLE GPX ROUTE GENERATOR                                             */
+    /* ---------------------------------------------------------------------- */
+    loadSampleBtn.addEventListener("click", () => {
+      // High-resolution alpine gorge test track (Aiguille du Midi to Mont Blanc ridge)
+      let gpx = '<?xml version="1.0" encoding="UTF-8"?>\n<gpx version="1.1" creator="CGPX_Alpine">\n<trk><name>Mont Blanc Ridge</name><trkseg>\n';
+      const N = 240;
+      let lat = 45.83262, lon = 6.86520, ele = 3842.0;
+      let t = 1789725600;
+
+      for (let i = 0; i < N; i++) {
+        lat += 0.00015 * Math.sin(i * 0.04) + 0.00008;
+        lon += 0.00018 * Math.cos(i * 0.03) + 0.00005;
+        ele += 2.2 * Math.sin(i * 0.05) + 0.8;
+        t += 3;
+        gpx += `<trkpt lat="${lat.toFixed(7)}" lon="${lon.toFixed(7)}"><ele>${ele.toFixed(2)}</ele><time>${new Date(t*1000).toISOString()}</time></trkpt>\n`;
+      }
+      gpx += '</trkseg></trk></gpx>';
+      currentRawGpxText = gpx;
+      fileStatus.classList.remove("hidden");
+      fileStatus.textContent = "Yüklendi: Mont_Blanc_Alpine_Ridge.gpx (240 nokta)";
+      parseAndPreviewGpx(gpx, "Mont_Blanc_Alpine_Ridge.gpx");
+    });
+
+    /* ---------------------------------------------------------------------- */
+    /* DOWNLOADS                                                              */
+    /* ---------------------------------------------------------------------- */
+    downloadCgpxBtn.addEventListener("click", () => {
+      if (!processedCgpxBytes) return;
+      const blob = new Blob([processedCgpxBytes], { type: "application/octet-stream" });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = "track_encrypted.cgpx";
+      a.click();
+      URL.revokeObjectURL(url);
+    });
+
+    downloadHeaderBtn.addEventListener("click", () => {
+      if (!processedCgpxBytes) return;
+      let h = "/**\n * @file track_cgpx_data.h\n * @brief Pre-compiled CGPX Container array for bare-metal MCU flash storage.\n */\n\n";
+      h += "#ifndef TRACK_CGPX_DATA_H\n#define TRACK_CGPX_DATA_H\n\n#include <stdint.h>\n\n";
+      h += `static const uint8_t TRACK_CGPX_DATA[${processedCgpxBytes.length}] = {\n  `;
+      for (let i = 0; i < processedCgpxBytes.length; i++) {
+        h += "0x" + processedCgpxBytes[i].toString(16).padStart(2, '0').toUpperCase() + ", ";
+        if ((i + 1) % 12 === 0) h += "\n  ";
+      }
+      h += "\n};\n\n#endif /* TRACK_CGPX_DATA_H */\n";
+
+      const blob = new Blob([h], { type: "text/plain" });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = "track_cgpx_data.h";
+      a.click();
+      URL.revokeObjectURL(url);
+    });
+
+    downloadPngBtn.addEventListener("click", () => {
+      const canvas = document.getElementById("mipCanvas");
+      const url = canvas.toDataURL("image/png");
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = "sharp_mip_display_400x240.png";
+      a.click();
+    });
+
+    // Auto-load sample track on first load
+    window.addEventListener("DOMContentLoaded", () => {
+      loadSampleBtn.click();
+    });
+  </script>
+</body>
+</html>

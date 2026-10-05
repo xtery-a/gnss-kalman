@@ -1,0 +1,3558 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+  <title>GARMIN GPSMAP 67i // Taktik Arazi Navigasyon Terminali</title>
+
+  <!-- Leaflet CSS & JS for Garmin TopoActive Mapping -->
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+
+  <!-- Google Fonts: Roboto Condensed & JetBrains Mono (Garmin OS Typography) -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;600;700;800&family=Roboto+Condensed:wght@400;700;800;900&display=swap" rel="stylesheet">
+
+  <style>
+    /* =========================================================================
+       AUTHENTIC GARMIN OUTDOOR OS PALETTE (TRANSFLECTIVE MIP LCD STYLING)
+       ========================================================================= */
+    :root {
+      /* Garmin Day Mode (High-contrast outdoor sunlight readable) */
+      --g-bg: #eceef2;
+      --g-screen-bg: #f8fafc;
+      --g-box-bg: #ffffff;
+      --g-border: #94a3b8;
+      --g-border-dark: #475569;
+      --g-label: #475569;
+      --g-val: #020617;
+      --g-accent: #0284c7;       /* Garmin Cyan */
+      --g-pointer: #dc2626;      /* Garmin Red Bearing Needle */
+      --g-pointer-cdi: #ea580c;  /* Garmin Amber CDI */
+      --g-highlight: #e0f2fe;
+      --g-route: #d946ef;        /* Garmin Magenta Active Route */
+      --g-active-green: #15803d;
+      --g-warn: #ea580c;
+      
+      /* Hardware Chassis Colors (Garmin GPSMAP 67i Rugged Polymer) */
+      --chassis-body: #1e242b;
+      --chassis-dark: #121519;
+      --chassis-orange: #ea580c;
+      --chassis-rubber: #29323d;
+      --key-bg: #2d3748;
+      --key-text: #e2e8f0;
+    }
+
+    /* Garmin Night Mode */
+    body.garmin-night {
+      --g-bg: #090b0e;
+      --g-screen-bg: #05070a;
+      --g-box-bg: #111620;
+      --g-border: #2e384d;
+      --g-border-dark: #475569;
+      --g-label: #94a3b8;
+      --g-val: #f8fafc;
+      --g-accent: #38bdf8;
+      --g-pointer: #ef4444;
+      --g-pointer-cdi: #f59e0b;
+      --g-highlight: #1e293b;
+      --g-route: #f43f5e;
+      --g-active-green: #22c55e;
+      --g-warn: #f59e0b;
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+      -webkit-tap-highlight-color: transparent;
+      user-select: none;
+    }
+
+    body {
+      background-color: #0b0e12;
+      color: var(--g-val);
+      font-family: 'Roboto Condensed', -apple-system, BlinkMacSystemFont, sans-serif;
+      min-height: 100vh;
+      overflow-x: hidden;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 10px 0;
+    }
+
+    .mono {
+      font-family: 'JetBrains Mono', monospace;
+    }
+
+    /* =========================================================================
+       GARMIN GPSMAP 67i PHYSICAL CHASSIS CONTAINER
+       ========================================================================= */
+    #garminChassis {
+      position: relative;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      width: 410px;
+      background: var(--chassis-body);
+      border: 4px solid var(--chassis-dark);
+      border-radius: 40px 40px 32px 32px;
+      box-shadow: 
+        inset 0 0 15px rgba(0,0,0,0.8),
+        0 20px 60px rgba(0,0,0,0.9),
+        0 0 0 2px #334155;
+      padding: 16px 14px 18px 14px;
+      transition: all 0.25s ease;
+    }
+
+    #garminChassis.screen-only {
+      width: 100vw;
+      height: 100vh;
+      max-width: 480px;
+      border: none;
+      border-radius: 0;
+      padding: 0;
+      box-shadow: none;
+    }
+    #garminChassis.screen-only .chassis-antenna,
+    #garminChassis.screen-only .garmin-keypad,
+    #garminChassis.screen-only .chassis-branding {
+      display: none !important;
+    }
+    #garminChassis.screen-only #garminScreen {
+      border: none;
+      border-radius: 0;
+      height: 100vh;
+      width: 100%;
+    }
+
+    .chassis-antenna {
+      position: absolute;
+      top: -34px;
+      left: 36px;
+      width: 46px;
+      height: 38px;
+      background: linear-gradient(to right, #1a2027, #2d3744, #1a2027);
+      border-radius: 12px 12px 0 0;
+      border: 2px solid var(--chassis-dark);
+      border-bottom: none;
+      box-shadow: 0 -4px 8px rgba(0,0,0,0.6);
+    }
+    .antenna-cap {
+      width: 32px;
+      height: 6px;
+      background: var(--chassis-orange);
+      border-radius: 4px 4px 0 0;
+      margin: 4px auto 0 auto;
+    }
+
+    .chassis-branding {
+      width: 100%;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 2px 8px 8px 8px;
+    }
+    .brand-garmin {
+      font-weight: 900;
+      font-size: 15px;
+      letter-spacing: 2px;
+      color: #cbd5e1;
+    }
+    .brand-model {
+      font-weight: 800;
+      font-size: 12px;
+      letter-spacing: 0.5px;
+      color: var(--chassis-orange);
+    }
+
+    /* Screen Viewport */
+    #garminScreen {
+      position: relative;
+      width: 100%;
+      height: 520px;
+      background: var(--g-screen-bg);
+      border: 3px solid #0f172a;
+      border-radius: 8px;
+      overflow: hidden;
+      display: flex;
+      flex-direction: column;
+      box-shadow: inset 0 0 6px rgba(0,0,0,0.5);
+    }
+
+    /* Garmin Status Bar */
+    .garmin-status-bar {
+      height: 28px;
+      background: #0f172a;
+      color: #f8fafc;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 0 8px;
+      font-size: 12px;
+      font-weight: 700;
+      border-bottom: 2px solid #000;
+      flex-shrink: 0;
+    }
+
+    .sat-ladder {
+      display: flex;
+      align-items: flex-end;
+      gap: 2px;
+      height: 14px;
+    }
+    .sat-bar {
+      width: 3px;
+      background: #475569;
+      border-radius: 1px;
+    }
+    .sat-bar.b1 { height: 4px; }
+    .sat-bar.b2 { height: 7px; }
+    .sat-bar.b3 { height: 10px; }
+    .sat-bar.b4 { height: 14px; }
+    .sat-bar.active { background: #22c55e; }
+
+    .battery-icon {
+      display: flex;
+      align-items: center;
+    }
+    .bat-shell {
+      width: 18px;
+      height: 10px;
+      border: 1.5px solid #cbd5e1;
+      border-radius: 2px;
+      padding: 1px;
+      display: flex;
+      gap: 1px;
+    }
+    .bat-nipple {
+      width: 2px;
+      height: 4px;
+      background: #cbd5e1;
+      border-radius: 0 1px 1px 0;
+    }
+    .bat-fill {
+      flex: 1;
+      background: #22c55e;
+      border-radius: 1px;
+    }
+
+    .status-quick-btn {
+      background: transparent;
+      border: none;
+      color: #94a3b8;
+      font-size: 11px;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      gap: 2px;
+    }
+    .status-quick-btn:hover {
+      color: #fff;
+    }
+
+    #pageViewport {
+      position: relative;
+      flex: 1;
+      width: 100%;
+      overflow: hidden;
+      background: var(--g-screen-bg);
+    }
+
+    .garmin-page {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      visibility: hidden;
+      opacity: 0;
+      pointer-events: none;
+      display: flex;
+      flex-direction: column;
+      overflow-y: auto;
+    }
+    .garmin-page.active-page {
+      visibility: visible;
+      opacity: 1;
+      pointer-events: auto;
+    }
+
+    /* Garmin Data Grids */
+    .garmin-data-grid-4 {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      grid-auto-rows: 64px;
+      border-bottom: 2px solid var(--g-border-dark);
+      background: var(--g-box-bg);
+      flex-shrink: 0;
+    }
+    .garmin-data-grid-2 {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      height: 52px;
+      border-bottom: 2px solid var(--g-border-dark);
+      background: var(--g-box-bg);
+      flex-shrink: 0;
+    }
+    .data-box {
+      border-right: 1px solid var(--g-border);
+      border-bottom: 1px solid var(--g-border);
+      padding: 4px 8px;
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+      overflow: hidden;
+      background: var(--g-box-bg);
+    }
+    .data-box:nth-child(2n) {
+      border-right: none;
+    }
+    .data-box-label {
+      font-size: 10.5px;
+      font-weight: 800;
+      color: var(--g-label);
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+    .data-box-val {
+      font-size: 22px;
+      font-weight: 900;
+      color: var(--g-val);
+      text-align: right;
+      line-height: 1;
+      white-space: nowrap;
+    }
+    .data-box-unit {
+      font-size: 11px;
+      font-weight: 700;
+      color: var(--g-label);
+      margin-left: 2px;
+    }
+
+    /* PAGE 1: COMPASS */
+    .compass-page-body {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      position: relative;
+      padding: 8px 0;
+    }
+
+    .garmin-compass-ring {
+      position: relative;
+      width: 210px;
+      height: 210px;
+      border-radius: 50%;
+      border: 3px solid var(--g-border-dark);
+      background: radial-gradient(circle, var(--g-screen-bg) 60%, #cbd5e1 100%);
+      box-shadow: inset 0 0 8px rgba(0,0,0,0.25);
+    }
+    body.garmin-night .garmin-compass-ring {
+      background: radial-gradient(circle, #05070a 60%, #1e293b 100%);
+    }
+
+    .garmin-compass-dial {
+      position: absolute;
+      width: 100%;
+      height: 100%;
+      border-radius: 50%;
+      transition: transform 0.2s cubic-bezier(0.1, 0.9, 0.2, 1);
+    }
+    .garmin-cardinal {
+      position: absolute;
+      font-weight: 900;
+      font-size: 14px;
+      color: var(--g-val);
+      transform: translate(-50%, -50%);
+    }
+    .garmin-cardinal.n { top: 14px; left: 50%; color: #dc2626; font-size: 16px; }
+    .garmin-cardinal.e { top: 50%; right: 4px; transform: translateY(-50%); }
+    .garmin-cardinal.s { bottom: 6px; left: 50%; }
+    .garmin-cardinal.w { top: 50%; left: 14px; transform: translateY(-50%); }
+
+    .garmin-lubber-mark {
+      position: absolute;
+      top: -4px;
+      left: 50%;
+      transform: translateX(-50%);
+      width: 0;
+      height: 0;
+      border-left: 8px solid transparent;
+      border-right: 8px solid transparent;
+      border-top: 12px solid #0f172a;
+      z-index: 25;
+    }
+    body.garmin-night .garmin-lubber-mark {
+      border-top-color: #38bdf8;
+    }
+
+    .garmin-bearing-needle {
+      position: absolute;
+      top: 18px;
+      left: calc(50% - 3px);
+      width: 6px;
+      height: 90px;
+      background: var(--g-pointer);
+      transform-origin: center bottom;
+      z-index: 15;
+      display: none;
+    }
+    .garmin-bearing-needle::before {
+      content: '';
+      position: absolute;
+      top: -14px;
+      left: -9px;
+      width: 0;
+      height: 0;
+      border-left: 12px solid transparent;
+      border-right: 12px solid transparent;
+      border-bottom: 18px solid var(--g-pointer);
+    }
+
+    .garmin-cdi-bar {
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      width: 140px;
+      height: 22px;
+      display: none;
+      align-items: center;
+      justify-content: space-between;
+      z-index: 20;
+    }
+    .garmin-cdi-dots {
+      width: 100%;
+      display: flex;
+      justify-content: space-between;
+      font-size: 16px;
+      font-weight: 900;
+      color: var(--g-label);
+    }
+    .garmin-cdi-indicator {
+      position: absolute;
+      top: -2px;
+      bottom: -2px;
+      left: 50%;
+      width: 4px;
+      background: var(--g-pointer-cdi);
+      border-radius: 2px;
+      transform: translateX(-50%);
+      transition: left 0.3s ease;
+      box-shadow: 0 0 4px rgba(0,0,0,0.5);
+    }
+
+    .garmin-center-hub {
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      width: 68px;
+      height: 68px;
+      background: var(--g-box-bg);
+      border: 2px solid var(--g-border-dark);
+      border-radius: 50%;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      z-index: 10;
+      box-shadow: 0 2px 6px rgba(0,0,0,0.3);
+    }
+    .center-deg {
+      font-size: 20px;
+      font-weight: 900;
+      color: var(--g-val);
+      line-height: 1;
+    }
+    .center-cardinal-name {
+      font-size: 11px;
+      font-weight: 800;
+      color: var(--g-label);
+    }
+
+    .garmin-bottom-ribbon {
+      width: 100%;
+      background: var(--g-box-bg);
+      border-top: 2px solid var(--g-border-dark);
+      padding: 6px 10px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      font-size: 12px;
+      font-weight: 800;
+      flex-shrink: 0;
+    }
+
+    /* Slope Hazard Ribbon */
+    .slope-hazard-ribbon {
+      width: 100%;
+      background: var(--g-box-bg);
+      border-top: 1px solid var(--g-border);
+      padding: 3px 10px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      font-size: 11px;
+      font-weight: 800;
+    }
+
+    /* PAGE 2: MAP */
+    #pageMap {
+      padding: 0;
+      overflow: hidden;
+    }
+    #garminMapCanvas {
+      width: 100%;
+      height: 100%;
+      flex: 1;
+      min-height: 0;
+      background: #020408;
+    }
+    .garmin-scale-bar {
+      position: absolute;
+      bottom: 8px;
+      left: 8px;
+      z-index: 500;
+      background: rgba(255, 255, 255, 0.88);
+      border-left: 2px solid #000;
+      border-right: 2px solid #000;
+      border-bottom: 2px solid #000;
+      padding: 1px 4px;
+      font-size: 9.5px;
+      font-weight: 900;
+      color: #000;
+      text-align: center;
+      box-shadow: 0 1px 4px rgba(0,0,0,0.4);
+    }
+    .garmin-map-banner {
+      position: absolute;
+      top: 54px;
+      left: 6px;
+      right: 6px;
+      z-index: 500;
+      background: rgba(15, 23, 42, 0.95);
+      color: #fff;
+      border: 2px solid #38bdf8;
+      border-radius: 4px;
+      padding: 6px 10px;
+      display: none;
+      align-items: center;
+      gap: 8px;
+    }
+    .garmin-banner-icon {
+      font-size: 18px;
+      color: #38bdf8;
+    }
+    .garmin-banner-txt {
+      font-size: 12px;
+      font-weight: 800;
+    }
+
+    /* Tactical Map HUD & Controls */
+    .garmin-map-controls {
+      position: absolute;
+      bottom: 8px;
+      right: 8px;
+      z-index: 500;
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+    }
+    .garmin-map-ctrl-btn {
+      background: rgba(15, 23, 42, 0.92);
+      color: #f8fafc;
+      border: 1.5px solid var(--g-border);
+      border-radius: 4px;
+      padding: 3px 6px;
+      font-size: 9.5px;
+      font-weight: 800;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      gap: 4px;
+      box-shadow: 0 2px 6px rgba(0,0,0,0.5);
+    }
+    .garmin-map-ctrl-btn:active {
+      background: var(--g-highlight);
+      border-color: var(--g-accent);
+    }
+    .garmin-north-arrow {
+      position: absolute;
+      top: 54px;
+      left: 8px;
+      z-index: 500;
+      width: 24px;
+      height: 24px;
+      background: rgba(15, 23, 42, 0.88);
+      border: 1.5px solid #38bdf8;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 10px;
+      font-weight: 900;
+      color: #ef4444;
+      box-shadow: 0 2px 6px rgba(0,0,0,0.5);
+      transition: transform 0.2s ease-out;
+      pointer-events: none;
+    }
+    .garmin-crosshair {
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      width: 32px;
+      height: 32px;
+      transform: translate(-50%, -50%);
+      z-index: 450;
+      pointer-events: none;
+    }
+    .garmin-crosshair .ch-h {
+      position: absolute;
+      top: 15px;
+      left: 0;
+      width: 32px;
+      height: 2px;
+      background: #ef4444;
+      box-shadow: 0 0 4px #000;
+    }
+    .garmin-crosshair .ch-v {
+      position: absolute;
+      top: 0;
+      left: 15px;
+      width: 2px;
+      height: 32px;
+      background: #ef4444;
+      box-shadow: 0 0 4px #000;
+    }
+    .garmin-crosshair .ch-c {
+      position: absolute;
+      top: 12px;
+      left: 12px;
+      width: 8px;
+      height: 8px;
+      border: 1.5px solid #fff;
+      border-radius: 50%;
+    }
+    .garmin-pan-hud {
+      position: absolute;
+      top: 52px;
+      left: 6px;
+      right: 6px;
+      z-index: 520;
+      background: rgba(15, 23, 42, 0.95);
+      color: #fff;
+      border: 1.5px solid var(--chassis-orange);
+      border-radius: 4px;
+      padding: 5px 8px;
+      font-size: 11px;
+      font-weight: 800;
+      box-shadow: 0 4px 10px rgba(0,0,0,0.6);
+    }
+
+    /* PAGE 3: TRIP COMPUTER */
+    .trip-matrix {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      grid-auto-rows: 56px;
+      background: var(--g-box-bg);
+      border-bottom: 2px solid var(--g-border-dark);
+    }
+    .trip-btn-row {
+      display: flex;
+      gap: 6px;
+      padding: 10px;
+      background: var(--g-screen-bg);
+    }
+    .garmin-screen-btn {
+      flex: 1;
+      background: var(--g-box-bg);
+      border: 2px solid var(--g-border-dark);
+      color: var(--g-val);
+      font-size: 13px;
+      font-weight: 800;
+      padding: 8px;
+      border-radius: 4px;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 6px;
+    }
+    .garmin-screen-btn:active {
+      background: var(--g-highlight);
+    }
+
+    /* PAGE 4: ELEVATION PLOT */
+    .elev-plot-container {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      padding: 8px;
+      gap: 6px;
+    }
+    .elev-svg {
+      width: 100%;
+      height: 180px;
+      background: var(--g-box-bg);
+      border: 2px solid var(--g-border-dark);
+      border-radius: 4px;
+    }
+
+    /* PAGE 5: MAIN MENU */
+    .garmin-menu-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 8px;
+      padding: 12px 10px;
+    }
+    .menu-item-tile {
+      background: var(--g-box-bg);
+      border: 2px solid var(--g-border);
+      border-radius: 6px;
+      padding: 10px 4px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 6px;
+      cursor: pointer;
+    }
+    .menu-item-tile:active, .menu-item-tile.selected {
+      border-color: var(--g-accent);
+      background: var(--g-highlight);
+    }
+    .menu-item-icon {
+      font-size: 26px;
+    }
+    .menu-item-label {
+      font-size: 11px;
+      font-weight: 800;
+      color: var(--g-val);
+      text-align: center;
+      line-height: 1.1;
+    }
+
+    /* PAGE 6: SATELLITE SKYPLOT & BARS */
+    .sat-skyview-container {
+      background: var(--g-box-bg);
+      border-bottom: 2px solid var(--g-border-dark);
+      padding: 6px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+    .sat-polar-svg {
+      width: 170px;
+      height: 170px;
+      border-radius: 50%;
+    }
+    .sat-bars-list {
+      display: flex;
+      gap: 3px;
+      height: 70px;
+      align-items: flex-end;
+      padding: 6px 10px;
+      background: var(--g-box-bg);
+      border-bottom: 1px solid var(--g-border);
+      overflow-x: auto;
+    }
+    .sat-column {
+      min-width: 16px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 2px;
+      height: 100%;
+      justify-content: flex-end;
+    }
+    .sat-col-bar {
+      width: 10px;
+      background: #22c55e;
+      border-radius: 1px;
+      transition: height 0.5s ease;
+    }
+    .sat-col-bar.glonass { background: #f59e0b; }
+    .sat-col-bar.galileo { background: #38bdf8; }
+    .sat-col-bar.beidou { background: #a855f7; }
+    .sat-col-prn {
+      font-size: 8.5px;
+      font-weight: 700;
+      color: var(--g-label);
+    }
+
+    /* PHYSICAL KEYPAD */
+    .garmin-keypad {
+      width: 100%;
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+      padding-top: 14px;
+    }
+
+    .keypad-row-top {
+      display: grid;
+      grid-template-columns: 1fr 1fr 1fr 1fr;
+      gap: 8px;
+    }
+    .g-key {
+      background: var(--key-bg);
+      border: 1px solid #1a202c;
+      border-bottom: 3px solid #11151c;
+      color: var(--key-text);
+      font-family: 'Roboto Condensed', sans-serif;
+      font-weight: 900;
+      font-size: 13px;
+      padding: 10px 4px;
+      border-radius: 6px;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      box-shadow: 0 2px 5px rgba(0,0,0,0.4);
+      transition: all 0.1s ease;
+    }
+    .g-key:active {
+      transform: translateY(2px);
+      border-bottom-width: 1px;
+    }
+
+    .keypad-rocker-section {
+      display: flex;
+      align-items: center;
+      justify-content: space-around;
+      padding: 4px 10px;
+    }
+    .garmin-dpad {
+      position: relative;
+      width: 110px;
+      height: 110px;
+      background: #1e252e;
+      border: 3px solid #14181e;
+      border-radius: 50%;
+      box-shadow: inset 0 0 8px rgba(0,0,0,0.8), 0 4px 10px rgba(0,0,0,0.6);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+    .dpad-btn {
+      position: absolute;
+      background: transparent;
+      border: none;
+      color: #94a3b8;
+      font-size: 15px;
+      font-weight: 900;
+      cursor: pointer;
+      padding: 6px;
+    }
+    .dpad-up { top: 4px; left: 50%; transform: translateX(-50%); }
+    .dpad-down { bottom: 4px; left: 50%; transform: translateX(-50%); }
+    .dpad-left { left: 4px; top: 50%; transform: translateY(-50%); }
+    .dpad-right { right: 4px; top: 50%; transform: translateY(-50%); }
+
+    .dpad-enter {
+      width: 44px;
+      height: 44px;
+      background: #2b3442;
+      border: 2px solid #3e4a5e;
+      border-radius: 50%;
+      color: #f8fafc;
+      font-size: 10.5px;
+      font-weight: 900;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      box-shadow: 0 2px 4px rgba(0,0,0,0.4);
+    }
+    .dpad-enter:active {
+      background: var(--chassis-orange);
+      color: #000;
+    }
+    .keypad-side-keys {
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+      width: 80px;
+    }
+
+    /* Modals */
+    .g-modal-backdrop {
+      display: none;
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: rgba(0,0,0,0.75);
+      z-index: 1000;
+      align-items: center;
+      justify-content: center;
+      padding: 14px;
+    }
+    .g-modal-box {
+      width: 100%;
+      max-width: 330px;
+      background: var(--g-box-bg);
+      border: 2px solid #0f172a;
+      border-radius: 6px;
+      padding: 12px;
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+    .g-modal-title {
+      font-size: 14px;
+      font-weight: 900;
+      color: var(--g-val);
+      border-bottom: 2px solid var(--g-border);
+      padding-bottom: 4px;
+      display: flex;
+      justify-content: space-between;
+    }
+    .g-modal-input {
+      width: 100%;
+      background: var(--g-screen-bg);
+      border: 1px solid var(--g-border);
+      padding: 6px 8px;
+      font-size: 13px;
+      font-weight: 700;
+    }
+
+    /* SOS Flashing Animation */
+    body.sos-strobe-active #garminScreen {
+      animation: morseStrobe 0.6s infinite alternate;
+    }
+    @keyframes morseStrobe {
+      0% { filter: invert(0); }
+      100% { filter: invert(1); }
+    }
+
+    /* Tactical On-Screen Notice Banner */
+    .garmin-global-notice {
+      position: absolute;
+      top: 34px;
+      left: 6px;
+      right: 6px;
+      z-index: 1500;
+      background: rgba(15, 23, 42, 0.96);
+      color: #f8fafc;
+      border: 2px solid var(--g-accent);
+      border-radius: 4px;
+      padding: 6px 8px;
+      font-size: 11px;
+      font-weight: 800;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.6);
+      pointer-events: none;
+    }
+  </style>
+</head>
+<body class="garmin-day">
+
+  <!-- =========================================================================
+       GARMIN GPSMAP 67i PHYSICAL CHASSIS
+       ========================================================================= -->
+  <div id="garminChassis">
+
+    <!-- Quad-Helix Top Antenna -->
+    <div class="chassis-antenna" title="Quad-Helix Multi-GNSS / Iridium Antenna">
+      <div class="antenna-cap"></div>
+    </div>
+
+    <!-- Top Chassis Branding -->
+    <div class="chassis-branding">
+      <span class="brand-garmin">GARMIN</span>
+      <span class="brand-model">GPSMAP 67i</span>
+    </div>
+
+    <!-- 3" COLOR TRANSFLECTIVE SCREEN -->
+    <div id="garminScreen">
+
+      <!-- GARMIN TOP GLOBAL TOAST/NOTICE -->
+      <div id="garminGlobalNotice" class="garmin-global-notice" style="display:none;">
+        <span id="garminNoticeIcon">ℹ️</span>
+        <span id="garminNoticeTxt">BİLDİRİM</span>
+      </div>
+
+      <!-- GARMIN TOP STATUS BAR -->
+      <header class="garmin-status-bar">
+        <!-- 4-Bar Satellite Signal Ladder -->
+        <div style="display:flex; align-items:center; gap:6px;">
+          <div class="sat-ladder" title="GPS / GLONASS / Galileo 3D Lock">
+            <div class="sat-bar b1" id="satBar1"></div>
+            <div class="sat-bar b2" id="satBar2"></div>
+            <div class="sat-bar b3" id="satBar3"></div>
+            <div class="sat-bar b4" id="satBar4"></div>
+          </div>
+          <span class="mono" id="topGpsStatusText" style="font-size:11px;">KAPALI</span>
+        </div>
+
+        <!-- Current 24h Time -->
+        <div class="mono" id="topTimeUtc" style="font-size:12px; font-weight:800;">--:--</div>
+
+        <!-- Profile & Battery Indicator -->
+        <div style="display:flex; align-items:center; gap:8px;">
+          <span id="topProfileIcon" title="Kinematik Profil">⚠️</span>
+          <div class="battery-icon" title="Li-ion Battery">
+            <div class="bat-shell">
+              <div class="bat-fill"></div>
+            </div>
+            <div class="bat-nipple"></div>
+          </div>
+          <button class="status-quick-btn" id="btnToggleNight" title="Gece / Gündüz">🌙</button>
+          <button class="status-quick-btn" id="btnToggleChassis" title="Gövde / Tam Ekran">📱</button>
+        </div>
+      </header>
+
+      <!-- PAGE VIEWPORT (Garmin Page Loop) -->
+      <main id="pageViewport">
+
+        <!-- ===================================================================
+             PAGE 1: GARMIN COMPASS PAGE
+             =================================================================== -->
+        <section class="garmin-page active-page" id="pageCompass">
+          <!-- 4 Configurable Garmin Data Fields -->
+          <div class="garmin-data-grid-4">
+            <div class="data-box">
+              <span class="data-box-label">SPEED</span>
+              <span class="data-box-val mono" id="boxSpeed">-- <span class="data-box-unit">km/h</span></span>
+            </div>
+            <div class="data-box">
+              <span class="data-box-label">DIST TO NEXT</span>
+              <span class="data-box-val mono" id="boxDistNext">-- <span class="data-box-unit">m</span></span>
+            </div>
+            <div class="data-box">
+              <span class="data-box-label">TO GOTO</span>
+              <span class="data-box-val" id="boxToGoto" style="font-size:16px;">NONE</span>
+            </div>
+            <div class="data-box">
+              <span class="data-box-label">ELEVATION</span>
+              <span class="data-box-val mono" id="boxElev">-- <span class="data-box-unit">m</span></span>
+            </div>
+          </div>
+
+          <!-- Compass Dial & Bearing Pointer -->
+          <div class="compass-page-body">
+            <div class="garmin-compass-ring">
+              <div class="garmin-lubber-mark"></div>
+              
+              <!-- Red Bearing Needle -->
+              <div class="garmin-bearing-needle" id="garminBearingNeedle" style="display:none;"></div>
+
+              <!-- Course Deviation Indicator (CDI Scale & Needle) -->
+              <div class="garmin-cdi-bar" id="garminCdiBar" style="display:none;">
+                <div class="garmin-cdi-dots mono">
+                  <span>•</span><span>•</span><span>•</span><span>•</span><span>•</span>
+                </div>
+                <div class="garmin-cdi-indicator" id="garminCdiNeedle"></div>
+              </div>
+
+              <!-- Rotating Compass Dial -->
+              <div class="garmin-compass-dial" id="garminCompassDial">
+                <div class="garmin-cardinal n">N</div>
+                <div class="garmin-cardinal e">E</div>
+                <div class="garmin-cardinal s">S</div>
+                <div class="garmin-cardinal w">W</div>
+              </div>
+
+              <!-- Center Readout Hub -->
+              <div class="garmin-center-hub">
+                <span class="center-deg mono" id="centerHeadingDeg">---°</span>
+                <span class="center-cardinal-name" id="centerHeadingCard" style="font-size:9.5px; color:#ef4444;">SİSTEM KAPALI</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- Slope & Avalanche Hazard Ribbon -->
+          <div class="slope-hazard-ribbon mono">
+            <span id="slopeAngleText">EĞİM: --</span>
+            <span id="slopeAvalancheBadge" style="color:var(--g-label);">SENSÖR YOK</span>
+          </div>
+
+          <!-- Bottom Location Ribbon (MGRS & Accuracy) -->
+          <div class="garmin-bottom-ribbon">
+            <span class="mono" id="bottomMgrsRibbon" style="color:#ef4444; font-weight:800;">SİSTEM KAPALI // SENSÖR BEKLENİYOR</span>
+            <span class="mono" id="bottomAccRibbon" style="color:var(--g-label);">ACC: --</span>
+          </div>
+        </section>
+
+        <!-- ===================================================================
+             PAGE 2: GARMIN MAP PAGE
+             =================================================================== -->
+        <section class="garmin-page" id="pageMap">
+          <!-- 2 Top Data Fields -->
+          <div class="garmin-data-grid-2">
+            <div class="data-box">
+              <span class="data-box-label" id="mapFieldLabel1">DIST TO DEST</span>
+              <span class="data-box-val mono" id="mapDistVal">--</span>
+            </div>
+            <div class="data-box">
+              <span class="data-box-label" id="mapFieldLabel2">TIME TO NEXT</span>
+              <span class="data-box-val mono" id="mapEtaVal">--:--</span>
+            </div>
+          </div>
+
+          <!-- Turn-by-Turn Maneuver Overlay -->
+          <div class="garmin-map-banner" id="garminMapBanner" style="display:none;">
+            <span class="garmin-banner-icon" id="garminMapBannerIcon">➔</span>
+            <span class="garmin-banner-txt" id="garminMapBannerTxt">SİSTEM KAPALI</span>
+          </div>
+
+          <!-- Garmin Pan Mode HUD -->
+          <div class="garmin-pan-hud mono" id="garminPanHud" style="display:none;">
+            <div style="display:flex; justify-content:space-between; align-items:center;">
+              <span style="font-size:10px; font-weight:900; color:var(--chassis-orange);">🎯 İMLEÇ: <span id="panHudMgrs">--</span></span>
+              <button class="g-key" style="padding:2px 6px; font-size:10px; background:#0284c7; color:#fff;" onclick="recenterMapToGps()">MERKEZLE</button>
+            </div>
+            <div style="font-size:9.5px; color:#cbd5e1; margin-top:2px;">
+              BRG: <span id="panHudBrg">---°</span> | DIST: <span id="panHudDist" style="color:var(--g-accent); font-weight:800;">-- m</span>
+            </div>
+          </div>
+
+          <!-- Map Canvas -->
+          <div id="garminMapCanvas"></div>
+
+          <!-- Garmin North Arrow Indicator -->
+          <div class="garmin-north-arrow" id="garminNorthArrow" title="Kuzey Göstergesi">
+            <svg width="18" height="18" viewBox="0 0 24 24" style="display:block;">
+              <polygon points="12,2 16,12 12,9 8,12" fill="#ef4444" />
+              <polygon points="12,22 16,12 12,15 8,12" fill="#94a3b8" />
+              <circle cx="12" cy="12" r="2" fill="#0f172a" />
+            </svg>
+          </div>
+
+          <!-- Garmin Tactical Pan Crosshair -->
+          <div class="garmin-crosshair" id="garminPanCrosshair" style="display:none;">
+            <div class="ch-h"></div>
+            <div class="ch-v"></div>
+            <div class="ch-c"></div>
+          </div>
+
+          <!-- Garmin Floating Map HUD Controls -->
+          <div class="garmin-map-controls">
+            <button class="garmin-map-ctrl-btn" id="btnToggleMapLayer" onclick="cycleMapLayer()" title="Harita Katmanı">
+              <span>🗺️</span> <span id="mapLayerLabel">TOPO</span>
+            </button>
+            <button class="garmin-map-ctrl-btn" id="btnToggleMapOrient" onclick="toggleMapOrientation()" title="Yönlendirme">
+              <span>🧭</span> <span id="mapOrientLabel">NORTH UP</span>
+            </button>
+            <button class="garmin-map-ctrl-btn" id="btnCacheMapTiles" onclick="cacheCurrentMapArea()" title="Görünen Bölgeyi Çevrimdışı İndir">
+              <span>💾</span> <span>İNDİR</span>
+            </button>
+          </div>
+
+          <!-- Garmin Authentic Scale Bar -->
+          <div class="garmin-scale-bar mono" id="garminScaleBar">200m |----|</div>
+        </section>
+
+        <!-- ===================================================================
+             PAGE 3: GARMIN TRIP COMPUTER (8-BOX MATRIX)
+             =================================================================== -->
+        <section class="garmin-page" id="pageTrip">
+          <div class="trip-matrix">
+            <div class="data-box">
+              <span class="data-box-label">TRIP ODOM</span>
+              <span class="data-box-val mono" id="tcOdom">0.00 km</span>
+            </div>
+            <div class="data-box">
+              <span class="data-box-label">STOPPED TIME</span>
+              <span class="data-box-val mono" id="tcStopped">--:--:--</span>
+            </div>
+            <div class="data-box">
+              <span class="data-box-label">MOVING TIME</span>
+              <span class="data-box-val mono" id="tcMoving">--:--:--</span>
+            </div>
+            <div class="data-box">
+              <span class="data-box-label">MOVING AVG</span>
+              <span class="data-box-val mono" id="tcMovingAvg">-- km/h</span>
+            </div>
+            <div class="data-box">
+              <span class="data-box-label">OVERALL AVG</span>
+              <span class="data-box-val mono" id="tcOverallAvg">-- km/h</span>
+            </div>
+            <div class="data-box">
+              <span class="data-box-label">MAX SPEED</span>
+              <span class="data-box-val mono" id="tcMaxSpeed">-- km/h</span>
+            </div>
+            <div class="data-box">
+              <span class="data-box-label">ELEVATION</span>
+              <span class="data-box-val mono" id="tcElevation">-- m</span>
+            </div>
+            <div class="data-box">
+              <span class="data-box-label">TOTAL ASCENT</span>
+              <span class="data-box-val mono" id="tcTotalAscent" style="color:var(--g-active-green);">+0 m</span>
+            </div>
+          </div>
+
+          <div class="trip-btn-row">
+            <button class="garmin-screen-btn" id="btnResetTrip"><span>🔄</span> RESET TRIP</button>
+            <button class="garmin-screen-btn" id="btnExportGpx"><span>💾</span> EXPORT GPX</button>
+          </div>
+        </section>
+
+        <!-- ===================================================================
+             PAGE 4: ELEVATION PLOT
+             =================================================================== -->
+        <section class="garmin-page" id="pageElevation">
+          <div class="garmin-data-grid-2">
+            <div class="data-box">
+              <span class="data-box-label">TOTAL ASCENT</span>
+              <span class="data-box-val mono" id="elevAscentBox">+0 m</span>
+            </div>
+            <div class="data-box">
+              <span class="data-box-label">MAX ELEV</span>
+              <span class="data-box-val mono" id="elevMaxBox">-- m</span>
+            </div>
+          </div>
+          <div class="elev-plot-container">
+            <svg class="elev-svg" id="garminElevSvg" viewBox="0 0 360 160">
+              <text x="50%" y="50%" text-anchor="middle" fill="#dc2626" font-size="12" font-weight="800">SİSTEM KAPALI // SENSÖR BEKLENİYOR</text>
+            </svg>
+            <div class="garmin-bottom-ribbon">
+              <span>LIVE TRACK ELEVATION</span>
+              <span class="mono" id="elevGradeBox">GRADE: --</span>
+            </div>
+          </div>
+        </section>
+
+        <!-- ===================================================================
+             PAGE 5: GARMIN MAIN MENU
+             =================================================================== -->
+        <section class="garmin-page" id="pageMenu">
+          <div class="garmin-menu-grid">
+            <div class="menu-item-tile" onclick="switchPage('pageMap')">
+              <span class="menu-item-icon">🗺️</span>
+              <span class="menu-item-label">Map</span>
+            </div>
+            <div class="menu-item-tile" onclick="switchPage('pageCompass')">
+              <span class="menu-item-icon">🧭</span>
+              <span class="menu-item-label">Compass</span>
+            </div>
+            <div class="menu-item-tile" onclick="switchPage('pageTrip')">
+              <span class="menu-item-icon">📊</span>
+              <span class="menu-item-label">Trip Computer</span>
+            </div>
+            <div class="menu-item-tile" onclick="switchPage('pageElevation')">
+              <span class="menu-item-icon">📈</span>
+              <span class="menu-item-label">Elevation Plot</span>
+            </div>
+            <div class="menu-item-tile" onclick="openWaypointManager()">
+              <span class="menu-item-icon">📍</span>
+              <span class="menu-item-label">Waypoints</span>
+            </div>
+            <div class="menu-item-tile" onclick="calculateTrailRoute()">
+              <span class="menu-item-icon">🛣️</span>
+              <span class="menu-item-label">Route Planner</span>
+            </div>
+            <div class="menu-item-tile" onclick="triggerSightNGo()">
+              <span class="menu-item-icon">🎯</span>
+              <span class="menu-item-label">Sight 'N Go</span>
+            </div>
+            <div class="menu-item-tile" onclick="triggerProjectWp()">
+              <span class="menu-item-icon">📐</span>
+              <span class="menu-item-label">Project Wpt</span>
+            </div>
+            <div class="menu-item-tile" onclick="triggerAreaCalc()">
+              <span class="menu-item-icon">📏</span>
+              <span class="menu-item-label">Area Calc</span>
+            </div>
+            <div class="menu-item-tile" onclick="triggerSunMoon()">
+              <span class="menu-item-icon">☀️</span>
+              <span class="menu-item-label">Sun & Moon</span>
+            </div>
+            <div class="menu-item-tile" onclick="triggerTracBack()">
+              <span class="menu-item-icon">🔄</span>
+              <span class="menu-item-label" style="color:var(--g-route);">TracBack®</span>
+            </div>
+            <div class="menu-item-tile" onclick="triggerPerimeterGuard()">
+              <span class="menu-item-icon">🛡️</span>
+              <span class="menu-item-label">Perimeter Guard</span>
+            </div>
+            <div class="menu-item-tile" onclick="triggerTacticalMatrix()">
+              <span class="menu-item-icon">📋</span>
+              <span class="menu-item-label">Tac Matrix</span>
+            </div>
+            <div class="menu-item-tile" onclick="triggerSosScreen()">
+              <span class="menu-item-icon">🆘</span>
+              <span class="menu-item-label" style="color:var(--chassis-orange);">SOS / Beacon</span>
+            </div>
+            <div class="menu-item-tile" onclick="triggerGpxImport()">
+              <span class="menu-item-icon">📁</span>
+              <span class="menu-item-label">Import GPX</span>
+            </div>
+            <div class="menu-item-tile" onclick="switchPage('pageSatellite')">
+              <span class="menu-item-icon">🛰️</span>
+              <span class="menu-item-label">Satellite</span>
+            </div>
+            <div class="menu-item-tile" onclick="cycleKinematicProfile()">
+              <span class="menu-item-icon">⚙️</span>
+              <span class="menu-item-label" id="menuProfileLabel">Profile: OTO</span>
+            </div>
+          </div>
+        </section>
+
+        <!-- ===================================================================
+             PAGE 6: SATELLITE & SKYVIEW RADAR
+             =================================================================== -->
+        <section class="garmin-page" id="pageSatellite">
+          <div class="garmin-data-grid-2">
+            <div class="data-box">
+              <span class="data-box-label">ACCURACY</span>
+              <span class="data-box-val mono" id="satAccuracyBox">--</span>
+            </div>
+            <div class="data-box">
+              <span class="data-box-label">ACTIVE SATS</span>
+              <span class="data-box-val mono" id="satCountBox" style="color:#dc2626;">SİSTEM KAPALI</span>
+            </div>
+          </div>
+
+          <!-- Real-Time Polar Radar Skyview -->
+          <div class="sat-skyview-container">
+            <svg class="sat-polar-svg" id="garminSkyplotSvg" viewBox="0 0 200 200">
+              <text x="100" y="105" text-anchor="middle" fill="#dc2626" font-size="11" font-weight="800">SİSTEM KAPALI</text>
+            </svg>
+          </div>
+
+          <!-- Live Signal Bars Ladder -->
+          <div class="sat-bars-list" id="satBarsContainer">
+            <!-- Real live satellites with PRN and dB-Hz SNRs -->
+          </div>
+
+          <div style="padding:8px 10px; display:flex; flex-direction:column; gap:4px; font-size:11.5px;">
+            <div style="display:flex; justify-content:space-between; font-weight:800;">
+              <span>RECEIVER:</span>
+              <span class="mono" id="satReceiverPort" style="color:var(--g-accent);">--</span>
+            </div>
+            <div style="display:flex; justify-content:space-between; font-weight:700;">
+              <span>HARDWARE MODE:</span>
+              <span class="mono" id="satDynamicModelVal" style="color:#dc2626;">BAĞLANTI YOK</span>
+            </div>
+          </div>
+        </section>
+
+      </main>
+    </div>
+
+    <!-- =========================================================================
+         GARMIN GPSMAP 67i PHYSICAL HARDWARE KEYPAD
+         ========================================================================= -->
+    <div class="garmin-keypad">
+      <div class="keypad-row-top">
+        <button class="g-key" id="keyFind" title="Find Waypoint">FIND</button>
+        <button class="g-key" id="keyMark" title="Mark Waypoint" style="color:var(--chassis-orange);">MARK</button>
+        <button class="g-key" id="keyIn" title="Map Zoom In">IN</button>
+        <button class="g-key" id="keyOut" title="Map Zoom Out">OUT</button>
+      </div>
+
+      <div class="keypad-rocker-section">
+        <div class="keypad-side-keys">
+          <button class="g-key" id="keyMenu" title="Menu">MENU</button>
+        </div>
+
+        <div class="garmin-dpad">
+          <button class="dpad-btn dpad-up" id="keyUp">▲</button>
+          <button class="dpad-btn dpad-down" id="keyDown">▼</button>
+          <button class="dpad-btn dpad-left" id="keyLeft">◀</button>
+          <button class="dpad-btn dpad-right" id="keyRight">▶</button>
+          <button class="dpad-enter" id="keyEnter">ENTER</button>
+        </div>
+
+        <div class="keypad-side-keys">
+          <button class="g-key" id="keyPage" title="Page / Quit" style="background:#3b4758; color:#fff;">PAGE</button>
+        </div>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- HIDDEN FILE INPUT FOR GPX IMPORT -->
+  <input type="file" id="inpGpxUpload" accept=".gpx,.xml" style="display:none;" onchange="handleGpxUpload(event)">
+
+  <!-- MODAL: WAYPOINT MANAGER -->
+  <div class="g-modal-backdrop" id="modalWptManager">
+    <div class="g-modal-box">
+      <div class="g-modal-title">
+        <span>WAYPOINT MANAGER</span>
+        <span style="cursor:pointer;" onclick="closeModals()">✕</span>
+      </div>
+      <div style="max-height:220px; overflow-y:auto; display:flex; flex-direction:column; gap:4px;" id="wptManagerList"></div>
+      <div style="display:flex; gap:6px; justify-content:space-between; margin-top:6px;">
+        <button class="g-key" style="padding:4px 8px; font-size:11px;" onclick="markCurrentMapPoint()">+ HARİTA MERKEZİ EKLE</button>
+        <button class="g-key" style="padding:4px 8px;" onclick="closeModals()">CLOSE</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- MODAL: PROJECT WAYPOINT -->
+  <div class="g-modal-backdrop" id="modalProjectWp">
+    <div class="g-modal-box">
+      <div class="g-modal-title">
+        <span>PROJECT WAYPOINT</span>
+        <span style="cursor:pointer;" onclick="closeModals()">✕</span>
+      </div>
+      <div>
+        <label style="font-size:11px; font-weight:800;">BEARING (0-360°):</label>
+        <input type="number" class="g-modal-input mono" id="inpProjAngle" placeholder="045">
+      </div>
+      <div>
+        <label style="font-size:11px; font-weight:800;">DISTANCE (METERS):</label>
+        <input type="number" class="g-modal-input mono" id="inpProjDistM" placeholder="1000">
+      </div>
+      <div style="display:flex; gap:6px; justify-content:flex-end;">
+        <button class="g-key" style="padding:4px 8px;" onclick="closeModals()">CANCEL</button>
+        <button class="g-key" style="padding:4px 8px; background:var(--chassis-orange); color:#000;" onclick="submitProjectWp()">SAVE</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- MODAL: SUN & MOON (ASTRONOMICAL EPHEMERIS) -->
+  <div class="g-modal-backdrop" id="modalSunMoon">
+    <div class="g-modal-box">
+      <div class="g-modal-title">
+        <span>SUN & MOON EPHEMERIS</span>
+        <span style="cursor:pointer;" onclick="closeModals()">✕</span>
+      </div>
+      <div style="display:grid; grid-template-columns:1fr 1fr; gap:6px; font-size:12px;">
+        <div class="data-box" style="padding:4px;">
+          <span class="data-box-label">DAWN (BMNT)</span>
+          <span class="data-box-val mono" id="smDawn">--:--</span>
+        </div>
+        <div class="data-box" style="padding:4px;">
+          <span class="data-box-label">SUNRISE</span>
+          <span class="data-box-val mono" id="smSunrise">--:--</span>
+        </div>
+        <div class="data-box" style="padding:4px;">
+          <span class="data-box-label">SUNSET</span>
+          <span class="data-box-val mono" id="smSunset">--:--</span>
+        </div>
+        <div class="data-box" style="padding:4px;">
+          <span class="data-box-label">DUSK (EENT)</span>
+          <span class="data-box-val mono" id="smDusk">--:--</span>
+        </div>
+      </div>
+      <div style="padding:6px; background:var(--g-screen-bg); border:1px solid var(--g-border); font-size:12px;">
+        <b>LUNAR PHASE:</b> <span id="smMoonPhase" style="color:var(--g-warn);">--</span><br>
+        <b>ILLUMINATION:</b> <span id="smMoonIllum" class="mono">--%</span>
+        <div id="smLocationRef" style="font-size:10px; color:var(--g-label); margin-top:4px;">REFERANS: --</div>
+      </div>
+      <div style="display:flex; justify-content:flex-end;">
+        <button class="g-key" style="padding:4px 8px;" onclick="closeModals()">CLOSE</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- MODAL: AREA CALCULATION -->
+  <div class="g-modal-backdrop" id="modalAreaCalc">
+    <div class="g-modal-box">
+      <div class="g-modal-title">
+        <span>AREA CALCULATION</span>
+        <span style="cursor:pointer;" onclick="closeModals()">✕</span>
+      </div>
+      <div style="padding:8px; background:var(--g-screen-bg); border:1px solid var(--g-border); font-size:12px; display:flex; flex-direction:column; gap:6px;">
+        <div><b>CLOSED TRACK AREA:</b> <span class="mono" id="areaResultSqM" style="font-size:16px; font-weight:900; color:var(--g-accent);">-- m²</span></div>
+        <div><b>HECTARES / DÖNÜM:</b> <span class="mono" id="areaResultDonum">-- Dönüm</span></div>
+        <div><b>PERIMETER:</b> <span class="mono" id="areaResultPerimeter">-- metre</span></div>
+        <div id="areaCalcNote" style="font-size:10.5px; color:var(--g-label); margin-top:2px;"></div>
+      </div>
+      <div style="display:flex; justify-content:flex-end;">
+        <button class="g-key" style="padding:4px 8px;" onclick="closeModals()">CLOSE</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- MODAL: TACTICAL SOS & RADIO BEACON -->
+  <div class="g-modal-backdrop" id="modalSos">
+    <div class="g-modal-box" style="border-color:#ef4444;">
+      <div class="g-modal-title" style="color:#ef4444;">
+        <span>🆘 EMERGENCY SOS BEACON</span>
+        <span style="cursor:pointer;" onclick="closeModals()">✕</span>
+      </div>
+      <div style="padding:8px; background:#450a0a; color:#fee2e2; border-radius:4px; font-size:12px;">
+        <b style="color:#fca5a5;">TELSİZ / RADYO BİLDİRİMİ İÇİN OKUYUN:</b>
+        <div class="mono" id="sosPhoneticText" style="font-size:11px; margin-top:4px; font-weight:800; line-height:1.4;">
+          SİSTEM KAPALI // CANLI SENSÖR VERİSİ YOK
+        </div>
+      </div>
+      <div style="display:flex; justify-content:space-between; font-size:12px; font-weight:800;">
+        <span>MGRS GRID:</span>
+        <span class="mono" id="sosMgrsVal" style="color:var(--g-warn);">SİSTEM KAPALI</span>
+      </div>
+      <div style="display:flex; justify-content:space-between; font-size:12px; font-weight:800;">
+        <span>ELEVATION:</span>
+        <span class="mono" id="sosAltVal">-- m MSL</span>
+      </div>
+      <button class="g-key" id="btnToggleSosStrobe" style="background:#dc2626; color:#fff;" onclick="toggleSosStrobe()">
+        <span>🚨</span> OPTİK MORS SOS FLAŞÖRÜNÜ BAŞLAT
+      </button>
+      <div style="display:flex; justify-content:flex-end;">
+        <button class="g-key" style="padding:4px 8px;" onclick="closeModals()">CLOSE</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- MODAL: PERIMETER / ANCHOR GUARD -->
+  <div class="g-modal-backdrop" id="modalPerimeterGuard">
+    <div class="g-modal-box">
+      <div class="g-modal-title">
+        <span>🛡️ PERIMETER / GEOFENCE GUARD</span>
+        <span style="cursor:pointer;" onclick="closeModals()">✕</span>
+      </div>
+      <div style="padding:8px; background:var(--g-screen-bg); border:1px solid var(--g-border); font-size:12px; display:flex; flex-direction:column; gap:6px;">
+        <div style="display:flex; justify-content:space-between;">
+          <b>DURUM:</b>
+          <span class="mono" id="guardStatusText" style="font-weight:900; color:#64748b;">PASİF (DISARMED)</span>
+        </div>
+        <div style="display:flex; justify-content:space-between;">
+          <b>ÇAPA NOKTASI:</b>
+          <span class="mono" id="guardAnchorCoord" style="font-size:11px;">--</span>
+        </div>
+        <div style="display:flex; justify-content:space-between;">
+          <b>GÜNCEL SAPMA:</b>
+          <span class="mono" id="guardCurrentDist" style="font-size:13px; font-weight:800; color:var(--g-accent);">0 m</span>
+        </div>
+        <div>
+          <b>ALARM YARIÇAPI (GEOFENCE):</b>
+          <div style="display:flex; gap:6px; margin-top:4px;">
+            <button class="g-key" style="flex:1; padding:4px;" onclick="setGuardRadius(25)">25m</button>
+            <button class="g-key" style="flex:1; padding:4px;" onclick="setGuardRadius(50)">50m</button>
+            <button class="g-key" style="flex:1; padding:4px;" onclick="setGuardRadius(100)">100m</button>
+            <button class="g-key" style="flex:1; padding:4px;" onclick="setGuardRadius(250)">250m</button>
+          </div>
+          <div style="text-align:right; font-size:11px; margin-top:2px; color:var(--g-label);">Seçili: <b class="mono" id="guardRadiusVal">50m</b></div>
+        </div>
+      </div>
+      <button class="g-key" id="btnToggleGuard" style="background:#15803d; color:#fff;" onclick="togglePerimeterGuard()">
+        <span>🛡️</span> GÜVENLİK ÇEMBERİNİ DEVREYE AL
+      </button>
+      <div style="display:flex; justify-content:flex-end;">
+        <button class="g-key" style="padding:4px 8px;" onclick="closeModals()">CLOSE</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- MODAL: TACTICAL WAYPOINT & ETE MATRIX -->
+  <div class="g-modal-backdrop" id="modalTacMatrix">
+    <div class="g-modal-box" style="max-height:420px;">
+      <div class="g-modal-title">
+        <span>📋 TACTICAL ETE & WAYPOINT MATRIX</span>
+        <span style="cursor:pointer;" onclick="closeModals()">✕</span>
+      </div>
+      <div id="tacMatrixContainer" style="display:flex; flex-direction:column; gap:6px; max-height:280px; overflow-y:auto; padding:2px;">
+        <!-- Filled dynamically -->
+      </div>
+      <div style="display:flex; justify-content:flex-end;">
+        <button class="g-key" style="padding:4px 8px;" onclick="closeModals()">CLOSE</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- =========================================================================
+       CORE SCRIPT: 100% FUNCTIONAL HARDWARE INTEGRATION & ADVANCED TOOLS
+       ========================================================================= -->
+  <script>
+    /* =========================================================================
+       1. AUTHENTIC GARMIN PIEZO BEEP & AUDIO
+       ========================================================================= */
+    let audioCtx = null;
+
+    function playGarminBeep(freq = 880, duration = 0.035) {
+      try {
+        if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+        if (audioCtx.state === 'suspended') audioCtx.resume();
+        const osc = audioCtx.createOscillator();
+        const gain = audioCtx.createGain();
+        osc.type = 'sine';
+        osc.frequency.value = freq;
+        gain.gain.setValueAtTime(0.08, audioCtx.currentTime);
+        gain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + duration);
+        osc.connect(gain);
+        gain.connect(audioCtx.destination);
+        osc.start();
+        osc.stop(audioCtx.currentTime + duration);
+      } catch (e) {}
+    }
+
+    function playGarminChime() {
+      playGarminBeep(988, 0.04);
+      setTimeout(() => playGarminBeep(1318, 0.08), 50);
+    }
+
+    function showGarminNotice(msg, icon = 'ℹ️', durationMs = 3200) {
+      const el = document.getElementById('garminGlobalNotice');
+      const txt = document.getElementById('garminNoticeTxt');
+      const ic = document.getElementById('garminNoticeIcon');
+      if (!el || !txt) return;
+      txt.textContent = msg;
+      if (ic) ic.textContent = icon;
+      el.style.display = 'flex';
+      if (window._garminNoticeTimer) clearTimeout(window._garminNoticeTimer);
+      window._garminNoticeTimer = setTimeout(() => {
+        el.style.display = 'none';
+      }, durationMs);
+    }
+
+    /* =========================================================================
+       2. MGRS & GEODETICS (1-METER ACCURACY)
+       ========================================================================= */
+    function wgs84ToMgrs(lat, lon) {
+      if (lat === null || lon === null || isNaN(lat) || isNaN(lon)) return "--";
+      try {
+        const a = 6378137.0;
+        const f = 1 / 298.257223563;
+        const k0 = 0.9996;
+        const e2 = f * (2 - f);
+        const ep2 = e2 / (1 - e2);
+
+        const zone = Math.floor((lon + 180) / 6) + 1;
+        const lon0 = (zone - 1) * 6 - 180 + 3;
+        const lon0Rad = lon0 * (Math.PI / 180);
+
+        const phi = lat * (Math.PI / 180);
+        const lam = lon * (Math.PI / 180);
+
+        const N = a / Math.sqrt(1 - e2 * Math.sin(phi) * Math.sin(phi));
+        const T = Math.tan(phi) * Math.tan(phi);
+        const C = ep2 * Math.cos(phi) * Math.cos(phi);
+        const A = (lam - lon0Rad) * Math.cos(phi);
+
+        const M = a * (
+          (1 - e2 / 4 - 3 * e2 * e2 / 64 - 5 * e2 * e2 * e2 / 256) * phi
+          - (3 * e2 / 8 + 3 * e2 * e2 / 32 + 45 * e2 * e2 * e2 / 1024) * Math.sin(2 * phi)
+          + (15 * e2 * e2 / 256 + 45 * e2 * e2 * e2 / 1024) * Math.sin(4 * phi)
+          - (35 * e2 * e2 / 3072) * Math.sin(6 * phi)
+        );
+
+        const easting = k0 * N * (A + (1 - T + C) * Math.pow(A, 3) / 6 + (5 - 18 * T + T * T + 72 * C - 58 * ep2) * Math.pow(A, 5) / 120) + 500000.0;
+        const northing = k0 * (M + N * Math.tan(phi) * (A * A / 2 + (5 - T + 9 * C + 4 * C * C) * Math.pow(A, 4) / 24 + (61 - 58 * T + T * T + 600 * C - 330 * ep2) * Math.pow(A, 6) / 720));
+
+        const bandLetters = 'CDEFGHJKLMNPQRSTUVWX';
+        const bandIdx = Math.min(Math.max(Math.floor((lat + 80) / 8), 0), bandLetters.length - 1);
+        const bandLetter = bandLetters[bandIdx];
+
+        const colChars = ['ABCDEFGH', 'JKLMNPQR', 'STUVWXYZ'][(zone - 1) % 3];
+        const colIdx = Math.floor(easting / 100000) - 1;
+        const colLetter = colChars[(colIdx % colChars.length + colChars.length) % colChars.length];
+
+        const rowChars = 'ABCDEFGHJKLMNPQRSTUV';
+        let rowIdx = Math.floor(northing / 100000) % 20;
+        if ((zone - 1) % 2 === 1) rowIdx = (rowIdx + 5) % 20;
+        const rowLetter = rowChars[rowIdx];
+
+        const e100k = Math.floor(easting % 100000);
+        const n100k = Math.floor(northing % 100000);
+
+        return `${zone}${bandLetter} ${colLetter}${rowLetter} ${String(e100k).padStart(5, '0')} ${String(n100k).padStart(5, '0')}`;
+      } catch (err) {
+        return "--";
+      }
+    }
+
+    function haversineMeters(lat1, lon1, lat2, lon2) {
+      const R = 6371000.0;
+      const dLat = (lat2 - lat1) * Math.PI / 180.0;
+      const dLon = (lon2 - lon1) * Math.PI / 180.0;
+      const a = Math.sin(dLat / 2) * Math.sin(dLat / 2) +
+                Math.cos(lat1 * Math.PI / 180.0) * Math.cos(lat2 * Math.PI / 180.0) *
+                Math.sin(dLon / 2) * Math.sin(dLon / 2);
+      return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+    }
+
+    function calculateBearing(lat1, lon1, lat2, lon2) {
+      const y = Math.sin((lon2 - lon1) * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180);
+      const x = Math.cos(lat1 * Math.PI / 180) * Math.sin(lat2 * Math.PI / 180) -
+                Math.sin(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) * Math.cos((lon2 - lon1) * Math.PI / 180);
+      let brg = Math.atan2(y, x) * 180 / Math.PI;
+      return (brg + 360) % 360;
+    }
+
+    function projectPoint(lat, lon, brgDeg, distM) {
+      const R = 6371000.0;
+      const dDivR = distM / R;
+      const brgRad = brgDeg * Math.PI / 180;
+      const lat1 = lat * Math.PI / 180;
+      const lon1 = lon * Math.PI / 180;
+
+      const lat2 = Math.asin(Math.sin(lat1) * Math.cos(dDivR) + Math.cos(lat1) * Math.sin(dDivR) * Math.cos(brgRad));
+      const lon2 = lon1 + Math.atan2(Math.sin(brgRad) * Math.sin(dDivR) * Math.cos(lat1),
+                                    Math.cos(dDivR) - Math.sin(lat1) * Math.sin(lat2));
+      return { lat: lat2 * 180 / Math.PI, lon: lon2 * 180 / Math.PI };
+    }
+
+    /* =========================================================================
+       3. KALMAN FILTER WITH U-BLOX HARDWARE DYNAMIC SYNC
+       ========================================================================= */
+    const GNSS_PROFILES = {
+      STATIONARY: { key: 'STATIONARY', name: 'Stationary', shortName: 'Statik', icon: '🪟', ubx: 'stationary', q_pos: 0.005, q_vel: 0.005, zvuThreshKmh: 1.2, deadBandMeters: 3.0, outlierMeters: 12.0 },
+      PEDESTRIAN: { key: 'PEDESTRIAN', name: 'Pedestrian', shortName: 'Yaya', icon: '🚶', ubx: 'pedestrian', q_pos: 0.15, q_vel: 0.35, zvuThreshKmh: 0.8, deadBandMeters: 1.4, outlierMeters: 16.0 },
+      AUTOMOTIVE: { key: 'AUTOMOTIVE', name: 'Automotive', shortName: 'Araç', icon: '🚗', ubx: 'automotive', q_pos: 0.8, q_vel: 1.5, zvuThreshKmh: 0.0, deadBandMeters: 0.0, outlierMeters: 28.0 }
+    };
+
+    const gnssFilter = {
+      enabled: true,
+      profileMode: 'AUTO',
+      currentProfileKey: 'STATIONARY',
+      isInitialized: false,
+      originLat: 0.0, originLon: 0.0,
+      x: 0.0, y: 0.0, vx: 0.0, vy: 0.0,
+      lastTime: 0,
+      p: [[10.0, 0, 0, 0], [0, 10.0, 0, 0], [0, 0, 5.0, 0], [0, 0, 0, 5.0]],
+      filteredLat: null, filteredLon: null,
+      speedHistory: [],
+
+      evaluateAutoProfile(speedKmh) {
+        if (this.profileMode !== 'AUTO') return;
+        if (speedKmh === null || isNaN(speedKmh)) return;
+
+        this.speedHistory.push(speedKmh);
+        if (this.speedHistory.length > 8) this.speedHistory.shift();
+
+        const avgSpeed = this.speedHistory.reduce((a, b) => a + b, 0) / this.speedHistory.length;
+
+        let targetKey = this.currentProfileKey;
+        if (avgSpeed < 1.0) targetKey = 'STATIONARY';
+        else if (avgSpeed >= 1.0 && avgSpeed < 22.0) targetKey = 'PEDESTRIAN';
+        else if (avgSpeed >= 22.0) targetKey = 'AUTOMOTIVE';
+
+        if (targetKey !== this.currentProfileKey) {
+          applyProfile(targetKey, true);
+        }
+      },
+
+      update(rawLat, rawLon, speedKmh, hdop, nowMs) {
+        if (!this.enabled) {
+          this.filteredLat = rawLat;
+          this.filteredLon = rawLon;
+          return { lat: rawLat, lon: rawLon };
+        }
+
+        this.evaluateAutoProfile(speedKmh);
+        const prof = GNSS_PROFILES[this.currentProfileKey] || GNSS_PROFILES.STATIONARY;
+
+        if (!this.isInitialized) {
+          this.originLat = rawLat;
+          this.originLon = rawLon;
+          this.x = 0; this.y = 0; this.vx = 0; this.vy = 0;
+          this.lastTime = nowMs || Date.now();
+          this.isInitialized = true;
+          this.filteredLat = rawLat;
+          this.filteredLon = rawLon;
+          return { lat: rawLat, lon: rawLon };
+        }
+
+        const t = nowMs || Date.now();
+        let dt = (t - this.lastTime) / 1000.0;
+        this.lastTime = t;
+        if (dt <= 0.05 || dt > 10.0) dt = 1.0;
+
+        const phiRad = this.originLat * (Math.PI / 180.0);
+        const R_lat = 111319.9;
+        const R_lon = 111319.9 * Math.cos(phiRad);
+        const zx = (rawLon - this.originLon) * R_lon;
+        const zy = (rawLat - this.originLat) * R_lat;
+
+        const x_pred = this.x + this.vx * dt;
+        const y_pred = this.y + this.vy * dt;
+        const isStationary = (speedKmh !== null && speedKmh < prof.zvuThreshKmh);
+        const q_pos = isStationary ? prof.q_pos * dt : (prof.q_pos * 8.0) * dt * dt;
+        const q_vel = isStationary ? prof.q_vel * dt : (prof.q_vel * 4.0) * dt;
+
+        this.p[0][0] += q_pos + dt * (this.p[2][0] + this.p[0][2] + dt * this.p[2][2]);
+        this.p[1][1] += q_pos + dt * (this.p[3][1] + this.p[1][3] + dt * this.p[3][3]);
+        this.p[2][2] += q_vel;
+        this.p[3][3] += q_vel;
+
+        const dx = zx - x_pred;
+        const dy = zy - y_pred;
+        const innovDist = Math.sqrt(dx * dx + dy * dy);
+
+        if (innovDist > prof.outlierMeters && (speedKmh === null || speedKmh < 8.0)) {
+          this.filteredLat = this.originLat + (this.y / R_lat);
+          this.filteredLon = this.originLon + (this.x / R_lon);
+          return { lat: this.filteredLat, lon: this.filteredLon };
+        }
+
+        if (isStationary && prof.zvuThreshKmh > 0) {
+          this.vx *= 0.1;
+          this.vy *= 0.1;
+          if (innovDist < prof.deadBandMeters) {
+            this.filteredLat = this.originLat + (this.y / R_lat);
+            this.filteredLon = this.originLon + (this.x / R_lon);
+            return { lat: this.filteredLat, lon: this.filteredLon };
+          }
+        }
+
+        const safeHdop = (hdop && hdop > 0) ? hdop : 1.5;
+        const R = Math.pow(Math.max(1.5, safeHdop * 2.2), 2);
+
+        const Kx = this.p[0][0] / (this.p[0][0] + R);
+        const Ky = this.p[1][1] / (this.p[1][1] + R);
+        const Kvx = this.p[2][0] / (this.p[0][0] + R);
+        const Kvy = this.p[3][1] / (this.p[1][1] + R);
+
+        this.x = x_pred + Kx * dx;
+        this.y = y_pred + Ky * dy;
+        this.vx = this.vx + Kvx * dx;
+        this.vy = this.vy + Kvy * dy;
+
+        this.p[0][0] = (1.0 - Kx) * this.p[0][0];
+        this.p[1][1] = (1.0 - Ky) * this.p[1][1];
+        this.p[2][2] = (1.0 - Kvx) * this.p[2][2];
+        this.p[3][3] = (1.0 - Kvy) * this.p[3][3];
+
+        this.filteredLat = this.originLat + (this.y / R_lat);
+        this.filteredLon = this.originLon + (this.x / R_lon);
+        return { lat: this.filteredLat, lon: this.filteredLon };
+      }
+    };
+
+    function applyProfile(key, wasAuto) {
+      if (!GNSS_PROFILES[key]) return;
+      gnssFilter.currentProfileKey = key;
+      const prof = GNSS_PROFILES[key];
+      document.getElementById('topProfileIcon').textContent = prof.icon;
+      document.getElementById('menuProfileLabel').textContent = `Profile: ${prof.shortName}`;
+      document.getElementById('satDynamicModelVal').textContent = `${prof.key} (UBX-VALSET)`;
+      fetch(`/api/set_profile?profile=${prof.ubx}`).catch(() => {});
+    }
+
+    function cycleKinematicProfile() {
+      playGarminBeep(988, 0.04);
+      const keys = ['STATIONARY', 'PEDESTRIAN', 'AUTOMOTIVE'];
+      const curIdx = keys.indexOf(gnssFilter.currentProfileKey);
+      const nextKey = keys[(curIdx + 1) % keys.length];
+      gnssFilter.profileMode = 'MANUAL';
+      applyProfile(nextKey, false);
+    }
+
+    /* =========================================================================
+       4. GLOBAL TELEMETRY & MULTI-GNSS STATE (100% REAL-TIME DYNAMIC)
+       ========================================================================= */
+    const gnss = {
+      lat: null,
+      lon: null,
+      alt: null,
+      speedKmh: null,
+      heading: null,
+      hdop: null,
+      sats: 0,
+      fix: 'KAPALI',
+      connected: false,
+      lastFixTime: 0,
+      port: '--',
+      satellites: {} // Key: 'GP14', val: { constel, prn, elev, az, snr, ts }
+    };
+
+    const trip = {
+      startTime: Date.now(),
+      movingTimeMs: 0,
+      lastMoveTs: Date.now(),
+      totalMeters: 0.0,
+      maxSpeedKmh: 0.0,
+      speedSum: 0.0,
+      speedCount: 0,
+      prevLat: null,
+      prevLon: null,
+      prevAlt: null,
+      altGain: 0.0,
+      points: []
+    };
+
+    let waypoints = [];
+    let activeTargetId = null;
+
+    const currentRoute = {
+      active: false,
+      points: [],
+      maneuvers: [],
+      startLat: null,
+      startLon: null
+    };
+
+    let sosStrobeTimer = null;
+
+    /* =========================================================================
+       5. PAGE LOOP NAVIGATION
+       ========================================================================= */
+    const pageLoop = ['pageCompass', 'pageMap', 'pageTrip', 'pageElevation', 'pageMenu', 'pageSatellite'];
+    let currentPageIndex = 0;
+
+    function switchPage(pageId) {
+      playGarminBeep(880, 0.035);
+      const targetIdx = pageLoop.indexOf(pageId);
+      if (targetIdx >= 0) currentPageIndex = targetIdx;
+
+      document.querySelectorAll('.garmin-page').forEach(p => p.classList.remove('active-page'));
+      const activeEl = document.getElementById(pageId);
+      if (activeEl) activeEl.classList.add('active-page');
+
+      if (pageId === 'pageMap') {
+        initGarminMap();
+        setTimeout(() => {
+          if (map) {
+            map.invalidateSize();
+            if (!isPanMode && !mapHasCentered && gnss.lat !== null && gnss.lon !== null) {
+              map.setView([gnss.lat, gnss.lon], 16);
+              mapHasCentered = true;
+            }
+          }
+        }, 50);
+      } else if (pageId === 'pageElevation') {
+        renderGarminElevationSvg();
+      } else if (pageId === 'pageSatellite') {
+        renderGarminSkyplot();
+        renderSatelliteBars();
+      }
+    }
+
+    function pageNext() {
+      currentPageIndex = (currentPageIndex + 1) % pageLoop.length;
+      switchPage(pageLoop[currentPageIndex]);
+    }
+
+    function pagePrev() {
+      currentPageIndex = (currentPageIndex - 1 + pageLoop.length) % pageLoop.length;
+      switchPage(pageLoop[currentPageIndex]);
+    }
+
+    /* =========================================================================
+       6. LEAFLET MAP & AUTHENTIC GARMIN MAPPING ARCHITECTURE
+       ========================================================================= */
+    const GARMIN_CACHE_NAME = 'garmin-map-cache-v1';
+
+    // 1. Garmin Worldwide Vector Basemap (Zero-Network Grid Layer)
+    const GarminVectorBasemap = L.GridLayer.extend({
+      createTile: function(coords) {
+        const tile = document.createElement('canvas');
+        const size = this.getTileSize();
+        tile.width = size.x;
+        tile.height = size.y;
+        const ctx = tile.getContext('2d');
+
+        ctx.fillStyle = '#060a12';
+        ctx.fillRect(0, 0, size.x, size.y);
+
+        ctx.strokeStyle = '#1e293b';
+        ctx.lineWidth = 1;
+        ctx.strokeRect(0, 0, size.x, size.y);
+
+        ctx.strokeStyle = '#0284c7';
+        ctx.lineWidth = 1;
+        ctx.beginPath();
+        ctx.moveTo(size.x / 2 - 8, size.y / 2);
+        ctx.lineTo(size.x / 2 + 8, size.y / 2);
+        ctx.moveTo(size.x / 2, size.y / 2 - 8);
+        ctx.lineTo(size.x / 2, size.y / 2 + 8);
+        ctx.stroke();
+
+        ctx.fillStyle = '#475569';
+        ctx.font = '9px monospace';
+        ctx.fillText(`MGRS Z${coords.z} [${coords.x},${coords.y}]`, 6, 14);
+        return tile;
+      }
+    });
+
+    // 2. Garmin 4-Layer Profiles (Fast, Zero-CORS-Hang, 100% Reliable)
+    const GARMIN_LAYERS = {
+      topo: {
+        name: 'OSM TOPO',
+        url: 'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
+        options: { maxZoom: 19, attribution: 'OSM' }
+      },
+      satellite: {
+        name: 'BIRDSEYE',
+        url: 'https://mt{s}.google.com/vt/lyrs=y&x={x}&y={y}&z={z}',
+        options: { subdomains: ['0', '1', '2', '3'], maxNativeZoom: 20, maxZoom: 22, attribution: 'Satellite' }
+      },
+      tactical: {
+        name: 'NVG DARK',
+        url: 'https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png',
+        options: { subdomains: 'abcd', maxZoom: 20, attribution: 'CartoDB' }
+      },
+      basemap: {
+        name: 'BASEMAP',
+        url: '',
+        options: { maxZoom: 20 }
+      }
+    };
+
+    let map = null;
+    let mapHasCentered = false;
+    let posMarker = null;
+    let routePolyline = null;
+    let trackPolyline = null;
+    let wptMarkers = [];
+    let currentLayerKey = 'topo';
+    let activeTileLayer = null;
+    let mapOrientation = 'NORTH_UP';
+    let isPanMode = false;
+
+    function createGarminTileLayer(key) {
+      const cfg = GARMIN_LAYERS[key] || GARMIN_LAYERS.topo;
+      if (key === 'basemap' || !cfg.url) {
+        return new GarminVectorBasemap();
+      }
+      return L.tileLayer(cfg.url, {
+        ...cfg.options,
+        keepBuffer: 8,
+        updateWhenIdle: false,
+        updateWhenZooming: true
+      });
+    }
+
+    function initGarminMap() {
+      if (map) return;
+
+      const hasPos = (gnss.lat !== null && gnss.lon !== null);
+      const initialCenter = hasPos ? [gnss.lat, gnss.lon] : [39.0, 35.0];
+      const initialZoom = hasPos ? 16 : 6;
+      if (hasPos) mapHasCentered = true;
+
+      map = L.map('garminMapCanvas', {
+        center: initialCenter,
+        zoom: initialZoom,
+        zoomControl: false,
+        attributionControl: false
+      });
+
+      activeTileLayer = createGarminTileLayer(currentLayerKey).addTo(map);
+
+      // Cyan Live Breadcrumb Tracklog
+      trackPolyline = L.polyline([], {
+        color: '#06b6d4',
+        weight: 3.5,
+        opacity: 0.95
+      }).addTo(map);
+
+      // Magenta Route Polyline
+      routePolyline = L.polyline([], {
+        color: '#d946ef',
+        weight: 4,
+        opacity: 0.95
+      }).addTo(map);
+
+      // Map Pan/Drag Listener: Freely explore without auto-panning away
+      map.on('dragstart', () => enablePanMode());
+      map.on('move', () => {
+        updatePanHud();
+        updateGarminScaleBar();
+      });
+      map.on('zoomend', () => updateGarminScaleBar());
+
+      if (hasPos) {
+        createMapCursor();
+      }
+      renderMapWaypoints();
+      updateGarminScaleBar();
+    }
+
+    // Garmin Authentic Metric Scale Bar Engine
+    function updateGarminScaleBar() {
+      if (!map) return;
+      const center = map.getCenter();
+      const zoom = map.getZoom();
+      const mPerPixel = 40075016.686 * Math.cos(center.lat * Math.PI / 180) / Math.pow(2, zoom + 8);
+      const targetM = mPerPixel * 65;
+      const garminSteps = [5, 12, 20, 50, 80, 120, 200, 300, 500, 800, 1200, 2000, 3000, 5000, 8000, 12000, 20000, 50000, 80000, 120000, 200000, 500000];
+      const closest = garminSteps.reduce((prev, curr) => Math.abs(curr - targetM) < Math.abs(prev - targetM) ? curr : prev);
+      const pxWidth = Math.round(closest / mPerPixel);
+      const label = closest >= 1000 ? `${(closest/1000).toFixed(closest % 1000 === 0 ? 0 : 1)} km` : `${closest} m`;
+      const barEl = document.getElementById('garminScaleBar');
+      if (barEl) {
+        barEl.style.width = `${Math.max(46, pxWidth)}px`;
+        barEl.textContent = `${label} |----|`;
+      }
+    }
+
+    // Cycle Map Layer (OSM Topo -> BirdsEye Satellite -> NVG Dark -> Offline Basemap)
+    function cycleMapLayer() {
+      playGarminBeep(988, 0.03);
+      const keys = ['topo', 'satellite', 'tactical', 'basemap'];
+      const nextIdx = (keys.indexOf(currentLayerKey) + 1) % keys.length;
+      setMapLayer(keys[nextIdx]);
+    }
+
+    function setMapLayer(key) {
+      currentLayerKey = key;
+      const cfg = GARMIN_LAYERS[key];
+      if (activeTileLayer && map) map.removeLayer(activeTileLayer);
+
+      activeTileLayer = createGarminTileLayer(key).addTo(map);
+
+      const label = document.getElementById('mapLayerLabel');
+      if (label) label.textContent = cfg.name;
+      showGarminNotice(`HARİTA KATMANI: ${cfg.name}`, "🗺️", 2000);
+    }
+
+    // Garmin Orientation Engine: North Up vs. Track Up
+    function toggleMapOrientation() {
+      playGarminBeep(900, 0.03);
+      mapOrientation = (mapOrientation === 'NORTH_UP') ? 'TRACK_UP' : 'NORTH_UP';
+      const lbl = document.getElementById('mapOrientLabel');
+      if (lbl) lbl.textContent = mapOrientation === 'NORTH_UP' ? 'NORTH UP' : 'TRACK UP';
+      showGarminNotice(`YÖNLENDİRME: ${mapOrientation === 'NORTH_UP' ? 'KUZEY YUKARI' : 'İZ YUKARI (TRACK UP)'}`, "🧭", 2000);
+      updateMapOrientationDisplay();
+    }
+
+    function updateMapOrientationDisplay() {
+      const northArrow = document.getElementById('garminNorthArrow');
+      const cursorArrow = document.getElementById('mapCursorArrow');
+      const heading = (gnss.heading !== null && !isNaN(gnss.heading)) ? gnss.heading : 0;
+
+      if (mapOrientation === 'TRACK_UP') {
+        if (northArrow) northArrow.style.transform = `rotate(${-heading}deg)`;
+        if (cursorArrow) cursorArrow.style.transform = `translateX(-50%) rotate(0deg)`;
+      } else {
+        if (northArrow) northArrow.style.transform = 'rotate(0deg)';
+        if (cursorArrow) cursorArrow.style.transform = `translateX(-50%) rotate(${heading}deg)`;
+      }
+    }
+
+    // Garmin Pan Crosshair & Interactive Distance/Bearing HUD
+    function enablePanMode() {
+      if (isPanMode) return;
+      isPanMode = true;
+      const ch = document.getElementById('garminPanCrosshair');
+      const hud = document.getElementById('garminPanHud');
+      if (ch) ch.style.display = 'block';
+      if (hud) hud.style.display = 'block';
+      updatePanHud();
+    }
+
+    function recenterMapToGps() {
+      playGarminChime();
+      isPanMode = false;
+      const ch = document.getElementById('garminPanCrosshair');
+      const hud = document.getElementById('garminPanHud');
+      if (ch) ch.style.display = 'none';
+      if (hud) hud.style.display = 'none';
+
+      if (map) {
+        const targetLat = (gnss.lat !== null) ? gnss.lat : 39.0;
+        const targetLon = (gnss.lon !== null) ? gnss.lon : 35.0;
+        map.panTo([targetLat, targetLon]);
+        mapHasCentered = true;
+      }
+      showGarminNotice("HARİTA KONUMA KİLİTLENDİ", "🎯", 2000);
+    }
+
+    function updatePanHud() {
+      if (!map || !isPanMode) return;
+      const c = map.getCenter();
+      const mgrsEl = document.getElementById('panHudMgrs');
+      const brgEl = document.getElementById('panHudBrg');
+      const distEl = document.getElementById('panHudDist');
+
+      if (mgrsEl) mgrsEl.textContent = wgs84ToMgrs(c.lat, c.lng);
+
+      const hasPos = (gnss.lat !== null && gnss.lon !== null);
+      if (hasPos) {
+        const dist = haversineMeters(gnss.lat, gnss.lon, c.lat, c.lng);
+        const brg = calculateBearing(gnss.lat, gnss.lon, c.lat, c.lng);
+        if (distEl) distEl.textContent = dist >= 1000 ? `${(dist/1000).toFixed(2)} km` : `${Math.round(dist)} m`;
+        if (brgEl) brgEl.textContent = `${Math.round(brg)}°`;
+      } else {
+        if (distEl) distEl.textContent = '-- m';
+        if (brgEl) brgEl.textContent = '---°';
+      }
+    }
+
+    // Pre-cache Current Visible Bounding Box for Offline Wilderness Use
+    async function cacheCurrentMapArea() {
+      if (!map) return;
+      if (!('caches' in window)) {
+        showGarminNotice("TARAYICI ÖNBELLEK DESTEKLEMİYOR", "⚠️");
+        return;
+      }
+      playGarminChime();
+      showGarminNotice("BÖLGE ÇEVRİMDIŞI İNDİRİLİYOR...", "⏳", 3500);
+
+      const bounds = map.getBounds();
+      const currentZoom = map.getZoom();
+      const zooms = [currentZoom, Math.min(18, currentZoom + 1)];
+      const cfg = GARMIN_LAYERS[currentLayerKey];
+      if (!cfg.url) {
+        showGarminNotice("BASEMAP ZATEN TAMAMEN ÇEVRİMDIŞI", "ℹ️");
+        return;
+      }
+
+      try {
+        const cache = await caches.open(GARMIN_CACHE_NAME);
+        let count = 0;
+
+        for (const z of zooms) {
+          const minX = Math.floor((bounds.getWest() + 180) / 360 * Math.pow(2, z));
+          const maxX = Math.floor((bounds.getEast() + 180) / 360 * Math.pow(2, z));
+          const minY = Math.floor((1 - Math.log(Math.tan(bounds.getNorth() * Math.PI / 180) + 1 / Math.cos(bounds.getNorth() * Math.PI / 180)) / Math.PI) / 2 * Math.pow(2, z));
+          const maxY = Math.floor((1 - Math.log(Math.tan(bounds.getSouth() * Math.PI / 180) + 1 / Math.cos(bounds.getSouth() * Math.PI / 180)) / Math.PI) / 2 * Math.pow(2, z));
+
+          for (let x = Math.min(minX, maxX); x <= Math.max(minX, maxX); x++) {
+            for (let y = Math.min(minY, maxY); y <= Math.max(minY, maxY); y++) {
+              const sub = ['a', 'b', 'c'][(x + y) % 3];
+              const url = cfg.url.replace('{s}', sub).replace('{z}', z).replace('{x}', x).replace('{y}', y).replace('{r}', '');
+              try {
+                const resp = await fetch(url, { mode: 'cors' });
+                if (resp.ok) {
+                  await cache.put(url, resp);
+                  count++;
+                }
+              } catch(e) {}
+            }
+          }
+        }
+        showGarminNotice(`BÖLGE HAFIZAYA ALINDI (${count} KARO)`, "💾", 3500);
+      } catch(err) {
+        showGarminNotice("İNDİRME HATASI: " + err.message, "⚠️");
+      }
+    }
+
+    function createMapCursor() {
+      if (posMarker || !map || gnss.lat === null || gnss.lon === null) return;
+      const garminCursor = L.divIcon({
+        className: 'garmin-cursor-icon',
+        html: `
+          <div style="position:relative; width:28px; height:28px;">
+            <div id="mapCursorArrow" style="position:absolute; top:0; left:50%; width:0; height:0; border-left:7px solid transparent; border-right:7px solid transparent; border-bottom:18px solid #dc2626; transform-origin:center 14px; transform:translateX(-50%) rotate(0deg); filter:drop-shadow(0 2px 4px rgba(0,0,0,0.5));"></div>
+            <div style="position:absolute; top:11px; left:11px; width:6px; height:6px; background:#fff; border-radius:50%;"></div>
+          </div>
+        `,
+        iconSize: [28, 28],
+        iconAnchor: [14, 14]
+      });
+      posMarker = L.marker([gnss.lat, gnss.lon], { icon: garminCursor }).addTo(map);
+    }
+
+    function renderMapWaypoints() {
+      if (!map) return;
+      wptMarkers.forEach(m => map.removeLayer(m));
+      wptMarkers = [];
+
+      waypoints.forEach(wp => {
+        const isTarget = (wp.id === activeTargetId);
+        const icon = L.divIcon({
+          className: 'garmin-wpt-flag',
+          html: `<div style="background:${isTarget ? '#ea580c' : '#0284c7'}; color:#fff; font-size:10px; font-weight:900; padding:1px 5px; border-radius:2px; border:1px solid #000; box-shadow:0 1px 4px rgba(0,0,0,0.5);">${wp.name}</div>`,
+          iconAnchor: [20, 10]
+        });
+        const m = L.marker([wp.lat, wp.lon], { icon: icon }).addTo(map);
+        m.on('click', () => setActiveTarget(wp.id));
+        wptMarkers.push(m);
+      });
+    }
+
+    /* =========================================================================
+       7. OSRM FOOT TRAIL ROUTING ENGINE
+       ========================================================================= */
+    function calculateTrailRoute() {
+      let startLat = gnss.lat;
+      let startLon = gnss.lon;
+      let isMapCenterStart = false;
+
+      if (!gnss.connected || startLat === null || startLon === null) {
+        if (map) {
+          const c = map.getCenter();
+          startLat = c.lat;
+          startLon = c.lng;
+          isMapCenterStart = true;
+        } else if (waypoints.length > 0) {
+          startLat = waypoints[0].lat;
+          startLon = waypoints[0].lon;
+        } else {
+          startLat = 39.0;
+          startLon = 35.0;
+        }
+      }
+
+      let activeWp = waypoints.find(w => w.id === activeTargetId);
+      if (!activeWp) {
+        if (waypoints.length > 0) {
+          activeWp = waypoints[waypoints.length - 1];
+          activeTargetId = activeWp.id;
+        } else {
+          openWaypointManager();
+          showGarminNotice("ROTA OLUŞTURMAK İÇİN LÜTFEN HEDEF SEÇİN", "📍");
+          return;
+        }
+      }
+
+      playGarminChime();
+      currentRoute.startLat = startLat;
+      currentRoute.startLon = startLon;
+
+      const url = `https://router.project-osrm.org/route/v1/foot/${startLon},${startLat};${activeWp.lon},${activeWp.lat}?overview=full&geometries=geojson&steps=true`;
+      
+      showGarminNotice(isMapCenterStart ? "HARİTA MERKEZİNDEN ROTA ÇİZİLİYOR..." : "PATİKA ROTASI HESAPLANIYOR...", "⏳");
+      fetch(url)
+        .then(r => r.json())
+        .then(data => {
+          if (data && data.routes && data.routes.length > 0) {
+            const r = data.routes[0];
+            currentRoute.active = true;
+            currentRoute.points = r.geometry.coordinates.map(c => [c[1], c[0]]);
+            currentRoute.maneuvers = (r.legs[0]?.steps || []).map(s => ({
+              text: s.name ? `${s.name} yönünde devam edin` : 'Patikayı takip edin',
+              distanceM: s.distance
+            }));
+
+            if (routePolyline && map) {
+              routePolyline.setLatLngs(currentRoute.points);
+              map.fitBounds(routePolyline.getBounds(), { padding: [25, 25] });
+            }
+
+            if (currentRoute.maneuvers.length > 0) {
+              const banner = document.getElementById('garminMapBanner');
+              if (banner) {
+                banner.style.display = 'flex';
+                document.getElementById('garminMapBannerTxt').textContent = currentRoute.maneuvers[0].text;
+              }
+            }
+
+            switchPage('pageMap');
+          } else {
+            fallbackDirectRoute(startLat, startLon, activeWp);
+          }
+        })
+        .catch(() => fallbackDirectRoute(startLat, startLon, activeWp));
+    }
+
+    function fallbackDirectRoute(startLat, startLon, activeWp) {
+      currentRoute.active = true;
+      currentRoute.points = [[startLat, startLon], [activeWp.lat, activeWp.lon]];
+      if (routePolyline && map) {
+        routePolyline.setLatLngs(currentRoute.points);
+        map.fitBounds(routePolyline.getBounds(), { padding: [25, 25] });
+      }
+      showGarminNotice(`DÜZ HAT ROTASI: ${activeWp.name}`, "🎯");
+      switchPage('pageMap');
+    }
+
+    /* =========================================================================
+       8. TELEMETRY COMMITS & REAL SLOPE/AVALANCHE MONITOR
+       ========================================================================= */
+    function commitFix(lat, lon, alt, speedKmh, heading, hdop, sats) {
+      if (lat === null || lon === null || isNaN(lat) || isNaN(lon)) return;
+
+      const filtered = gnssFilter.update(lat, lon, speedKmh, hdop, Date.now());
+      gnss.lat = filtered.lat;
+      gnss.lon = filtered.lon;
+      if (alt !== null && !isNaN(alt)) gnss.alt = alt;
+      if (speedKmh !== null && !isNaN(speedKmh)) gnss.speedKmh = speedKmh;
+      if (heading !== null && !isNaN(heading)) gnss.heading = heading;
+      if (hdop !== null && !isNaN(hdop)) gnss.hdop = hdop;
+      if (sats !== null && !isNaN(sats)) gnss.sats = sats;
+
+      updateTrip(filtered.lat, filtered.lon, gnss.alt, gnss.speedKmh);
+      calculateRealSlope();
+      checkPerimeterGuard();
+      updateGarminUI();
+    }
+
+    function updateTrip(lat, lon, alt, speed) {
+      const now = Date.now();
+      if (trip.prevLat !== null && trip.prevLon !== null) {
+        const d = haversineMeters(trip.prevLat, trip.prevLon, lat, lon);
+        if (d > 0.4 && d < 100.0) {
+          trip.totalMeters += d;
+          if (speed && speed > 1.0) trip.movingTimeMs += (now - trip.lastMoveTs);
+        }
+      }
+      trip.lastMoveTs = now;
+      trip.prevLat = lat;
+      trip.prevLon = lon;
+
+      if (alt !== null && trip.prevAlt !== null) {
+        const dAlt = alt - trip.prevAlt;
+        if (dAlt > 0.3 && dAlt < 15.0) trip.altGain += dAlt;
+      }
+      trip.prevAlt = alt;
+
+      if (speed && speed > trip.maxSpeedKmh) trip.maxSpeedKmh = speed;
+      if (speed && speed > 0) {
+        trip.speedSum += speed;
+        trip.speedCount++;
+      }
+      if (alt !== null) {
+        trip.points.push({ lat, lon, alt });
+        if (trip.points.length > 3000) trip.points.shift();
+        if (trackPolyline && map) {
+          trackPolyline.addLatLng([lat, lon]);
+        }
+      }
+    }
+
+    /* Slope Angle & Avalanche Hazard Calculation */
+    function calculateRealSlope() {
+      const angleTxt = document.getElementById('slopeAngleText');
+      const badge = document.getElementById('slopeAvalancheBadge');
+
+      if (!gnss.connected || gnss.lat === null || trip.points.length < 5) {
+        if (angleTxt) angleTxt.textContent = 'EĞİM: --';
+        if (badge) {
+          badge.textContent = (!gnss.connected) ? 'SENSÖR YOK' : 'HAREKET BEKLENİYOR';
+          badge.style.color = '#64748b';
+        }
+        return;
+      }
+
+      const ptNow = trip.points[trip.points.length - 1];
+      const ptPrev = trip.points[Math.max(0, trip.points.length - 5)];
+      const d = haversineMeters(ptPrev.lat, ptPrev.lon, ptNow.lat, ptNow.lon);
+      if (d < 5.0) return;
+
+      const dAlt = Math.abs(ptNow.alt - ptPrev.alt);
+      const angleDeg = Math.atan(dAlt / d) * 180 / Math.PI;
+      const gradePct = Math.round((dAlt / d) * 100);
+
+      if (angleTxt) angleTxt.textContent = `EĞİM: ${angleDeg.toFixed(1)}° (%${gradePct})`;
+
+      if (badge) {
+        if (angleDeg >= 28.0 && angleDeg <= 45.0) {
+          badge.textContent = '⚠️ ÇIĞ TEHLİKESİ';
+          badge.style.color = '#dc2626';
+        } else if (angleDeg > 45.0) {
+          badge.textContent = '🧗 DİK KAYALIK';
+          badge.style.color = '#ea580c';
+        } else {
+          badge.textContent = 'GÜVENLİ ZEMİN';
+          badge.style.color = 'var(--g-active-green)';
+        }
+      }
+    }
+
+    function updateGarminUI() {
+      const d = new Date();
+      const timeEl = document.getElementById('topTimeUtc');
+      if (timeEl) {
+        timeEl.textContent = `${String(d.getHours()).padStart(2,'0')}:${String(d.getMinutes()).padStart(2,'0')}`;
+      }
+
+      // Top Status Bar: Satellite Signal Ladder & Status
+      const satBars = [
+        document.getElementById('satBar1'),
+        document.getElementById('satBar2'),
+        document.getElementById('satBar3'),
+        document.getElementById('satBar4')
+      ];
+      const topStatus = document.getElementById('topGpsStatusText');
+      const topProf = document.getElementById('topProfileIcon');
+      const satPortEl = document.getElementById('satReceiverPort');
+
+      if (satPortEl) satPortEl.textContent = gnss.connected ? (gnss.port || 'COM4') : '--';
+
+      if (!gnss.connected) {
+        satBars.forEach(b => b?.classList.remove('active'));
+        if (topStatus) {
+          topStatus.textContent = 'KAPALI';
+          topStatus.style.color = '#dc2626';
+        }
+        if (topProf) topProf.textContent = '⚠️';
+      } else {
+        const activeBarCount = gnss.lat === null ? 1 : (gnss.sats >= 8 ? 4 : (gnss.sats >= 6 ? 3 : (gnss.sats >= 4 ? 2 : 1)));
+        satBars.forEach((b, idx) => {
+          if (idx < activeBarCount) b?.classList.add('active');
+          else b?.classList.remove('active');
+        });
+        if (topStatus) {
+          topStatus.textContent = gnss.fix || 'NO FIX';
+          topStatus.style.color = (gnss.lat !== null) ? 'var(--g-active-green)' : '#f59e0b';
+        }
+        if (topProf) {
+          const prof = GNSS_PROFILES[gnssFilter.currentProfileKey] || GNSS_PROFILES.STATIONARY;
+          topProf.textContent = prof.icon;
+        }
+      }
+
+      // Compass Page Data Fields
+      const boxSpeed = document.getElementById('boxSpeed');
+      const boxElev = document.getElementById('boxElev');
+      const boxDistNext = document.getElementById('boxDistNext');
+      const boxToGoto = document.getElementById('boxToGoto');
+
+      if (!gnss.connected) {
+        if (boxSpeed) boxSpeed.innerHTML = `-- <span class="data-box-unit">km/h</span>`;
+        if (boxElev) boxElev.innerHTML = `-- <span class="data-box-unit">m</span>`;
+        if (boxDistNext) boxDistNext.innerHTML = `-- <span class="data-box-unit">m</span>`;
+        if (boxToGoto) boxToGoto.textContent = `NONE`;
+      } else if (gnss.lat === null) {
+        if (boxSpeed) boxSpeed.innerHTML = `-- <span class="data-box-unit">km/h</span>`;
+        if (boxElev) boxElev.innerHTML = `-- <span class="data-box-unit">m</span>`;
+        if (boxDistNext) boxDistNext.innerHTML = `-- <span class="data-box-unit">m</span>`;
+        if (boxToGoto) boxToGoto.textContent = `ARANIYOR`;
+      } else {
+        if (boxSpeed) boxSpeed.innerHTML = `${(gnss.speedKmh !== null ? gnss.speedKmh.toFixed(1) : '0.0')} <span class="data-box-unit">km/h</span>`;
+        if (boxElev) boxElev.innerHTML = `${(gnss.alt !== null ? Math.round(gnss.alt) : '--')} <span class="data-box-unit">m</span>`;
+      }
+
+      const activeWp = waypoints.find(w => w.id === activeTargetId);
+      const needle = document.getElementById('garminBearingNeedle');
+      const cdiBar = document.getElementById('garminCdiBar');
+      const cdiNeedle = document.getElementById('garminCdiNeedle');
+
+      if (gnss.connected && gnss.lat !== null && activeWp) {
+        const distM = haversineMeters(gnss.lat, gnss.lon, activeWp.lat, activeWp.lon);
+        const brg = calculateBearing(gnss.lat, gnss.lon, activeWp.lat, activeWp.lon);
+
+        if (boxDistNext) boxDistNext.innerHTML = distM >= 1000 ? `${(distM/1000).toFixed(2)} <span class="data-box-unit">km</span>` : `${Math.round(distM)} <span class="data-box-unit">m</span>`;
+        if (boxToGoto) boxToGoto.textContent = activeWp.name;
+        const mapDistEl = document.getElementById('mapDistVal');
+        if (mapDistEl) mapDistEl.textContent = distM >= 1000 ? `${(distM/1000).toFixed(2)} km` : `${Math.round(distM)} m`;
+
+        if (needle) {
+          needle.style.display = 'block';
+          const hdg = gnss.heading !== null ? gnss.heading : 0;
+          needle.style.transform = `rotate(${brg - hdg}deg)`;
+        }
+
+        const startLat = currentRoute.startLat || gnss.lat;
+        const startLon = currentRoute.startLon || gnss.lon;
+        const dtk = calculateBearing(startLat, startLon, activeWp.lat, activeWp.lon);
+        const brgP = calculateBearing(startLat, startLon, gnss.lat, gnss.lon);
+        const distP = haversineMeters(startLat, startLon, gnss.lat, gnss.lon);
+        const xteMeters = distP * Math.sin((brgP - dtk) * Math.PI / 180.0);
+
+        if (cdiBar) {
+          cdiBar.style.display = 'flex';
+          const clampedXte = Math.max(-100, Math.min(100, xteMeters));
+          const needlePercent = 50 + (clampedXte / 100) * 45;
+          if (cdiNeedle) cdiNeedle.style.left = `${needlePercent}%`;
+        }
+      } else {
+        if (boxDistNext) boxDistNext.innerHTML = `-- <span class="data-box-unit">m</span>`;
+        if (boxToGoto) boxToGoto.textContent = (!gnss.connected) ? 'NONE' : (activeWp ? activeWp.name : (gnss.lat === null ? 'ARANIYOR' : 'NONE'));
+        const mapDistEl = document.getElementById('mapDistVal');
+        if (mapDistEl) mapDistEl.textContent = '--';
+        if (needle) needle.style.display = 'none';
+        if (cdiBar) cdiBar.style.display = 'none';
+      }
+
+      // Compass dial
+      const dial = document.getElementById('garminCompassDial');
+      const degText = document.getElementById('centerHeadingDeg');
+      const cardText = document.getElementById('centerHeadingCard');
+
+      if (!gnss.connected) {
+        if (dial) dial.style.transform = `rotate(0deg)`;
+        if (degText) degText.textContent = `---°`;
+        if (cardText) {
+          cardText.textContent = `SİSTEM KAPALI`;
+          cardText.style.color = '#ef4444';
+        }
+      } else if (gnss.lat === null || gnss.heading === null) {
+        if (dial) dial.style.transform = `rotate(0deg)`;
+        if (degText) degText.textContent = `---°`;
+        if (cardText) {
+          cardText.textContent = `UYDU ARANIYOR`;
+          cardText.style.color = '#f59e0b';
+        }
+      } else {
+        if (dial) dial.style.transform = `rotate(${-gnss.heading}deg)`;
+        if (degText) degText.textContent = `${Math.round(gnss.heading).toString().padStart(3,'0')}°`;
+        const cardinalDirs = ['N', 'NNE', 'NE', 'ENE', 'E', 'ESE', 'SE', 'SSE', 'S', 'SSW', 'SW', 'WSW', 'W', 'WNW', 'NW', 'NNW'];
+        const cIdx = Math.round(gnss.heading / 22.5) % 16;
+        if (cardText) {
+          cardText.textContent = cardinalDirs[cIdx];
+          cardText.style.color = 'var(--g-val)';
+        }
+      }
+
+      // MGRS Ribbon
+      const mgrsEl = document.getElementById('bottomMgrsRibbon');
+      const accEl = document.getElementById('bottomAccRibbon');
+      if (!gnss.connected) {
+        if (mgrsEl) {
+          mgrsEl.textContent = 'SİSTEM KAPALI // SENSÖR BEKLENİYOR';
+          mgrsEl.style.color = '#ef4444';
+        }
+        if (accEl) accEl.textContent = 'ACC: --';
+      } else if (gnss.lat === null) {
+        if (mgrsEl) {
+          mgrsEl.textContent = 'UYDU ARANIYOR (NO FIX)';
+          mgrsEl.style.color = '#f59e0b';
+        }
+        if (accEl) accEl.textContent = 'ACC: --';
+      } else {
+        if (mgrsEl) {
+          mgrsEl.textContent = wgs84ToMgrs(gnss.lat, gnss.lon);
+          mgrsEl.style.color = 'var(--g-val)';
+        }
+        if (accEl) accEl.textContent = `ACC: ±${((gnss.hdop || 1.5) * 1.6).toFixed(1)}m`;
+      }
+
+      // Trip Computer
+      document.getElementById('tcOdom').textContent = `${(trip.totalMeters / 1000.0).toFixed(2)} km`;
+      document.getElementById('tcMaxSpeed').textContent = trip.maxSpeedKmh > 0 ? `${trip.maxSpeedKmh.toFixed(1)} km/h` : '-- km/h';
+      document.getElementById('tcElevation').textContent = (gnss.connected && gnss.alt !== null) ? `${gnss.alt.toFixed(1)} m` : '-- m';
+      document.getElementById('tcTotalAscent').textContent = `+${Math.round(trip.altGain)} m`;
+
+      const movingSec = Math.floor(trip.movingTimeMs / 1000);
+      const totalSec = Math.floor((Date.now() - trip.startTime) / 1000);
+      const stoppedSec = Math.max(0, totalSec - movingSec);
+
+      document.getElementById('tcMoving').textContent = trip.movingTimeMs > 0 ? formatHours(movingSec) : '--:--:--';
+      document.getElementById('tcStopped').textContent = (gnss.connected && totalSec > 0) ? formatHours(stoppedSec) : '--:--:--';
+      document.getElementById('tcMovingAvg').textContent = trip.speedCount > 0 ? `${(trip.speedSum / trip.speedCount).toFixed(1)} km/h` : '-- km/h';
+      document.getElementById('tcOverallAvg').textContent = (trip.totalMeters > 0 && totalSec > 0) ? `${(trip.totalMeters / totalSec * 3.6).toFixed(1)} km/h` : '-- km/h';
+
+      // Map Cursor & Gentle Tracking
+      if (map && gnss.lat !== null && gnss.lon !== null) {
+        createMapCursor();
+        if (posMarker) {
+          posMarker.setLatLng([gnss.lat, gnss.lon]);
+          const arrow = document.getElementById('mapCursorArrow');
+          if (arrow && gnss.heading !== null) arrow.style.transform = `translateX(-50%) rotate(${gnss.heading}deg)`;
+        }
+        if (!isPanMode) {
+          if (!mapHasCentered) {
+            map.setView([gnss.lat, gnss.lon], 16);
+            mapHasCentered = true;
+          } else {
+            map.panTo([gnss.lat, gnss.lon], { animate: true, duration: 0.5 });
+          }
+        }
+      }
+    }
+
+    function formatHours(s) {
+      const h = Math.floor(s / 3600);
+      const m = Math.floor((s % 3600) / 60);
+      const sec = s % 60;
+      return `${String(h).padStart(2,'0')}:${String(m).padStart(2,'0')}:${String(sec).padStart(2,'0')}`;
+    }
+
+    /* Render Real Elevation Profile SVG from Trip Points */
+    function renderGarminElevationSvg() {
+      const svg = document.getElementById('garminElevSvg');
+      const ascentBox = document.getElementById('elevAscentBox');
+      const maxBox = document.getElementById('elevMaxBox');
+      const gradeBox = document.getElementById('elevGradeBox');
+      if (!svg) return;
+      svg.innerHTML = '';
+
+      if (!gnss.connected || gnss.lat === null) {
+        svg.innerHTML = `<text x="50%" y="50%" text-anchor="middle" fill="#dc2626" font-size="12" font-weight="800">SİSTEM KAPALI // SENSÖR BEKLENİYOR</text>`;
+        if (ascentBox) ascentBox.textContent = `+0 m`;
+        if (maxBox) maxBox.textContent = `-- m`;
+        if (gradeBox) gradeBox.textContent = `GRADE: --`;
+        return;
+      }
+
+      const pts = trip.points;
+      if (pts.length < 2) {
+        svg.innerHTML = `<text x="50%" y="50%" text-anchor="middle" fill="#64748b" font-size="12">Yeterli irtifa verisi toplanıyor...</text>`;
+        if (ascentBox) ascentBox.textContent = `+${Math.round(trip.altGain)} m`;
+        if (maxBox) maxBox.textContent = gnss.alt ? `${Math.round(gnss.alt)} m` : `-- m`;
+        return;
+      }
+
+      let minAlt = 99999, maxAlt = -99999;
+      pts.forEach(p => {
+        if (p.alt < minAlt) minAlt = p.alt;
+        if (p.alt > maxAlt) maxAlt = p.alt;
+      });
+      const altRange = Math.max(10, maxAlt - minAlt + 8);
+
+      if (ascentBox) ascentBox.textContent = `+${Math.round(trip.altGain)} m`;
+      if (maxBox) maxBox.textContent = `${Math.round(maxAlt)} m`;
+
+      let pathD = `M 10 145 `;
+      pts.forEach((p, idx) => {
+        const x = 10 + (idx / (pts.length - 1)) * 340;
+        const y = 140 - ((p.alt - minAlt + 4) / altRange) * 110;
+        pathD += `L ${x.toFixed(1)} ${y.toFixed(1)} `;
+      });
+      pathD += `L 350 150 L 10 150 Z`;
+
+      const path = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+      path.setAttribute('d', pathD);
+      path.setAttribute('fill', 'rgba(21, 128, 61, 0.35)');
+      path.setAttribute('stroke', '#15803d');
+      path.setAttribute('stroke-width', '2');
+      svg.appendChild(path);
+    }
+
+    /* =========================================================================
+       9. LIVE POLAR RADAR SATELLITE SKYPLOT & BARS
+       ========================================================================= */
+    function renderGarminSkyplot() {
+      const svg = document.getElementById('garminSkyplotSvg');
+      if (!svg) return;
+      svg.innerHTML = '';
+
+      // Draw Radar Background Rings
+      const rings = [85, 56, 28];
+      rings.forEach(r => {
+        const c = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
+        c.setAttribute('cx', '100'); c.setAttribute('cy', '100'); c.setAttribute('r', r);
+        c.setAttribute('fill', 'none'); c.setAttribute('stroke', '#475569'); c.setAttribute('stroke-dasharray', '3,3');
+        svg.appendChild(c);
+      });
+
+      // Axis cross
+      const l1 = document.createElementNS('http://www.w3.org/2000/svg', 'line');
+      l1.setAttribute('x1', '100'); l1.setAttribute('y1', '15'); l1.setAttribute('x2', '100'); l1.setAttribute('y2', '185');
+      l1.setAttribute('stroke', '#334155'); svg.appendChild(l1);
+
+      const l2 = document.createElementNS('http://www.w3.org/2000/svg', 'line');
+      l2.setAttribute('x1', '15'); l2.setAttribute('y1', '100'); l2.setAttribute('x2', '185'); l2.setAttribute('y2', '100');
+      l2.setAttribute('stroke', '#334155'); svg.appendChild(l2);
+
+      const sats = Object.values(gnss.satellites);
+      if (!gnss.connected || sats.length === 0) {
+        const txt = document.createElementNS('http://www.w3.org/2000/svg', 'text');
+        txt.setAttribute('x', '100'); txt.setAttribute('y', '105');
+        txt.setAttribute('text-anchor', 'middle'); txt.setAttribute('font-size', '10');
+        txt.setAttribute('font-weight', '900'); txt.setAttribute('fill', gnss.connected ? '#f59e0b' : '#dc2626');
+        txt.textContent = gnss.connected ? 'UYDU ARANIYOR...' : 'SİSTEM KAPALI';
+        svg.appendChild(txt);
+        return;
+      }
+
+      sats.forEach(s => {
+        if (s.elev <= 0) return;
+        const r = 85 * ((90 - s.elev) / 90.0);
+        const azRad = s.az * Math.PI / 180.0;
+        const x = 100 + r * Math.sin(azRad);
+        const y = 100 - r * Math.cos(azRad);
+
+        let color = '#22c55e'; // GPS
+        if (s.constel === 'GL') color = '#f59e0b';
+        if (s.constel === 'GA') color = '#38bdf8';
+        if (s.constel === 'GB') color = '#a855f7';
+
+        const dot = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
+        dot.setAttribute('cx', x.toFixed(1)); dot.setAttribute('cy', y.toFixed(1)); dot.setAttribute('r', '5');
+        dot.setAttribute('fill', color); dot.setAttribute('stroke', '#fff'); dot.setAttribute('stroke-width', '1');
+        svg.appendChild(dot);
+
+        const txt = document.createElementNS('http://www.w3.org/2000/svg', 'text');
+        txt.setAttribute('x', x.toFixed(1)); txt.setAttribute('y', (y - 7).toFixed(1));
+        txt.setAttribute('text-anchor', 'middle'); txt.setAttribute('font-size', '8');
+        txt.setAttribute('font-weight', '900'); txt.setAttribute('fill', '#f8fafc');
+        txt.textContent = s.prn;
+        svg.appendChild(txt);
+      });
+    }
+
+    function renderSatelliteBars() {
+      const container = document.getElementById('satBarsContainer');
+      const countBox = document.getElementById('satCountBox');
+      const accBox = document.getElementById('satAccuracyBox');
+      const modelVal = document.getElementById('satDynamicModelVal');
+      if (!container) return;
+      container.innerHTML = '';
+
+      if (!gnss.connected) {
+        if (countBox) {
+          countBox.textContent = 'SİSTEM KAPALI';
+          countBox.style.color = '#dc2626';
+        }
+        if (accBox) accBox.textContent = '--';
+        if (modelVal) {
+          modelVal.textContent = 'BAĞLANTI YOK';
+          modelVal.style.color = '#dc2626';
+        }
+        return;
+      }
+
+      const sats = Object.values(gnss.satellites).sort((a, b) => b.snr - a.snr);
+      if (countBox) {
+        countBox.textContent = sats.length > 0 ? `${sats.length} IN VIEW` : (gnss.lat === null ? '0 IN VIEW' : `${gnss.sats} SATS`);
+        countBox.style.color = sats.length > 0 ? 'var(--g-active-green)' : '#f59e0b';
+      }
+      if (accBox) {
+        accBox.textContent = (gnss.hdop && gnss.hdop > 0) ? `±${(gnss.hdop * 1.6).toFixed(1)} m` : '--';
+      }
+      if (modelVal) {
+        const prof = GNSS_PROFILES[gnssFilter.currentProfileKey] || GNSS_PROFILES.STATIONARY;
+        modelVal.textContent = `${prof.key} (UBX-VALSET)`;
+        modelVal.style.color = 'var(--g-active-green)';
+      }
+
+      sats.forEach(s => {
+        const col = document.createElement('div');
+        col.className = 'sat-column';
+        let cls = '';
+        if (s.constel === 'GL') cls = 'glonass';
+        if (s.constel === 'GA') cls = 'galileo';
+        if (s.constel === 'GB') cls = 'beidou';
+
+        const barH = Math.min(50, Math.max(4, s.snr));
+        col.innerHTML = `
+          <div class="sat-col-bar ${cls}" style="height:${barH}px;"></div>
+          <span class="sat-col-prn mono">${s.prn}</span>
+        `;
+        container.appendChild(col);
+      });
+    }
+
+    /* =========================================================================
+       10. ADVANCED HARDWARE NMEA PARSER (WITH FULL MULTI-GNSS GSV)
+       ========================================================================= */
+    function fetchGpsData() {
+      fetch('/api/gps')
+        .then(r => r.json())
+        .then(data => {
+          if (!data || !data.connected) {
+            gnss.connected = false;
+            gnss.port = '--';
+            gnss.fix = 'KAPALI';
+            gnss.satellites = {};
+            updateGarminUI();
+            renderGarminSkyplot();
+            renderSatelliteBars();
+            return;
+          }
+
+          gnss.connected = true;
+          gnss.port = data.port || 'COM4';
+          const lines = data.lines || [];
+          for (const line of lines) {
+            parseNmea(line);
+          }
+
+          // If no fix has been received for more than 5 seconds
+          if (Date.now() - gnss.lastFixTime > 5000 && gnss.lat !== null) {
+            gnss.fix = 'NO FIX';
+          }
+
+          updateGarminUI();
+          renderGarminSkyplot();
+          renderSatelliteBars();
+        })
+        .catch(() => {
+          gnss.connected = false;
+          gnss.port = '--';
+          gnss.fix = 'KAPALI';
+          gnss.satellites = {};
+          updateGarminUI();
+          renderGarminSkyplot();
+          renderSatelliteBars();
+        });
+    }
+
+    function parseNmea(line) {
+      if (!line || !line.startsWith('$')) return;
+      const parts = line.split('*')[0].split(',');
+      const type = parts[0].slice(3);
+
+      if (type === 'GGA') {
+        const rawLat = parseCoord(parts[2], parts[3]);
+        const rawLon = parseCoord(parts[4], parts[5]);
+        const fix = parseInt(parts[6]) || 0;
+        const sats = parseInt(parts[7]) || 0;
+        const hdop = parseFloat(parts[8]) || null;
+        const alt = parseFloat(parts[9]) || null;
+
+        gnss.sats = sats;
+        gnss.hdop = hdop;
+
+        if (fix > 0 && rawLat && rawLon) {
+          gnss.fix = fix === 1 ? '3D FIX' : (fix === 2 ? 'DGPS' : 'FIX');
+          gnss.lastFixTime = Date.now();
+          commitFix(rawLat, rawLon, alt, gnss.speedKmh, gnss.heading, hdop, sats);
+        } else if (gnss.lat === null) {
+          gnss.fix = 'NO FIX';
+        }
+      } else if (type === 'RMC') {
+        if (parts[2] === 'A') {
+          const rawLat = parseCoord(parts[3], parts[4]);
+          const rawLon = parseCoord(parts[5], parts[6]);
+          const speedKnots = parseFloat(parts[7]) || 0.0;
+          const speedKmh = speedKnots * 1.852;
+          const heading = parseFloat(parts[8]);
+
+          if (rawLat && rawLon) {
+            gnss.lastFixTime = Date.now();
+            commitFix(rawLat, rawLon, gnss.alt, speedKmh, !isNaN(heading) ? heading : gnss.heading, gnss.hdop, gnss.sats);
+          }
+        }
+      } else if (type.endsWith('GSV')) {
+        // Multi-GNSS Constellation Sats (GPS, GLONASS, Galileo, BeiDou)
+        const constel = type.substring(0, 2);
+        for (let i = 4; i + 3 < parts.length; i += 4) {
+          const prn = parseInt(parts[i]);
+          const elev = parseInt(parts[i+1]) || 0;
+          const az = parseInt(parts[i+2]) || 0;
+          const snr = parseInt(parts[i+3]) || 0;
+          if (prn) {
+            gnss.satellites[`${constel}${prn}`] = { constel, prn, elev, az, snr, ts: Date.now() };
+          }
+        }
+      }
+    }
+
+    function parseCoord(coordStr, dir) {
+      if (!coordStr || !dir) return null;
+      let dot = coordStr.indexOf('.');
+      if (dot < 0) return null;
+      let degDigits = dot - 2;
+      let deg = parseFloat(coordStr.substring(0, degDigits));
+      let min = parseFloat(coordStr.substring(degDigits));
+      let val = deg + (min / 60.0);
+      if (dir === 'S' || dir === 'W') val = -val;
+      return val;
+    }
+
+    setInterval(fetchGpsData, 1000);
+
+    /* =========================================================================
+       11. PHYSICAL KEYPAD DISPATCH
+       ========================================================================= */
+    document.getElementById('keyPage')?.addEventListener('click', () => pageNext());
+    document.getElementById('keyMenu')?.addEventListener('click', () => switchPage('pageMenu'));
+    document.getElementById('keyFind')?.addEventListener('click', () => openWaypointManager());
+    document.getElementById('keyIn')?.addEventListener('click', () => { playGarminBeep(1100, 0.03); if (map) map.zoomIn(); });
+    document.getElementById('keyOut')?.addEventListener('click', () => { playGarminBeep(800, 0.03); if (map) map.zoomOut(); });
+    document.getElementById('keyEnter')?.addEventListener('click', () => {
+      playGarminBeep(1200, 0.05);
+      if (isPanMode) recenterMapToGps();
+    });
+
+    document.getElementById('keyUp')?.addEventListener('click', () => { playGarminBeep(900, 0.02); if (map) { enablePanMode(); map.panBy([0, -80]); } });
+    document.getElementById('keyDown')?.addEventListener('click', () => { playGarminBeep(900, 0.02); if (map) { enablePanMode(); map.panBy([0, 80]); } });
+    document.getElementById('keyLeft')?.addEventListener('click', () => { playGarminBeep(900, 0.02); if (map) { enablePanMode(); map.panBy([-80, 0]); } });
+    document.getElementById('keyRight')?.addEventListener('click', () => { playGarminBeep(900, 0.02); if (map) { enablePanMode(); map.panBy([80, 0]); } });
+
+    function markCoordinatePoint(lat, lon, customName = null) {
+      playGarminChime();
+      const count = waypoints.length + 1;
+      const name = customName || `WP-${String(count).padStart(2,'0')}`;
+      const newWp = {
+        id: Date.now(),
+        name: name,
+        category: 'USER',
+        lat: lat,
+        lon: lon,
+        mgrs: wgs84ToMgrs(lat, lon)
+      };
+      waypoints.push(newWp);
+      activeTargetId = newWp.id;
+      renderMapWaypoints();
+      showGarminNotice(`NOKTA KAYDEDİLDİ: ${newWp.name} [${newWp.mgrs}]`, "📍");
+      return newWp;
+    }
+
+    document.getElementById('keyMark')?.addEventListener('click', () => {
+      let lat = gnss.lat;
+      let lon = gnss.lon;
+      let prefix = 'WP';
+
+      if (isPanMode && map) {
+        const c = map.getCenter();
+        lat = c.lat;
+        lon = c.lng;
+        prefix = 'CUR';
+      } else if (!gnss.connected || lat === null || lon === null) {
+        if (map) {
+          const c = map.getCenter();
+          lat = c.lat;
+          lon = c.lng;
+          prefix = 'MAP';
+        } else {
+          lat = 39.0;
+          lon = 35.0;
+        }
+      }
+      const name = `${prefix}-${String(waypoints.length + 1).padStart(2,'0')}`;
+      markCoordinatePoint(lat, lon, name);
+    });
+
+    document.getElementById('btnToggleNight')?.addEventListener('click', () => document.body.classList.toggle('garmin-night'));
+    document.getElementById('btnToggleChassis')?.addEventListener('click', () => {
+      document.getElementById('garminChassis').classList.toggle('screen-only');
+      if (map) setTimeout(() => map.invalidateSize(), 200);
+    });
+
+    /* =========================================================================
+       12. TACTICAL TOOLS & EXPERIMENTAL ENGINES
+       ========================================================================= */
+    // Sight 'N Go
+    function triggerSightNGo() {
+      playGarminChime();
+      let lat = gnss.lat;
+      let lon = gnss.lon;
+      let heading = gnss.heading;
+
+      if (lat === null || lon === null) {
+        if (map) {
+          const c = map.getCenter();
+          lat = c.lat;
+          lon = c.lng;
+        } else {
+          lat = 39.0;
+          lon = 35.0;
+        }
+      }
+      if (heading === null || isNaN(heading)) {
+        heading = 0.0;
+      }
+
+      const proj = projectPoint(lat, lon, heading, 10000);
+      const sightWp = {
+        id: 9999,
+        name: `SIGHT ${Math.round(heading)}°`,
+        category: 'SIGHT',
+        lat: proj.lat,
+        lon: proj.lon,
+        mgrs: wgs84ToMgrs(proj.lat, proj.lon)
+      };
+      waypoints = waypoints.filter(w => w.id !== 9999);
+      waypoints.push(sightWp);
+      activeTargetId = 9999;
+      renderMapWaypoints();
+      showGarminNotice(`SIGHT 'N GO: ${Math.round(heading)}° KERTERİZİ ALINDI`, "🎯");
+      switchPage('pageCompass');
+    }
+
+    // Project Waypoint
+    function triggerProjectWp() {
+      document.getElementById('modalProjectWp').style.display = 'flex';
+    }
+
+    function submitProjectWp() {
+      let lat = gnss.lat;
+      let lon = gnss.lon;
+      if (lat === null || lon === null) {
+        if (map) {
+          const c = map.getCenter();
+          lat = c.lat;
+          lon = c.lng;
+        } else {
+          lat = 39.0;
+          lon = 35.0;
+        }
+      }
+      const brg = parseFloat(document.getElementById('inpProjAngle').value);
+      const dist = parseFloat(document.getElementById('inpProjDistM').value);
+      if (isNaN(brg) || isNaN(dist)) return;
+
+      playGarminChime();
+      const p = projectPoint(lat, lon, brg, dist);
+      const newWp = {
+        id: Date.now(),
+        name: `PRJ-${Math.round(brg)}°`,
+        category: 'USER',
+        lat: p.lat,
+        lon: p.lon,
+        mgrs: wgs84ToMgrs(p.lat, p.lon)
+      };
+      waypoints.push(newWp);
+      activeTargetId = newWp.id;
+      closeModals();
+      renderMapWaypoints();
+      showGarminNotice(`İZDÜŞÜM NOKTASI EKLENDİ: ${newWp.name}`, "📐");
+      switchPage('pageCompass');
+    }
+
+    // Sun & Moon Real Astronomical Calculations
+    function triggerSunMoon() {
+      playGarminBeep(880, 0.04);
+      let lat = gnss.lat;
+      let lon = gnss.lon;
+      let isLive = (gnss.connected && lat !== null && lon !== null);
+
+      if (!isLive) {
+        if (map) {
+          const c = map.getCenter();
+          lat = c.lat;
+          lon = c.lng;
+        } else {
+          lat = 39.0;
+          lon = 35.0;
+        }
+      }
+
+      const now = new Date();
+      const start = new Date(now.getFullYear(), 0, 0);
+      const dayOfYear = Math.floor((now - start) / (1000 * 60 * 60 * 24));
+
+      const dec = 23.45 * Math.sin((360 / 365 * (dayOfYear - 81)) * Math.PI / 180);
+      const bRad = (360 / 365 * (dayOfYear - 81)) * Math.PI / 180;
+      const eotMin = 9.87 * Math.sin(2 * bRad) - 7.53 * Math.cos(bRad) - 1.5 * Math.sin(bRad);
+
+      const cosOmega = (Math.sin(-0.833 * Math.PI / 180) - Math.sin(lat * Math.PI / 180) * Math.sin(dec * Math.PI / 180)) /
+                       (Math.cos(lat * Math.PI / 180) * Math.cos(dec * Math.PI / 180));
+
+      if (cosOmega >= -1.0 && cosOmega <= 1.0) {
+        const omega = Math.acos(cosOmega) * 180 / Math.PI;
+        const noonUtc = 12.0 - (lon / 15.0) - (eotMin / 60.0);
+        const srUtc = noonUtc - (omega / 15.0);
+        const ssUtc = noonUtc + (omega / 15.0);
+
+        const tz = 3.0; // TRT UTC+3
+        document.getElementById('smDawn').textContent = formatHoursDecimal(srUtc + tz - 0.5);
+        document.getElementById('smSunrise').textContent = formatHoursDecimal(srUtc + tz);
+        document.getElementById('smSunset').textContent = formatHoursDecimal(ssUtc + tz);
+        document.getElementById('smDusk').textContent = formatHoursDecimal(ssUtc + tz + 0.5);
+      } else {
+        document.getElementById('smDawn').textContent = '--:--';
+        document.getElementById('smSunrise').textContent = '--:--';
+        document.getElementById('smSunset').textContent = '--:--';
+        document.getElementById('smDusk').textContent = '--:--';
+      }
+
+      const refNewMoon = new Date('2000-01-06T18:14:00Z');
+      const daysSince = (now - refNewMoon) / (1000 * 60 * 60 * 24);
+      const cycle = 29.53058867;
+      const phaseDays = daysSince % cycle;
+      const illumPercent = Math.round((1 - Math.cos(2 * Math.PI * phaseDays / cycle)) / 2 * 100);
+      const phaseNames = ['Yeni Ay', 'Hilal', 'İlk Dördün', 'Büyüyen Şişkin', 'Dolunay', 'Küçülen Şişkin', 'Son Dördün', 'Küçülen Hilal'];
+      const pIdx = Math.floor((phaseDays / cycle) * 8 + 0.5) % 8;
+
+      document.getElementById('smMoonPhase').textContent = phaseNames[pIdx];
+      document.getElementById('smMoonIllum').textContent = `%${illumPercent}`;
+      const refEl = document.getElementById('smLocationRef');
+      if (refEl) {
+        refEl.textContent = isLive ? 'KONUM: CANLI GPS KİLİDİ' : 'KONUM: HARİTA MERKEZİ (OFFLINE)';
+      }
+      document.getElementById('modalSunMoon').style.display = 'flex';
+    }
+
+    function formatHoursDecimal(hDec) {
+      hDec = (hDec + 24) % 24;
+      const h = Math.floor(hDec);
+      const m = Math.floor((hDec - h) * 60);
+      return `${String(h).padStart(2,'0')}:${String(m).padStart(2,'0')}`;
+    }
+
+    // Area Calculation (Shoelace Algorithm on Live Track, GPX, or Waypoints)
+    function triggerAreaCalc() {
+      playGarminBeep(880, 0.04);
+      let pts = [];
+      let sourceName = "";
+
+      if (trip.points && trip.points.length >= 3) {
+        pts = trip.points;
+        sourceName = "CANLI İZ KAYDI";
+      } else if (currentRoute.points && currentRoute.points.length >= 3) {
+        pts = currentRoute.points.map(p => ({ lat: p[0], lon: p[1] }));
+        sourceName = "YÜKLÜ GPX / ROTA";
+      } else if (waypoints.length >= 3) {
+        pts = waypoints;
+        sourceName = "KAYITLI NOKTALAR";
+      }
+
+      const sqEl = document.getElementById('areaResultSqM');
+      const donEl = document.getElementById('areaResultDonum');
+      const perEl = document.getElementById('areaResultPerimeter');
+      const noteEl = document.getElementById('areaCalcNote');
+
+      if (pts.length < 3) {
+        sqEl.textContent = '-- m²';
+        donEl.textContent = '-- Dönüm';
+        perEl.textContent = '-- metre';
+        if (noteEl) noteEl.textContent = "KAPALI ALAN İÇİN İZ KAYDI, GPX DOSYASI VEYA EN AZ 3 NOKTA GEREKLİDİR.";
+        document.getElementById('modalAreaCalc').style.display = 'flex';
+        return;
+      }
+
+      const originLat = pts[0].lat;
+      const originLon = pts[0].lon;
+      const phiRad = originLat * Math.PI / 180;
+      const R_lat = 111319.9;
+      const R_lon = 111319.9 * Math.cos(phiRad);
+
+      const metricPts = pts.map(p => ({
+        x: (p.lon - originLon) * R_lon,
+        y: (p.lat - originLat) * R_lat
+      }));
+
+      let area = 0.0;
+      let perimeter = 0.0;
+      const n = metricPts.length;
+
+      for (let i = 0; i < n; i++) {
+        const j = (i + 1) % n;
+        area += metricPts[i].x * metricPts[j].y;
+        area -= metricPts[j].x * metricPts[i].y;
+        const dx = metricPts[j].x - metricPts[i].x;
+        const dy = metricPts[j].y - metricPts[i].y;
+        perimeter += Math.sqrt(dx * dx + dy * dy);
+      }
+      area = Math.abs(area) / 2.0;
+
+      sqEl.textContent = `${Math.round(area).toLocaleString()} m²`;
+      donEl.textContent = `${(area / 1000.0).toFixed(2)} Dönüm`;
+      perEl.textContent = `${Math.round(perimeter)} metre`;
+      if (noteEl) noteEl.textContent = `HESAPLAMA: ${sourceName} (${pts.length} NOKTA)`;
+      document.getElementById('modalAreaCalc').style.display = 'flex';
+    }
+
+    // Tactical SOS Beacon & Radio Prompt
+    function triggerSosScreen() {
+      playGarminChime();
+      const mgrsEl = document.getElementById('sosMgrsVal');
+      const altEl = document.getElementById('sosAltVal');
+      const phoneticEl = document.getElementById('sosPhoneticText');
+
+      if (!gnss.connected || gnss.lat === null || gnss.lon === null) {
+        if (mgrsEl) mgrsEl.textContent = 'SİSTEM KAPALI';
+        if (altEl) altEl.textContent = '-- m MSL';
+        if (phoneticEl) phoneticEl.textContent = 'SİSTEM KAPALI // CANLI SENSÖR VERİSİ YOK';
+        document.getElementById('modalSos').style.display = 'flex';
+        return;
+      }
+
+      const mgrs = wgs84ToMgrs(gnss.lat, gnss.lon);
+      if (mgrsEl) mgrsEl.textContent = mgrs;
+      if (altEl) altEl.textContent = (gnss.alt !== null ? `${gnss.alt.toFixed(1)} m MSL` : '-- m MSL');
+
+      // Phonetic conversion
+      const NATO_PHONETIC = {
+        '0':'SIFIR', '1':'BİR', '2':'İKİ', '3':'ÜÇ', '4':'DÖRT', '5':'BEŞ', '6':'ALTI', '7':'YEDİ', '8':'SEKİZ', '9':'DOKUZ',
+        'T':'TANGO', 'U':'UNİFORM', 'L':'LİMA', 'V':'VİKTOR', 'K':'KİLO', 'S':'SİERRA', 'R':'ROMEO'
+      };
+      let phonetic = 'KARE ';
+      for (let ch of mgrs.toUpperCase()) {
+        if (ch === ' ') phonetic += ' - ';
+        else phonetic += (NATO_PHONETIC[ch] || ch) + ' ';
+      }
+      if (phoneticEl) phoneticEl.textContent = phonetic;
+      document.getElementById('modalSos').style.display = 'flex';
+    }
+
+    function toggleSosStrobe() {
+      const btn = document.getElementById('btnToggleSosStrobe');
+      if (sosStrobeTimer) {
+        clearInterval(sosStrobeTimer);
+        sosStrobeTimer = null;
+        document.body.classList.remove('sos-strobe-active');
+        btn.innerHTML = '<span>🚨</span> OPTİK MORS SOS FLAŞÖRÜNÜ BAŞLAT';
+        btn.style.background = '#dc2626';
+      } else {
+        document.body.classList.add('sos-strobe-active');
+        btn.innerHTML = '<span>🛑</span> SOS FLAŞÖRÜNÜ DURDUR';
+        btn.style.background = '#000';
+        sosStrobeTimer = setInterval(() => {
+          playGarminBeep(1600, 0.08);
+        }, 600);
+      }
+    }
+
+    // External GPX Import Tool
+    function triggerGpxImport() {
+      document.getElementById('inpGpxUpload').click();
+    }
+
+    function handleGpxUpload(e) {
+      const file = e.target.files[0];
+      if (!file) return;
+
+      const reader = new FileReader();
+      reader.onload = function(evt) {
+        const text = evt.target.result;
+        const parser = new DOMParser();
+        const xml = parser.parseFromString(text, 'text/xml');
+        const trkpts = xml.querySelectorAll('trkpt');
+
+        if (trkpts.length === 0) {
+          showGarminNotice("GPX: GEÇERLİ İZ NOKTASI BULUNAMADI", "⚠️");
+          return;
+        }
+
+        const importedPts = [];
+        trkpts.forEach(pt => {
+          const lat = parseFloat(pt.getAttribute('lat'));
+          const lon = parseFloat(pt.getAttribute('lon'));
+          if (!isNaN(lat) && !isNaN(lon)) importedPts.push([lat, lon]);
+        });
+
+        currentRoute.active = true;
+        currentRoute.points = importedPts;
+        if (routePolyline && map) {
+          routePolyline.setLatLngs(importedPts);
+          map.fitBounds(routePolyline.getBounds(), { padding: [30, 30] });
+        }
+        playGarminChime();
+        showGarminNotice(`GPX YÜKLENDİ: ${importedPts.length} NOKTA`, "📁");
+        switchPage('pageMap');
+      };
+      reader.readAsText(file);
+    }
+
+    // Waypoint Manager Modal & Map Center Bookmark
+    function openWaypointManager() {
+      playGarminBeep(880, 0.03);
+      const list = document.getElementById('wptManagerList');
+      if (!list) return;
+      list.innerHTML = '';
+
+      if (waypoints.length === 0) {
+        list.innerHTML = `
+          <div style="text-align:center; padding:18px 10px; color:var(--g-label); font-weight:700;">
+            KAYITLI NOKTA BULUNAMADI<br>
+            <span style="font-size:11px; font-weight:normal;">[MARK] tuşuna basabilir veya aşağıdaki buton ile harita merkezini kaydedebilirsiniz.</span>
+          </div>`;
+      } else {
+        waypoints.forEach(wp => {
+          const isTarget = (wp.id === activeTargetId);
+          const div = document.createElement('div');
+          div.style.cssText = `border:1px solid var(--g-border); padding:6px; background:${isTarget ? 'var(--g-highlight)' : 'var(--g-box-bg)'}; display:flex; justify-content:space-between; align-items:center; cursor:pointer;`;
+          div.innerHTML = `
+            <div>
+              <div style="font-weight:900;">📍 ${wp.name} ${isTarget ? '★' : ''}</div>
+              <div class="mono" style="font-size:10px; color:var(--g-label);">${wp.mgrs}</div>
+            </div>
+            <button class="g-key" style="padding:4px 8px; font-size:11px;" onclick="setActiveTarget(${wp.id}); closeModals();">GO</button>
+          `;
+          list.appendChild(div);
+        });
+      }
+      document.getElementById('modalWptManager').style.display = 'flex';
+    }
+
+    function markCurrentMapPoint() {
+      if (!map) initGarminMap();
+      const c = map ? map.getCenter() : { lat: 39.0, lng: 35.0 };
+      const count = waypoints.length + 1;
+      const name = `MAP-${String(count).padStart(2,'0')}`;
+      markCoordinatePoint(c.lat, c.lng, name);
+      openWaypointManager();
+    }
+
+    function setActiveTarget(id) {
+      playGarminChime();
+      activeTargetId = id;
+      renderMapWaypoints();
+      updateGarminUI();
+      switchPage('pageCompass');
+    }
+
+    function closeModals() {
+      document.querySelectorAll('.g-modal-backdrop').forEach(m => m.style.display = 'none');
+    }
+
+    // TracBack® Inversion Engine
+    function triggerTracBack() {
+      playGarminChime();
+      let trackPts = [];
+      if (trip.points && trip.points.length >= 3) {
+        trackPts = trip.points.map(p => [p.lat, p.lon]);
+      } else if (currentRoute.points && currentRoute.points.length >= 3) {
+        trackPts = currentRoute.points.slice();
+      }
+
+      if (trackPts.length < 3) {
+        showGarminNotice("TRACBACK: İZ KAYDI VEYA GPX GEREKLİDİR", "⚠️");
+        switchPage('pageMap');
+        return;
+      }
+
+      const reversed = trackPts.slice().reverse();
+      currentRoute.active = true;
+      currentRoute.points = reversed;
+      currentRoute.maneuvers = [
+        { text: 'TracBack: İz kaydını geriye doğru takip edin', distanceM: trip.totalMeters || 1000 }
+      ];
+      if (routePolyline && map) {
+        routePolyline.setLatLngs(reversed);
+        map.fitBounds(routePolyline.getBounds(), { padding: [30, 30] });
+      }
+      showGarminNotice("TRACBACK: GERİ DÖNÜŞ ROTASI AKTİF", "🔄");
+      switchPage('pageMap');
+    }
+
+    // Perimeter Guard (Anchor / Camp Geofence)
+    const perimeterGuard = {
+      armed: false,
+      lat: null,
+      lon: null,
+      isMapAnchor: false,
+      radiusM: 50,
+      breached: false
+    };
+
+    function triggerPerimeterGuard() {
+      playGarminBeep(880, 0.03);
+      updatePerimeterModalUI();
+      document.getElementById('modalPerimeterGuard').style.display = 'flex';
+    }
+
+    function setGuardRadius(r) {
+      perimeterGuard.radiusM = r;
+      document.getElementById('guardRadiusVal').textContent = `${r}m`;
+      playGarminBeep(988, 0.02);
+    }
+
+    function togglePerimeterGuard() {
+      let gLat = gnss.lat;
+      let gLon = gnss.lon;
+      let isMapAnchor = false;
+
+      if (!gnss.connected || gLat === null || gLon === null) {
+        if (map) {
+          const c = map.getCenter();
+          gLat = c.lat;
+          gLon = c.lng;
+          isMapAnchor = true;
+        } else {
+          gLat = 39.0;
+          gLon = 35.0;
+          isMapAnchor = true;
+        }
+      }
+
+      perimeterGuard.armed = !perimeterGuard.armed;
+      const btn = document.getElementById('btnToggleGuard');
+      if (perimeterGuard.armed) {
+        perimeterGuard.lat = gLat;
+        perimeterGuard.lon = gLon;
+        perimeterGuard.isMapAnchor = isMapAnchor;
+        perimeterGuard.breached = false;
+        playGarminChime();
+        btn.innerHTML = '<span>🛑</span> GÜVENLİK ÇEMBERİNİ DEVRE DIŞI BIRAK';
+        btn.style.background = '#dc2626';
+        showGarminNotice(isMapAnchor ? "GÜVENLİK ÇEMBERİ (GNSS BEKLENİYOR)" : "GÜVENLİK ÇEMBERİ DEVREDE", "🛡️");
+      } else {
+        perimeterGuard.breached = false;
+        perimeterGuard.isMapAnchor = false;
+        playGarminBeep(440, 0.05);
+        btn.innerHTML = '<span>🛡️</span> GÜVENLİK ÇEMBERİNİ DEVREYE AL';
+        btn.style.background = '#15803d';
+        showGarminNotice("GÜVENLİK ÇEMBERİ DEVRE DIŞI", "🛡️");
+      }
+      updatePerimeterModalUI();
+    }
+
+    function updatePerimeterModalUI() {
+      const statusTxt = document.getElementById('guardStatusText');
+      const anchorTxt = document.getElementById('guardAnchorCoord');
+      const distTxt = document.getElementById('guardCurrentDist');
+
+      if (!statusTxt) return;
+      if (perimeterGuard.armed && perimeterGuard.lat !== null) {
+        const isOffline = (!gnss.connected || gnss.lat === null);
+        if (isOffline) {
+          statusTxt.textContent = 'BEKLEMEDE (GNSS BEKLENİYOR)';
+          statusTxt.style.color = 'var(--g-warn)';
+        } else {
+          statusTxt.textContent = perimeterGuard.breached ? '⚠️ İHLAL EDİLDİ! (BREACH)' : 'AKTİF (KORUMA SAĞLANIYOR)';
+          statusTxt.style.color = perimeterGuard.breached ? '#dc2626' : '#15803d';
+        }
+        anchorTxt.textContent = wgs84ToMgrs(perimeterGuard.lat, perimeterGuard.lon) + (perimeterGuard.isMapAnchor ? ' [HARİTA]' : '');
+        const curDist = (!isOffline) ? haversineMeters(perimeterGuard.lat, perimeterGuard.lon, gnss.lat, gnss.lon) : 0;
+        distTxt.textContent = isOffline ? `0 m (GNSS Bekleniyor) / Limit ${perimeterGuard.radiusM}m` : `${curDist.toFixed(1)} m / Max ${perimeterGuard.radiusM} m`;
+        distTxt.style.color = curDist > perimeterGuard.radiusM ? '#dc2626' : 'var(--g-accent)';
+      } else {
+        statusTxt.textContent = 'PASİF (DISARMED)';
+        statusTxt.style.color = '#64748b';
+        anchorTxt.textContent = '--';
+        distTxt.textContent = '0 m';
+      }
+    }
+
+    function checkPerimeterGuard() {
+      if (!perimeterGuard.armed || perimeterGuard.lat === null || gnss.lat === null || gnss.lon === null) return;
+      const d = haversineMeters(perimeterGuard.lat, perimeterGuard.lon, gnss.lat, gnss.lon);
+      if (d > perimeterGuard.radiusM) {
+        perimeterGuard.breached = true;
+        playGarminBeep(1800, 0.12);
+        const topIcon = document.getElementById('topProfileIcon');
+        if (topIcon) topIcon.textContent = '🚨';
+      } else {
+        perimeterGuard.breached = false;
+      }
+      updatePerimeterModalUI();
+    }
+
+    // Tactical Waypoint & ETE Matrix
+    function triggerTacticalMatrix() {
+      playGarminBeep(880, 0.03);
+      const container = document.getElementById('tacMatrixContainer');
+      if (!container) return;
+      container.innerHTML = '';
+
+      if (waypoints.length === 0) {
+        container.innerHTML = `<div style="text-align:center; padding:24px 10px; color:var(--g-label); font-weight:700;">KAYITLI NOKTA BULUNAMADI<br><span style="font-size:11px; font-weight:normal;">Önce [MARK] tuşu ile en az bir hedef nokta kaydedin.</span></div>`;
+        document.getElementById('modalTacMatrix').style.display = 'flex';
+        return;
+      }
+
+      const speedKmh = (gnss.speedKmh && gnss.speedKmh > 1.0) ? gnss.speedKmh : 4.2;
+
+      const hasPos = (gnss.lat !== null && gnss.lon !== null);
+      const refLat = hasPos ? gnss.lat : (map ? map.getCenter().lat : null);
+      const refLon = hasPos ? gnss.lon : (map ? map.getCenter().lng : null);
+
+      const sorted = waypoints.map(wp => {
+        const d = (refLat !== null && refLon !== null) ? haversineMeters(refLat, refLon, wp.lat, wp.lon) : null;
+        const b = (refLat !== null && refLon !== null) ? calculateBearing(refLat, refLon, wp.lat, wp.lon) : null;
+        const eteSec = (d !== null) ? (d / (speedKmh * 1000.0 / 3600.0)) : null;
+        return { ...wp, distM: d, brg: b, eteSec };
+      }).sort((a, b) => (a.distM || 0) - (b.distM || 0));
+
+      sorted.forEach(item => {
+        const isTarget = (item.id === activeTargetId);
+        const row = document.createElement('div');
+        row.style.cssText = `border:1px solid var(--g-border); background:${isTarget ? 'var(--g-highlight)' : 'var(--g-box-bg)'}; padding:8px; border-radius:4px; display:flex; justify-content:space-between; align-items:center; font-size:11.5px;`;
+        
+        const distStr = item.distM !== null ? (item.distM >= 1000 ? `${(item.distM/1000).toFixed(2)} km` : `${Math.round(item.distM)} m`) : '--';
+        const eteStr = item.eteSec !== null ? formatHours(Math.floor(item.eteSec)) : '--:--:--';
+        const brgStr = item.brg !== null ? `${Math.round(item.brg)}°` : '---°';
+
+        row.innerHTML = `
+          <div>
+            <div style="font-weight:900; font-size:13px; color:var(--g-val);">
+              ${item.name} ${isTarget ? '★ <span style="font-size:10px; color:var(--g-route);">AKTİF</span>' : ''}
+            </div>
+            <div class="mono" style="font-size:10px; color:var(--g-label);">${item.mgrs}</div>
+            <div style="font-size:10.5px; margin-top:2px; font-weight:700;">
+              KERTERİZ: <span class="mono">${brgStr}</span> | MESAFE: <span class="mono" style="color:var(--g-accent);">${distStr}</span> | ETE: <span class="mono">${eteStr}</span>
+            </div>
+          </div>
+          <button class="g-key" style="padding:6px 10px; font-size:11px;" onclick="setActiveTarget(${item.id}); closeModals();">NAV</button>
+        `;
+        container.appendChild(row);
+      });
+
+      document.getElementById('modalTacMatrix').style.display = 'flex';
+    }
+
+    // Reset Trip
+    document.getElementById('btnResetTrip')?.addEventListener('click', () => {
+      if (confirm("Reset All Trip Data?")) {
+        playGarminBeep(440, 0.1);
+        trip.startTime = Date.now();
+        trip.movingTimeMs = 0;
+        trip.totalMeters = 0;
+        trip.maxSpeedKmh = 0;
+        trip.speedSum = 0;
+        trip.speedCount = 0;
+        trip.altGain = 0;
+        trip.points = [];
+        updateGarminUI();
+      }
+    });
+
+    // Export GPX
+    document.getElementById('btnExportGpx')?.addEventListener('click', () => {
+      let gpx = `<?xml version="1.0" encoding="UTF-8"?>\n<gpx version="1.1" creator="Garmin GPSMAP 67i">\n  <trk><name>Garmin Track</name><trkseg>\n`;
+      trip.points.forEach(p => {
+        gpx += `    <trkpt lat="${p.lat}" lon="${p.lon}"><ele>${p.alt||0}</ele></trkpt>\n`;
+      });
+      gpx += `  </trkseg></trk>\n</gpx>`;
+      const blob = new Blob([gpx], { type: 'application/gpx+xml' });
+      const a = document.createElement('a');
+      a.href = URL.createObjectURL(blob);
+      a.download = `garmin_gpsmap67i_${new Date().toISOString().slice(0,10)}.gpx`;
+      a.click();
+    });
+
+    /* =========================================================================
+       INITIAL STARTUP
+       ========================================================================= */
+    window.addEventListener('DOMContentLoaded', () => {
+      initGarminMap();
+      updateGarminUI();
+      renderGarminSkyplot();
+      renderSatelliteBars();
+    });
+  </script>
+</body>
+</html>
