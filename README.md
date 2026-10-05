@@ -150,17 +150,25 @@ To eliminate receiver desensitization, this platform implements a two-stage hybr
 ```
 gnss-kalman/
 ├── src/                  # ANSI C99 Bare-Metal Firmware Modules (Zero-Heap)
-│   ├── hybrid_comms.c    # 1W LoRa & Iridium SBD Hybrid Telemetry, BFT & Failover
+│   ├── kalman_filter.c   # 6-State Kinematic Extended Kalman Filter (EKF) Core
+│   ├── fdcan_hal.c       # STM32 Silicon FDCAN (Bosch M_CAN) Hardware Layer
+│   ├── sx1262_hal.c      # Semtech SX1262 1W LoRa SPI Hardware Radio Driver
+│   ├── iridium_at_fsm.c  # RockBLOCK 9603 Iridium SBD Non-Blocking AT FSM Driver
+│   ├── hybrid_comms.c    # Tactical Data Link, BFT Beaconing & Satellite Failover
 │   ├── cgpx_engine.c     # DPCM + LEB128 Varint Lossless Route Compression
 │   ├── mip_display.c     # Sharp MIP Display Driver (400x240 1-bit Monochrome)
 │   ├── chord_fsm.c       # 4-Button Temporal Chording Input State Machine
-│   ├── split_node_bus.c  # Split-Node CAN-FD Differential Communication Protocol
-│   ├── gnss_nmea.c       # Circular DMA Buffer NMEA 0183 Tokenizer & Parser
+│   ├── split_node_bus.c  # Split-Node CAN-FD Frame Packaging Protocol
+│   ├── gnss_nmea.c       # Circular DMA Buffer NMEA Tokenizer (RMC, GGA, GSV)
 │   ├── crypto_hal.c      # STM32 Hardware SAES / Software AES-128-CTR Crypto HAL
 │   ├── nlos_filter.c     # 64-Sector Polar Topographic DEM Skymask Horizon Filter
 │   └── power_supervisor.c# Sub-Zero Lithium Guard, Hysteresis & Thermal Throttle
 │
 ├── include/              # C99 Header Files & Protocol Definitions (*.h)
+│   ├── kalman_filter.h   # Kinematic EKF State-Space & Covariance API
+│   ├── fdcan_hal.h       # STM32 FDCAN Dual Bit-Timing & Message RAM API
+│   ├── sx1262_hal.h      # Semtech SX1262 LoRa SPI Protocol Definitions
+│   ├── iridium_at_fsm.h  # RockBLOCK Iridium SBD State Machine Declarations
 │   ├── hybrid_comms.h    # Tactical Data Link, BFT Beacon & Satellite API
 │   ├── split_node_bus.h  # CAN-FD Frame Format & BFT Message Types
 │   ├── crypto_hal.h      # AES-128-CTR Cipher Engine Interface
@@ -196,7 +204,7 @@ gnss-kalman/
 │   ├── test_cgpx.py           # CGPX Lossless Compression & C99 Engine Tests
 │   ├── test_topo.py           # Topographic DEM, Hillshade & Contour Tests
 │   ├── test_map_stability.py  # Map Engine Stability & Loop Test
-│   └── test_harness_*.c       # Native Bare-Metal C Test Harnesses (8 Harnesses)
+│   └── test_harness_*.c       # Native Bare-Metal C Test Harnesses (11 Harnesses)
 │
 ├── tools/                # Python DEM, 3D Hillshade & Geospatial CLI Tools
 ├── data/                 # Sample Alpine Routes (GPX/CGPX) & 30m DEM GeoTIFF

@@ -42,7 +42,10 @@ TEST_TARGETS = \
 	$(BUILD_DIR)/test_harness_power \
 	$(BUILD_DIR)/test_harness_topo \
 	$(BUILD_DIR)/test_harness_cryo \
-	$(BUILD_DIR)/test_harness_hybrid_comms
+	$(BUILD_DIR)/test_harness_hybrid_comms \
+	$(BUILD_DIR)/test_harness_kalman \
+	$(BUILD_DIR)/test_harness_fdcan \
+	$(BUILD_DIR)/test_harness_radio
 
 .PHONY: all lib tests test clean help
 
@@ -95,6 +98,15 @@ $(BUILD_DIR)/test_harness_cryo: $(TESTS_DIR)/test_harness_cryo.c $(LIB_TARGET)
 $(BUILD_DIR)/test_harness_hybrid_comms: $(TESTS_DIR)/test_harness_hybrid_comms.c $(LIB_TARGET)
 	$(CC) $(CFLAGS) $(INCLUDES) $< $(LIB_TARGET) $(LDLIBS) -o $@
 
+$(BUILD_DIR)/test_harness_kalman: $(TESTS_DIR)/test_harness_kalman.c $(LIB_TARGET)
+	$(CC) $(CFLAGS) $(INCLUDES) $< $(LIB_TARGET) $(LDLIBS) -o $@
+
+$(BUILD_DIR)/test_harness_fdcan: $(TESTS_DIR)/test_harness_fdcan.c $(LIB_TARGET)
+	$(CC) $(CFLAGS) $(INCLUDES) $< $(LIB_TARGET) $(LDLIBS) -o $@
+
+$(BUILD_DIR)/test_harness_radio: $(TESTS_DIR)/test_harness_radio.c $(LIB_TARGET)
+	$(CC) $(CFLAGS) $(INCLUDES) $< $(LIB_TARGET) $(LDLIBS) -o $@
+
 tests: $(TEST_TARGETS)
 
 # Run complete test verification
@@ -110,6 +122,9 @@ test: tests
 	@$(BUILD_DIR)/test_harness_topo
 	@$(BUILD_DIR)/test_harness_cryo
 	@$(BUILD_DIR)/test_harness_hybrid_comms
+	@$(BUILD_DIR)/test_harness_kalman
+	@$(BUILD_DIR)/test_harness_fdcan
+	@$(BUILD_DIR)/test_harness_radio
 	@echo "================================================================="
 	@echo " RUNNING PYTHON V&V MASTER TEST HARNESS"
 	@echo "================================================================="

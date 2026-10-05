@@ -21,7 +21,6 @@ void trn_validator_init(trn_validator_t *trn, float initial_dem_alt_m) {
 }
 
 float trn_compute_baro_alt(uint32_t press_pa_x100, int16_t temp_deci_c) {
-    (void)temp_deci_c; /* Standard ISA pressure-altitude baseline */
     if (press_pa_x100 == 0) return 0.0f;
 
     /* Pressure in Pascals */
@@ -32,9 +31,18 @@ float trn_compute_baro_alt(uint32_t press_pa_x100, int16_t temp_deci_c) {
 
     /* Hypsometric formula: h = 44330 * (1 - (p / p0)^0.190294957) */
     float pressure_ratio = p_pa / p0;
-    float alt = 44330.0f * (1.0f - powf(pressure_ratio, 0.190294957f));
+    float alt_isa = 44330.0f * (1.0f - powf(pressure_ratio, 0.190294957f));
 
-    return alt;
+    /* Real-World Temperature Lapse-Rate Compensation:
+     * Scale by (T_kelvin / T_isa_std) where T_isa_std = 288.15 K (+15.0 C) */
+    if (temp_deci_c != 0) {
+        float t_kelvin = 273.15f + ((float)temp_deci_c / 10.0f);
+        if (t_kelvin > 150.0f && t_kelvin < 350.0f) {
+            alt_isa *= (t_kelvin / 288.15f);
+        }
+    }
+
+    return alt_isa;
 }
 
 bool trn_update_step(trn_validator_t *trn,

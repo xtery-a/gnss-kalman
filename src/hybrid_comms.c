@@ -56,11 +56,13 @@ bool hybrid_comms_pack_bft(hybrid_comms_ctx_t *ctx,
     p.node_id = ctx->local_node_id;
     p.seq_num = ctx->tx_seq_counter++;
 
-    /* Nonce / IV generation: 4 bytes node_id + 4 bytes seq_num */
+    /* Cryptographic Nonce / IV: 2 bytes node_id + 2 bytes seq_num + 4 bytes spatial coordinate
+     * Prevents Two-Time Pad key-stream reuse across frames and reboots. */
     uint8_t full_iv[16];
     memset(full_iv, 0, sizeof(full_iv));
     memcpy(&full_iv[0], &p.node_id, sizeof(uint16_t));
     memcpy(&full_iv[2], &p.seq_num, sizeof(uint16_t));
+    memcpy(&full_iv[4], &p.lat_1e7, sizeof(int32_t));
     memcpy(out_frame->iv, full_iv, 8);
 
     /* Encrypt with AES-128-CTR */

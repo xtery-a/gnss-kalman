@@ -43,12 +43,16 @@ set(TACTICAL_SOURCES
     src/chord_fsm.c
     src/cryo_sentinel.c
     src/crypto_hal.c
+    src/fdcan_hal.c
     src/gnss_nmea.c
     src/hybrid_comms.c
+    src/iridium_at_fsm.c
+    src/kalman_filter.c
     src/mip_display.c
     src/nlos_filter.c
     src/power_supervisor.c
     src/split_node_bus.c
+    src/sx1262_hal.c
     src/thermal_throttle.c
     src/topo_map.c
     src/trn_validator.c
@@ -116,6 +120,18 @@ if(BUILD_TESTS)
     # Phase 7: Hybrid Tactical Comms & BFT
     add_tactical_test(test_harness_hybrid_comms tests/test_harness_hybrid_comms.c)
     add_test(NAME test_harness_hybrid_comms COMMAND test_harness_hybrid_comms)
+
+    # Kinematic Extended Kalman Filter
+    add_tactical_test(test_harness_kalman tests/test_harness_kalman.c)
+    add_test(NAME test_harness_kalman COMMAND test_harness_kalman)
+
+    # STM32 Silicon FDCAN Hardware Layer
+    add_tactical_test(test_harness_fdcan tests/test_harness_fdcan.c)
+    add_test(NAME test_harness_fdcan COMMAND test_harness_fdcan)
+
+    # Physical RF Hardware Drivers (SX1262 LoRa SPI & RockBLOCK Iridium SBD AT FSM)
+    add_tactical_test(test_harness_radio tests/test_harness_radio.c)
+    add_test(NAME test_harness_radio COMMAND test_harness_radio)
 endif()
 
 # ==============================================================================

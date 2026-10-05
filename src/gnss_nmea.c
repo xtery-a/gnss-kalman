@@ -255,7 +255,26 @@ bool gnss_parse_sentence(const char *sentence,
     }
 
     /* ---------------------------------------------------------------------- */
-    /* 2. Parse $GNGSV / $GPGSV (Satellites in View with L1/L5 Dual Band)     */
+    /* 2. Parse $GNGGA / $GPGGA (Global Positioning System Fix Data)          */
+    /* ---------------------------------------------------------------------- */
+    if (strstr(sentence, "GGA") != NULL) {
+        /* Field 6: Fix Quality */
+        if (get_field(sentence, 6, token, sizeof(token))) {
+            int qual = atoi(token);
+            pvt->valid = (qual > 0);
+        }
+
+        /* Field 9: Altitude above MSL in meters */
+        if (get_field(sentence, 9, token, sizeof(token)) && token[0] != '\0') {
+            double alt_m = atof(token);
+            pvt->alt_geo_mm = (int32_t)(alt_m * 1000.0 + 0.5);
+        }
+
+        return true;
+    }
+
+    /* ---------------------------------------------------------------------- */
+    /* 3. Parse $GNGSV / $GPGSV (Satellites in View with L1/L5 Dual Band)     */
     /* ---------------------------------------------------------------------- */
     if (strstr(sentence, "GSV") != NULL) {
         /* Check for Signal ID (field 20 in NMEA 4.11 for LC29H) */
