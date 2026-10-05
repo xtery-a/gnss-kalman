@@ -9,6 +9,10 @@
 > ⚠️ **Project Status:** *Active Research & Development (WIP / Work in Progress)*  
 > Open-source tactical navigation and situational awareness research combining an ANSI C99 bare-metal zero-heap firmware core, multi-band GNSS engine, bidirectional tactical data link (1W LoRa + Iridium SBD failover), two-stage RF power electronics, and a ruggedized handheld tactical terminal inspired by Garmin GPSMAP 67i architecture.
 
+<p align="center">
+  <img src="assets/linkedin/1_tactical_terminal_ui.jpg" alt="Tactical Multi-GNSS Handheld Terminal" width="850">
+</p>
+
 ---
 
 ## 📌 Project Overview
@@ -41,6 +45,10 @@ The system is **not** a passive consumer GPS receiver (RX-only); it is an **acti
 ---
 
 ## 🏛️ System & Data Link Architecture
+
+<p align="center">
+  <img src="assets/linkedin/2_split_node_architecture.jpg" alt="Decoupled Split-Node Tactical Bus Architecture" width="850">
+</p>
 
 ```
 +====================================================================================================+
@@ -113,6 +121,10 @@ The terminal acts as an active communication node within tactical networks via a
 ---
 
 ## ⚡ Power Electronics: Hybrid Two-Stage RF Power Architecture
+
+<p align="center">
+  <img src="assets/linkedin/3_rf_power_isolation.jpg" alt="Sub-Microvolt RF Power Isolation Architecture" width="850">
+</p>
 
 In mission-critical tactical hardware, switching DC-DC converters generate $20 - 30\text{ mV}_{p-p}$ high-frequency ripple ($f_{sw} \approx 2.4\text{ MHz}$). If routed directly to $-167\text{ dBm}$ GNSS low-noise amplifiers (LNA) and LoRa VCOs, this switching noise severely degrades satellite carrier-to-noise ratio ($\Delta C/N_0 \approx 5.5\text{ dB}$ desense drop).
 

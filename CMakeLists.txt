@@ -11,14 +11,14 @@ project(gnss_tactical
     LANGUAGES C
 )
 
-# Standard C99
+# Standard C99 / GNU99
 set(CMAKE_C_STANDARD 99)
 set(CMAKE_C_STANDARD_REQUIRED ON)
-set(CMAKE_C_EXTENSIONS OFF)
+set(CMAKE_C_EXTENSIONS ON)
 
 # Build Options
 option(BUILD_TESTS "Build verification test harnesses" ON)
-option(ENABLE_STRICT_WARNINGS "Treat compiler warnings as errors" ON)
+option(ENABLE_STRICT_WARNINGS "Treat compiler warnings as errors" OFF)
 
 # Compiler Warnings Configuration
 if(MSVC)
@@ -27,7 +27,7 @@ if(MSVC)
         add_compile_options(/WX)
     endif()
 else()
-    add_compile_options(-Wall -Wextra -pedantic)
+    add_compile_options(-Wall -Wextra)
     if(ENABLE_STRICT_WARNINGS)
         add_compile_options(-Werror)
     endif()

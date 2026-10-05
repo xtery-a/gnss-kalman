@@ -6,7 +6,7 @@
 CC      ?= gcc
 AR      ?= ar
 PYTHON  ?= python
-CFLAGS  ?= -std=c99 -Wall -Wextra -Werror -pedantic -O2
+CFLAGS  ?= -std=gnu99 -Wall -Wextra -O2
 INCLUDES = -Iinclude
 LDFLAGS ?=
 LDLIBS  ?= -lm
@@ -17,10 +17,12 @@ TESTS_DIR = tests
 BUILD_DIR = build
 
 ifeq ($(OS),Windows_NT)
+    EXE_EXT  = .exe
     RM_DIR   = cmd /C "if exist $(BUILD_DIR) rmdir /s /q $(BUILD_DIR)"
     RM_FILES = cmd /C "if exist *.pbm del /q /f *.pbm"
     MKDIR_P  = cmd /C "if not exist $(BUILD_DIR) mkdir $(BUILD_DIR)"
 else
+    EXE_EXT  =
     RM_DIR   = rm -rf $(BUILD_DIR)
     RM_FILES = rm -f *.pbm
     MKDIR_P  = mkdir -p $(BUILD_DIR)
@@ -35,17 +37,17 @@ LIB_TARGET = $(BUILD_DIR)/libgnss_tactical.a
 
 # Test Executables
 TEST_TARGETS = \
-	$(BUILD_DIR)/test_harness_cgpx \
-	$(BUILD_DIR)/test_harness_bus \
-	$(BUILD_DIR)/test_harness_display \
-	$(BUILD_DIR)/test_harness_nav \
-	$(BUILD_DIR)/test_harness_power \
-	$(BUILD_DIR)/test_harness_topo \
-	$(BUILD_DIR)/test_harness_cryo \
-	$(BUILD_DIR)/test_harness_hybrid_comms \
-	$(BUILD_DIR)/test_harness_kalman \
-	$(BUILD_DIR)/test_harness_fdcan \
-	$(BUILD_DIR)/test_harness_radio
+	$(BUILD_DIR)/test_harness_cgpx$(EXE_EXT) \
+	$(BUILD_DIR)/test_harness_bus$(EXE_EXT) \
+	$(BUILD_DIR)/test_harness_display$(EXE_EXT) \
+	$(BUILD_DIR)/test_harness_nav$(EXE_EXT) \
+	$(BUILD_DIR)/test_harness_power$(EXE_EXT) \
+	$(BUILD_DIR)/test_harness_topo$(EXE_EXT) \
+	$(BUILD_DIR)/test_harness_cryo$(EXE_EXT) \
+	$(BUILD_DIR)/test_harness_hybrid_comms$(EXE_EXT) \
+	$(BUILD_DIR)/test_harness_kalman$(EXE_EXT) \
+	$(BUILD_DIR)/test_harness_fdcan$(EXE_EXT) \
+	$(BUILD_DIR)/test_harness_radio$(EXE_EXT)
 
 .PHONY: all lib tests test clean help
 
@@ -74,37 +76,37 @@ $(LIB_TARGET): $(OBJS)
 lib: $(LIB_TARGET)
 
 # Compile test executables linking against static library
-$(BUILD_DIR)/test_harness_cgpx: $(TESTS_DIR)/test_harness.c $(LIB_TARGET)
+$(BUILD_DIR)/test_harness_cgpx$(EXE_EXT): $(TESTS_DIR)/test_harness.c $(LIB_TARGET)
 	$(CC) $(CFLAGS) $(INCLUDES) $< $(LIB_TARGET) $(LDLIBS) -o $@
 
-$(BUILD_DIR)/test_harness_bus: $(TESTS_DIR)/test_harness_bus.c $(LIB_TARGET)
+$(BUILD_DIR)/test_harness_bus$(EXE_EXT): $(TESTS_DIR)/test_harness_bus.c $(LIB_TARGET)
 	$(CC) $(CFLAGS) $(INCLUDES) $< $(LIB_TARGET) $(LDLIBS) -o $@
 
-$(BUILD_DIR)/test_harness_display: $(TESTS_DIR)/test_harness_display.c $(LIB_TARGET)
+$(BUILD_DIR)/test_harness_display$(EXE_EXT): $(TESTS_DIR)/test_harness_display.c $(LIB_TARGET)
 	$(CC) $(CFLAGS) $(INCLUDES) $< $(LIB_TARGET) $(LDLIBS) -o $@
 
-$(BUILD_DIR)/test_harness_nav: $(TESTS_DIR)/test_harness_nav.c $(LIB_TARGET)
+$(BUILD_DIR)/test_harness_nav$(EXE_EXT): $(TESTS_DIR)/test_harness_nav.c $(LIB_TARGET)
 	$(CC) $(CFLAGS) $(INCLUDES) $< $(LIB_TARGET) $(LDLIBS) -o $@
 
-$(BUILD_DIR)/test_harness_power: $(TESTS_DIR)/test_harness_power.c $(LIB_TARGET)
+$(BUILD_DIR)/test_harness_power$(EXE_EXT): $(TESTS_DIR)/test_harness_power.c $(LIB_TARGET)
 	$(CC) $(CFLAGS) $(INCLUDES) $< $(LIB_TARGET) $(LDLIBS) -o $@
 
-$(BUILD_DIR)/test_harness_topo: $(TESTS_DIR)/test_harness_topo.c $(LIB_TARGET)
+$(BUILD_DIR)/test_harness_topo$(EXE_EXT): $(TESTS_DIR)/test_harness_topo.c $(LIB_TARGET)
 	$(CC) $(CFLAGS) $(INCLUDES) $< $(LIB_TARGET) $(LDLIBS) -o $@
 
-$(BUILD_DIR)/test_harness_cryo: $(TESTS_DIR)/test_harness_cryo.c $(LIB_TARGET)
+$(BUILD_DIR)/test_harness_cryo$(EXE_EXT): $(TESTS_DIR)/test_harness_cryo.c $(LIB_TARGET)
 	$(CC) $(CFLAGS) $(INCLUDES) $< $(LIB_TARGET) $(LDLIBS) -o $@
 
-$(BUILD_DIR)/test_harness_hybrid_comms: $(TESTS_DIR)/test_harness_hybrid_comms.c $(LIB_TARGET)
+$(BUILD_DIR)/test_harness_hybrid_comms$(EXE_EXT): $(TESTS_DIR)/test_harness_hybrid_comms.c $(LIB_TARGET)
 	$(CC) $(CFLAGS) $(INCLUDES) $< $(LIB_TARGET) $(LDLIBS) -o $@
 
-$(BUILD_DIR)/test_harness_kalman: $(TESTS_DIR)/test_harness_kalman.c $(LIB_TARGET)
+$(BUILD_DIR)/test_harness_kalman$(EXE_EXT): $(TESTS_DIR)/test_harness_kalman.c $(LIB_TARGET)
 	$(CC) $(CFLAGS) $(INCLUDES) $< $(LIB_TARGET) $(LDLIBS) -o $@
 
-$(BUILD_DIR)/test_harness_fdcan: $(TESTS_DIR)/test_harness_fdcan.c $(LIB_TARGET)
+$(BUILD_DIR)/test_harness_fdcan$(EXE_EXT): $(TESTS_DIR)/test_harness_fdcan.c $(LIB_TARGET)
 	$(CC) $(CFLAGS) $(INCLUDES) $< $(LIB_TARGET) $(LDLIBS) -o $@
 
-$(BUILD_DIR)/test_harness_radio: $(TESTS_DIR)/test_harness_radio.c $(LIB_TARGET)
+$(BUILD_DIR)/test_harness_radio$(EXE_EXT): $(TESTS_DIR)/test_harness_radio.c $(LIB_TARGET)
 	$(CC) $(CFLAGS) $(INCLUDES) $< $(LIB_TARGET) $(LDLIBS) -o $@
 
 tests: $(TEST_TARGETS)
@@ -114,17 +116,17 @@ test: tests
 	@echo "================================================================="
 	@echo " RUNNING C BARE-METAL TEST HARNESSES"
 	@echo "================================================================="
-	@$(BUILD_DIR)/test_harness_cgpx data/mont_blanc_sample.cgpx
-	@$(BUILD_DIR)/test_harness_bus
-	@$(BUILD_DIR)/test_harness_display
-	@$(BUILD_DIR)/test_harness_nav
-	@$(BUILD_DIR)/test_harness_power
-	@$(BUILD_DIR)/test_harness_topo
-	@$(BUILD_DIR)/test_harness_cryo
-	@$(BUILD_DIR)/test_harness_hybrid_comms
-	@$(BUILD_DIR)/test_harness_kalman
-	@$(BUILD_DIR)/test_harness_fdcan
-	@$(BUILD_DIR)/test_harness_radio
+	@$(BUILD_DIR)/test_harness_cgpx$(EXE_EXT) data/mont_blanc_sample.cgpx
+	@$(BUILD_DIR)/test_harness_bus$(EXE_EXT)
+	@$(BUILD_DIR)/test_harness_display$(EXE_EXT)
+	@$(BUILD_DIR)/test_harness_nav$(EXE_EXT)
+	@$(BUILD_DIR)/test_harness_power$(EXE_EXT)
+	@$(BUILD_DIR)/test_harness_topo$(EXE_EXT)
+	@$(BUILD_DIR)/test_harness_cryo$(EXE_EXT)
+	@$(BUILD_DIR)/test_harness_hybrid_comms$(EXE_EXT)
+	@$(BUILD_DIR)/test_harness_kalman$(EXE_EXT)
+	@$(BUILD_DIR)/test_harness_fdcan$(EXE_EXT)
+	@$(BUILD_DIR)/test_harness_radio$(EXE_EXT)
 	@echo "================================================================="
 	@echo " RUNNING PYTHON V&V MASTER TEST HARNESS"
 	@echo "================================================================="

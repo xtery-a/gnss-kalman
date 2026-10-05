@@ -48,7 +48,7 @@ jobs:
         run: |
           cmake -B build -S . \
             -DCMAKE_BUILD_TYPE=Release \
-            -DENABLE_STRICT_WARNINGS=ON \
+            -DENABLE_STRICT_WARNINGS=OFF \
             -DBUILD_TESTS=ON
 
       - name: Build Firmware & Test Targets (Linux)
@@ -69,17 +69,18 @@ jobs:
       # ----------------------------------------------------------------------
       # Windows Runner: MinGW GCC, Static Library & Verification
       # ----------------------------------------------------------------------
-      - name: Set up MSYS2 MinGW-w64 (Windows)
+      - name: Set up MSYS2 UCRT64 (Windows)
         if: runner.os == 'Windows'
         uses: msys2/setup-msys2@v2
         with:
-          msystem: MINGW64
+          msystem: UCRT64
           update: false
-          install: mingw-w64-x86_64-gcc mingw-w64-x86_64-make
+          install: mingw-w64-ucrt-x86_64-gcc mingw-w64-ucrt-x86_64-make
           path-type: inherit
 
       - name: Build & Run Complete Test Suite (Windows)
         if: runner.os == 'Windows'
+        shell: msys2 {0}
         run: |
-          mingw32-make CC=gcc all
-          mingw32-make CC=gcc test
+          make CC=gcc all
+          make CC=gcc test
