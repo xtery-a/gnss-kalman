@@ -5,7 +5,6 @@
 
 CC      ?= gcc
 AR      ?= ar
-PYTHON  ?= python
 CFLAGS  ?= -std=gnu99 -Wall -Wextra -O2
 INCLUDES = -Iinclude
 LDFLAGS ?=
@@ -17,11 +16,13 @@ TESTS_DIR = tests
 BUILD_DIR = build
 
 ifeq ($(OS),Windows_NT)
+    PYTHON   ?= python
     EXE_EXT  = .exe
     RM_DIR   = cmd /C "if exist $(BUILD_DIR) rmdir /s /q $(BUILD_DIR)"
     RM_FILES = cmd /C "if exist *.pbm del /q /f *.pbm"
     MKDIR_P  = cmd /C "if not exist $(BUILD_DIR) mkdir $(BUILD_DIR)"
 else
+    PYTHON   ?= python3
     EXE_EXT  =
     RM_DIR   = rm -rf $(BUILD_DIR)
     RM_FILES = rm -f *.pbm
@@ -128,12 +129,17 @@ test: tests
 	@$(BUILD_DIR)/test_harness_fdcan$(EXE_EXT)
 	@$(BUILD_DIR)/test_harness_radio$(EXE_EXT)
 	@echo "================================================================="
+	@echo " ALL C BARE-METAL TEST HARNESSES PASSED 100% SUCCESS!"
+	@echo "================================================================="
+
+test-vnv:
+	@echo "================================================================="
 	@echo " RUNNING PYTHON V&V MASTER TEST HARNESS"
 	@echo "================================================================="
 	@$(PYTHON) tests/test_phases_all.py
 	@$(PYTHON) tests/test_harness_vnv.py
 	@echo "================================================================="
-	@echo " ALL SYSTEM BUILDS AND TESTS PASSED 100% SUCCESS!"
+	@echo " ALL PYTHON V&V TESTS PASSED 100% SUCCESS!"
 	@echo "================================================================="
 
 clean:

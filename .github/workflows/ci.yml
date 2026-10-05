@@ -59,12 +59,18 @@ jobs:
         if: runner.os == 'Linux'
         run: ctest --test-dir build --output-on-failure --verbose
 
-      - name: Verify Makefile Build & Python V&V Harness (Linux)
+      - name: Verify Makefile Build & C Test Harness (Linux)
         if: runner.os == 'Linux'
         run: |
           make clean
           make all
           make test
+
+      - name: Run Python V&V Verification Suite (Linux)
+        if: runner.os == 'Linux'
+        run: |
+          python tests/test_phases_all.py
+          python tests/test_harness_vnv.py
 
       # ----------------------------------------------------------------------
       # Windows Runner: MinGW GCC, Static Library & Verification
@@ -78,9 +84,15 @@ jobs:
           install: mingw-w64-ucrt-x86_64-gcc mingw-w64-ucrt-x86_64-make
           path-type: inherit
 
-      - name: Build & Run Complete Test Suite (Windows)
+      - name: Build & Run Complete C Test Suite (Windows)
         if: runner.os == 'Windows'
         shell: msys2 {0}
         run: |
           make CC=gcc all
           make CC=gcc test
+
+      - name: Run Python V&V Verification Suite (Windows)
+        if: runner.os == 'Windows'
+        run: |
+          python tests/test_phases_all.py
+          python tests/test_harness_vnv.py
