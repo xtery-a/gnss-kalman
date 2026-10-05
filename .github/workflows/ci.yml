@@ -81,12 +81,16 @@ jobs:
         with:
           msystem: UCRT64
           update: false
-          install: mingw-w64-ucrt-x86_64-gcc mingw-w64-ucrt-x86_64-make make
+          install: mingw-w64-ucrt-x86_64-gcc mingw-w64-ucrt-x86_64-make
           path-type: inherit
+
+      - name: Add MSYS2 UCRT64 to Windows PATH
+        if: runner.os == 'Windows'
+        run: |
+          echo "C:\msys64\ucrt64\bin" | Out-File -FilePath $env:GITHUB_PATH -Encoding utf8 -Append
 
       - name: Build & Run Complete C Test Suite (Windows)
         if: runner.os == 'Windows'
-        shell: msys2 {0}
         run: |
           mingw32-make CC=gcc all
           mingw32-make CC=gcc test

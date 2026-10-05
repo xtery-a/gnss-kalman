@@ -253,11 +253,14 @@ class TestCGPXToolchain(unittest.TestCase):
         fb_py = render_mip_framebuffer(dec_points, meta)
 
         # 4. Compile and Run C test harness
-        c_exe = os.path.join(BUILD_DIR, "test_cgpx.exe")
+        exe_ext = ".exe" if sys.platform == "win32" else ""
+        c_exe = os.path.join(BUILD_DIR, f"test_cgpx{exe_ext}")
         import shutil
         env = os.environ.copy()
         if os.path.exists(r"C:\msys64\mingw64\bin"):
             env["PATH"] = r"C:\msys64\mingw64\bin" + os.pathsep + env.get("PATH", "")
+        if os.path.exists(r"C:\msys64\ucrt64\bin"):
+            env["PATH"] = r"C:\msys64\ucrt64\bin" + os.pathsep + env.get("PATH", "")
 
         if not os.path.exists(c_exe):
             gcc_bin = shutil.which("gcc", path=env.get("PATH")) or "gcc"
@@ -266,7 +269,9 @@ class TestCGPXToolchain(unittest.TestCase):
             inc_dir = os.path.join(ROOT_DIR, "include")
             comp_cmd = f'{gcc_bin} -O2 -Wall -Wextra -I"{inc_dir}" "{harness_src}" "{engine_src}" -lm -o "{c_exe}"'
             comp_res = subprocess.run(comp_cmd, shell=True, env=env, capture_output=True, text=True)
-            self.assertEqual(comp_res.returncode, 0, f"Compilation of test_cgpx.exe failed: {comp_res.stderr}")
+            self.assertEqual(comp_res.returncode, 0, f"Compilation of {c_exe} failed: {comp_res.stderr}")
+            if sys.platform != "win32" and os.path.exists(c_exe):
+                os.chmod(c_exe, 0o755)
 
         cmd_c = [c_exe, cgpx_file, TEST_KEY_HEX, pbm_c_file]
         res_c = subprocess.run(cmd_c, env=env, capture_output=True, text=True)

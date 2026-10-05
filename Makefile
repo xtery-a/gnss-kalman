@@ -18,12 +18,14 @@ BUILD_DIR = build
 ifeq ($(OS),Windows_NT)
     PYTHON   ?= python
     EXE_EXT  = .exe
+    BIN_DIR  = $(BUILD_DIR)\
     RM_DIR   = cmd /C "if exist $(BUILD_DIR) rmdir /s /q $(BUILD_DIR)"
     RM_FILES = cmd /C "if exist *.pbm del /q /f *.pbm"
     MKDIR_P  = cmd /C "if not exist $(BUILD_DIR) mkdir $(BUILD_DIR)"
 else
     PYTHON   ?= python3
     EXE_EXT  =
+    BIN_DIR  = $(BUILD_DIR)/
     RM_DIR   = rm -rf $(BUILD_DIR)
     RM_FILES = rm -f *.pbm
     MKDIR_P  = mkdir -p $(BUILD_DIR)
@@ -117,17 +119,17 @@ test: tests
 	@echo "================================================================="
 	@echo " RUNNING C BARE-METAL TEST HARNESSES"
 	@echo "================================================================="
-	@$(BUILD_DIR)/test_harness_cgpx$(EXE_EXT) data/mont_blanc_sample.cgpx
-	@$(BUILD_DIR)/test_harness_bus$(EXE_EXT)
-	@$(BUILD_DIR)/test_harness_display$(EXE_EXT)
-	@$(BUILD_DIR)/test_harness_nav$(EXE_EXT)
-	@$(BUILD_DIR)/test_harness_power$(EXE_EXT)
-	@$(BUILD_DIR)/test_harness_topo$(EXE_EXT)
-	@$(BUILD_DIR)/test_harness_cryo$(EXE_EXT)
-	@$(BUILD_DIR)/test_harness_hybrid_comms$(EXE_EXT)
-	@$(BUILD_DIR)/test_harness_kalman$(EXE_EXT)
-	@$(BUILD_DIR)/test_harness_fdcan$(EXE_EXT)
-	@$(BUILD_DIR)/test_harness_radio$(EXE_EXT)
+	@$(BIN_DIR)test_harness_cgpx$(EXE_EXT) data/mont_blanc_sample.cgpx
+	@$(BIN_DIR)test_harness_bus$(EXE_EXT)
+	@$(BIN_DIR)test_harness_display$(EXE_EXT)
+	@$(BIN_DIR)test_harness_nav$(EXE_EXT)
+	@$(BIN_DIR)test_harness_power$(EXE_EXT)
+	@$(BIN_DIR)test_harness_topo$(EXE_EXT)
+	@$(BIN_DIR)test_harness_cryo$(EXE_EXT)
+	@$(BIN_DIR)test_harness_hybrid_comms$(EXE_EXT)
+	@$(BIN_DIR)test_harness_kalman$(EXE_EXT)
+	@$(BIN_DIR)test_harness_fdcan$(EXE_EXT)
+	@$(BIN_DIR)test_harness_radio$(EXE_EXT)
 	@echo "================================================================="
 	@echo " ALL C BARE-METAL TEST HARNESSES PASSED 100% SUCCESS!"
 	@echo "================================================================="

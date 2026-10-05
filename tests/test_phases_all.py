@@ -25,7 +25,10 @@ class MasterSystemVerificationHarness(unittest.TestCase):
         cls.env = os.environ.copy()
         if os.path.exists(r"C:\msys64\mingw64\bin"):
             cls.env["PATH"] = r"C:\msys64\mingw64\bin" + os.pathsep + cls.env.get("PATH", "")
+        if os.path.exists(r"C:\msys64\ucrt64\bin"):
+            cls.env["PATH"] = r"C:\msys64\ucrt64\bin" + os.pathsep + cls.env.get("PATH", "")
         cls.gcc_bin = shutil.which("gcc", path=cls.env.get("PATH")) or "gcc"
+        cls.exe_ext = ".exe" if sys.platform == "win32" else ""
         cls.root_dir = os.path.abspath(os.path.join(os.path.dirname(__file__), ".."))
         cls.build_dir = os.path.join(cls.root_dir, "build")
         cls.inc_dir = os.path.join(cls.root_dir, "include")
@@ -52,13 +55,15 @@ class MasterSystemVerificationHarness(unittest.TestCase):
         print("\n=================================================================")
         print(" PHASE 2: SHARP 2.7\" MIP DISPLAY & CHORDING INPUT FSM")
         print("=================================================================")
-        c_exe = os.path.join(self.build_dir, "test_display.exe")
+        c_exe = os.path.join(self.build_dir, f"test_display{self.exe_ext}")
         harness_c = os.path.join(self.tests_dir, "test_harness_display.c")
         mip_c = os.path.join(self.src_dir, "mip_display.c")
         chord_c = os.path.join(self.src_dir, "chord_fsm.c")
         compile_cmd = f'{self.gcc_bin} -O2 -Wall -Wextra -I"{self.inc_dir}" "{harness_c}" "{mip_c}" "{chord_c}" -lm -o "{c_exe}"'
         res_comp = subprocess.run(compile_cmd, shell=True, env=self.env, capture_output=True, text=True)
         self.assertEqual(res_comp.returncode, 0, f"Phase 2 compilation error: {res_comp.stderr}")
+        if sys.platform != "win32" and os.path.exists(c_exe):
+            os.chmod(c_exe, 0o755)
 
         res_exec = subprocess.run(f'"{c_exe}"', shell=True, env=self.env, capture_output=True, text=True)
         self.assertEqual(res_exec.returncode, 0, f"Phase 2 execution error:\n{res_exec.stderr}\n{res_exec.stdout}")
@@ -73,12 +78,14 @@ class MasterSystemVerificationHarness(unittest.TestCase):
         print("\n=================================================================")
         print(" PHASE 3: SPLIT-NODE CAN-FD PROTOCOL & FAULT RECOVERY HARNESS")
         print("=================================================================")
-        c_exe = os.path.join(self.build_dir, "test_bus.exe")
+        c_exe = os.path.join(self.build_dir, f"test_bus{self.exe_ext}")
         harness_c = os.path.join(self.tests_dir, "test_harness_bus.c")
         bus_c = os.path.join(self.src_dir, "split_node_bus.c")
         compile_cmd = f'{self.gcc_bin} -O2 -Wall -Wextra -I"{self.inc_dir}" "{harness_c}" "{bus_c}" -lm -o "{c_exe}"'
         res_comp = subprocess.run(compile_cmd, shell=True, env=self.env, capture_output=True, text=True)
         self.assertEqual(res_comp.returncode, 0, f"Phase 3 compilation error: {res_comp.stderr}")
+        if sys.platform != "win32" and os.path.exists(c_exe):
+            os.chmod(c_exe, 0o755)
 
         res_exec = subprocess.run(f'"{c_exe}"', shell=True, env=self.env, capture_output=True, text=True)
         self.assertEqual(res_exec.returncode, 0, f"Phase 3 execution error:\n{res_exec.stderr}\n{res_exec.stdout}")
@@ -94,7 +101,7 @@ class MasterSystemVerificationHarness(unittest.TestCase):
         print("\n=================================================================")
         print(" PHASE 4: LC29H GNSS PARSER, SAES CRYPTO & BARO-TRN ENGINE")
         print("=================================================================")
-        c_exe = os.path.join(self.build_dir, "test_nav.exe")
+        c_exe = os.path.join(self.build_dir, f"test_nav{self.exe_ext}")
         harness_c = os.path.join(self.tests_dir, "test_harness_nav.c")
         nmea_c = os.path.join(self.src_dir, "gnss_nmea.c")
         crypto_c = os.path.join(self.src_dir, "crypto_hal.c")
@@ -102,6 +109,8 @@ class MasterSystemVerificationHarness(unittest.TestCase):
         compile_cmd = f'{self.gcc_bin} -O2 -Wall -Wextra -I"{self.inc_dir}" "{harness_c}" "{nmea_c}" "{crypto_c}" "{trn_c}" -lm -o "{c_exe}"'
         res_comp = subprocess.run(compile_cmd, shell=True, env=self.env, capture_output=True, text=True)
         self.assertEqual(res_comp.returncode, 0, f"Phase 4 compilation error: {res_comp.stderr}")
+        if sys.platform != "win32" and os.path.exists(c_exe):
+            os.chmod(c_exe, 0o755)
 
         res_exec = subprocess.run(f'"{c_exe}"', shell=True, env=self.env, capture_output=True, text=True)
         self.assertEqual(res_exec.returncode, 0, f"Phase 4 execution error:\n{res_exec.stderr}\n{res_exec.stdout}")
@@ -119,7 +128,7 @@ class MasterSystemVerificationHarness(unittest.TestCase):
         print("\n=================================================================")
         print(" PHASE 5: SUB-ZERO POWER, THERMAL THROTTLING & TPL5010 WATCHDOG")
         print("=================================================================")
-        c_exe = os.path.join(self.build_dir, "test_power.exe")
+        c_exe = os.path.join(self.build_dir, f"test_power{self.exe_ext}")
         harness_c = os.path.join(self.tests_dir, "test_harness_power.c")
         pwr_c = os.path.join(self.src_dir, "power_supervisor.c")
         therm_c = os.path.join(self.src_dir, "thermal_throttle.c")
@@ -127,6 +136,8 @@ class MasterSystemVerificationHarness(unittest.TestCase):
         compile_cmd = f'{self.gcc_bin} -O2 -Wall -Wextra -I"{self.inc_dir}" "{harness_c}" "{pwr_c}" "{therm_c}" "{wdg_c}" -lm -o "{c_exe}"'
         res_comp = subprocess.run(compile_cmd, shell=True, env=self.env, capture_output=True, text=True)
         self.assertEqual(res_comp.returncode, 0, f"Phase 5 compilation error: {res_comp.stderr}")
+        if sys.platform != "win32" and os.path.exists(c_exe):
+            os.chmod(c_exe, 0o755)
 
         res_exec = subprocess.run(f'"{c_exe}"', shell=True, env=self.env, capture_output=True, text=True)
         self.assertEqual(res_exec.returncode, 0, f"Phase 5 execution error:\n{res_exec.stderr}\n{res_exec.stdout}")
@@ -162,13 +173,15 @@ class MasterSystemVerificationHarness(unittest.TestCase):
         print("\n=================================================================")
         print(" PHASE 7: HYBRID TACTICAL DATA LINK, BFT & IRIDIUM FAILOVER")
         print("=================================================================")
-        c_exe = os.path.join(self.build_dir, "test_hybrid_comms.exe")
+        c_exe = os.path.join(self.build_dir, f"test_hybrid_comms{self.exe_ext}")
         harness_c = os.path.join(self.tests_dir, "test_harness_hybrid_comms.c")
         comms_c = os.path.join(self.src_dir, "hybrid_comms.c")
         crypto_c = os.path.join(self.src_dir, "crypto_hal.c")
         compile_cmd = f'{self.gcc_bin} -O2 -Wall -Wextra -I"{self.inc_dir}" "{harness_c}" "{comms_c}" "{crypto_c}" -lm -o "{c_exe}"'
         res_comp = subprocess.run(compile_cmd, shell=True, env=self.env, capture_output=True, text=True)
         self.assertEqual(res_comp.returncode, 0, f"Phase 7 compilation error: {res_comp.stderr}")
+        if sys.platform != "win32" and os.path.exists(c_exe):
+            os.chmod(c_exe, 0o755)
 
         res_exec = subprocess.run(f'"{c_exe}"', shell=True, env=self.env, capture_output=True, text=True)
         self.assertEqual(res_exec.returncode, 0, f"Phase 7 execution error:\n{res_exec.stderr}\n{res_exec.stdout}")

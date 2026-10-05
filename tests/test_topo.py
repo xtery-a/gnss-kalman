@@ -24,7 +24,10 @@ import shutil
 ENV = os.environ.copy()
 if os.path.exists(r"C:\msys64\mingw64\bin"):
     ENV["PATH"] = r"C:\msys64\mingw64\bin" + os.pathsep + ENV.get("PATH", "")
+if os.path.exists(r"C:\msys64\ucrt64\bin"):
+    ENV["PATH"] = r"C:\msys64\ucrt64\bin" + os.pathsep + ENV.get("PATH", "")
 GCC_BIN = shutil.which("gcc", path=ENV.get("PATH")) or "gcc"
+EXE_EXT = ".exe" if sys.platform == "win32" else ""
 
 ROOT_DIR = os.path.abspath(os.path.join(os.path.dirname(__file__), ".."))
 TOOLS_DIR = os.path.join(ROOT_DIR, "tools")
@@ -70,7 +73,7 @@ def main():
 
     # Step 2: Compile C99 Firmware & Test Harness with MinGW GCC
     print("[2] Compiling C99 Zero-Heap Topo Map Firmware with MinGW GCC (-O2 -Wall -Wextra)...")
-    c_exe = os.path.join(BUILD_DIR, "test_topo.exe")
+    c_exe = os.path.join(BUILD_DIR, f"test_topo{EXE_EXT}")
     harness_c = os.path.join(TESTS_DIR, "test_harness_topo.c")
     topo_c = os.path.join(SRC_DIR, "topo_map.c")
     mip_c = os.path.join(SRC_DIR, "mip_display.c")
@@ -79,10 +82,12 @@ def main():
     if res_compile.stderr.strip():
         print(f"    Compiler notices:\n{res_compile.stderr.strip()}")
     assert os.path.exists(c_exe), f"Compilation failed: {c_exe} not created"
-    print("    [PASS] test_topo.exe successfully built with 0 errors.")
+    if sys.platform != "win32":
+        os.chmod(c_exe, 0o755)
+    print("    [PASS] test_topo binary successfully built with 0 errors.")
 
     # Step 3: Execute C99 Test Harness
-    print("[3] Running C99 Zero-Heap Test Harness (test_topo.exe)...")
+    print("[3] Running C99 Zero-Heap Test Harness...")
     res_run = run_cmd(f'"{c_exe}"')
     print("    " + "\n    ".join(res_run.stdout.strip().splitlines()))
     test_c_pbm = "test_topo_c_out.pbm"

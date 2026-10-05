@@ -573,6 +573,8 @@ def haversine_distance(lat1: float, lon1: float, lat2: float, lon2: float) -> fl
 
 def render_view_plot(points: List[TrackPoint], meta: Dict[str, Any], output_png: Optional[str] = None, show: bool = True):
     """Renders dual-panel validation UI via Matplotlib."""
+    import matplotlib
+    matplotlib.use("Agg")
     import matplotlib.pyplot as plt
 
     lats = [p.lat for p in points]
