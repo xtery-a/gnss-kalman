@@ -1,0 +1,85 @@
+name: Multi-Platform CI & Firmware Verification
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+
+jobs:
+  build-and-verify:
+    name: ${{ matrix.name }}
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - name: "Ubuntu 24.04 (GCC C99 & CMake/CTest)"
+            os: ubuntu-latest
+          - name: "Windows MinGW (GCC C99 & Makefile)"
+            os: windows-latest
+
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python 3.10
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.10'
+          cache: 'pip'
+
+      - name: Install Python Dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+
+      # ----------------------------------------------------------------------
+      # Linux Runner: CMake, CTest, Makefile, and V&V Harnesses
+      # ----------------------------------------------------------------------
+      - name: Install Build Tools (Linux)
+        if: runner.os == 'Linux'
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y build-essential cmake
+
+      - name: Configure CMake (Linux)
+        if: runner.os == 'Linux'
+        run: |
+          cmake -B build -S . \
+            -DCMAKE_BUILD_TYPE=Release \
+            -DENABLE_STRICT_WARNINGS=ON \
+            -DBUILD_TESTS=ON
+
+      - name: Build Firmware & Test Targets (Linux)
+        if: runner.os == 'Linux'
+        run: cmake --build build --config Release -- -j$(nproc)
+
+      - name: Run CTest Bare-Metal Suites (Linux)
+        if: runner.os == 'Linux'
+        run: ctest --test-dir build --output-on-failure --verbose
+
+      - name: Verify Makefile Build & Python V&V Harness (Linux)
+        if: runner.os == 'Linux'
+        run: |
+          make clean
+          make all
+          make test
+
+      # ----------------------------------------------------------------------
+      # Windows Runner: MinGW GCC, Static Library & Verification
+      # ----------------------------------------------------------------------
+      - name: Set up MSYS2 MinGW-w64 (Windows)
+        if: runner.os == 'Windows'
+        uses: msys2/setup-msys2@v2
+        with:
+          msystem: MINGW64
+          update: false
+          install: mingw-w64-x86_64-gcc mingw-w64-x86_64-make
+          path-type: inherit
+
+      - name: Build & Run Complete Test Suite (Windows)
+        if: runner.os == 'Windows'
+        run: |
+          mingw32-make CC=gcc all
+          mingw32-make CC=gcc test

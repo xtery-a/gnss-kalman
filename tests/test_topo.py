@@ -20,11 +20,11 @@ import sys
 import numpy as np
 from PIL import Image
 
+import shutil
 ENV = os.environ.copy()
-ENV["PATH"] = r"C:\msys64\mingw64\bin;" + ENV.get("PATH", "")
-GCC_BIN = r"C:\msys64\mingw64\bin\gcc.exe"
-if not os.path.exists(GCC_BIN):
-    GCC_BIN = "gcc.exe"
+if os.path.exists(r"C:\msys64\mingw64\bin"):
+    ENV["PATH"] = r"C:\msys64\mingw64\bin" + os.pathsep + ENV.get("PATH", "")
+GCC_BIN = shutil.which("gcc", path=ENV.get("PATH")) or "gcc"
 
 ROOT_DIR = os.path.abspath(os.path.join(os.path.dirname(__file__), ".."))
 TOOLS_DIR = os.path.join(ROOT_DIR, "tools")
@@ -74,7 +74,7 @@ def main():
     harness_c = os.path.join(TESTS_DIR, "test_harness_topo.c")
     topo_c = os.path.join(SRC_DIR, "topo_map.c")
     mip_c = os.path.join(SRC_DIR, "mip_display.c")
-    gcc_cmd = f'{GCC_BIN} -O2 -Wall -Wextra -I"{INC_DIR}" "{harness_c}" "{topo_c}" "{mip_c}" -o "{c_exe}"'
+    gcc_cmd = f'{GCC_BIN} -O2 -Wall -Wextra -I"{INC_DIR}" "{harness_c}" "{topo_c}" "{mip_c}" -lm -o "{c_exe}"'
     res_compile = run_cmd(gcc_cmd)
     if res_compile.stderr.strip():
         print(f"    Compiler notices:\n{res_compile.stderr.strip()}")

@@ -19,13 +19,12 @@ GCC_PATH = r"C:\msys64\mingw64\bin"
 
 class TestHybridComms(unittest.TestCase):
     def setUp(self):
+        import shutil
         os.makedirs(BUILD_DIR, exist_ok=True)
-        self.gcc_bin = "gcc"
-        if os.path.exists(os.path.join(GCC_PATH, "gcc.exe")):
-            self.gcc_bin = os.path.join(GCC_PATH, "gcc.exe")
         self.env = os.environ.copy()
         if os.path.exists(GCC_PATH):
             self.env["PATH"] = GCC_PATH + os.pathsep + self.env.get("PATH", "")
+        self.gcc_bin = shutil.which("gcc", path=self.env.get("PATH")) or "gcc"
 
     def test_hybrid_comms_c_execution(self):
         c_exe = os.path.join(BUILD_DIR, "test_hybrid_comms.exe")
@@ -33,7 +32,7 @@ class TestHybridComms(unittest.TestCase):
         comms_c = os.path.join(SRC_DIR, "hybrid_comms.c")
         crypto_c = os.path.join(SRC_DIR, "crypto_hal.c")
 
-        compile_cmd = f'"{self.gcc_bin}" -O2 -Wall -Wextra -I"{INC_DIR}" "{harness_c}" "{comms_c}" "{crypto_c}" -o "{c_exe}"'
+        compile_cmd = f'"{self.gcc_bin}" -O2 -Wall -Wextra -I"{INC_DIR}" "{harness_c}" "{comms_c}" "{crypto_c}" -lm -o "{c_exe}"'
         res_comp = subprocess.run(compile_cmd, shell=True, env=self.env, capture_output=True, text=True)
         self.assertEqual(res_comp.returncode, 0, f"Compilation error: {res_comp.stderr}")
 

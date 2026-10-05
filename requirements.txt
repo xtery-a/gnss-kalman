@@ -1,0 +1,7 @@
+# Tactical Multi-GNSS Terminal & Embedded Kalman Engine
+# Python Dependencies for Hardware Bridge, Simulation, and V&V Test Suites
+
+pyserial>=3.5
+numpy>=1.22.0
+pillow>=9.0.0
+cryptography>=38.0.0

@@ -14,20 +14,24 @@ class TestPhase2DisplayAndChording(unittest.TestCase):
 
     def test_01_c_harness_execution(self):
         """Compiles and executes test_display.exe."""
+        import shutil
         env = os.environ.copy()
-        env["PATH"] = "C:\\msys64\\mingw64\\bin;" + env.get("PATH", "")
+        if os.path.exists(r"C:\msys64\mingw64\bin"):
+            env["PATH"] = r"C:\msys64\mingw64\bin" + os.pathsep + env.get("PATH", "")
+        gcc_bin = shutil.which("gcc", path=env.get("PATH")) or "gcc"
 
         # Compile
         compile_cmd = [
-            "gcc.exe", "-O2", "-Wall", "-Wextra",
+            gcc_bin, "-O2", "-Wall", "-Wextra",
             "test_harness_display.c", "mip_display.c", "chord_fsm.c",
-            "-o", "test_display.exe"
+            "-lm", "-o", "test_display.exe"
         ]
-        res_comp = subprocess.run(compile_cmd, env=env, capture_output=True, text=True)
+        res_comp = subprocess.run(compile_cmd, cwd=os.path.dirname(__file__), env=env, capture_output=True, text=True)
         self.assertEqual(res_comp.returncode, 0, f"Compilation failed: {res_comp.stderr}")
 
         # Execute
-        res_exec = subprocess.run(["./test_display.exe"], env=env, capture_output=True, text=True)
+        c_exe = os.path.join(os.path.dirname(__file__), "test_display.exe")
+        res_exec = subprocess.run([c_exe], env=env, capture_output=True, text=True)
         self.assertEqual(res_exec.returncode, 0, f"Execution failed: {res_exec.stderr}\n{res_exec.stdout}")
 
         # Check stdout assertions

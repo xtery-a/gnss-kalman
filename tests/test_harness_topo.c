@@ -69,7 +69,7 @@ int main(void) {
 
     /* 4. Overlay Two-Pass White Halo Route */
     printf("[4] Rendering Two-Pass White Halo Tactical Route Overlay...\n");
-    int16_t sample_route[5][2] = {
+    const int16_t sample_route[5][2] = {
         { 48, 120 },
         { 120, 65 },
         { 220, 60 },

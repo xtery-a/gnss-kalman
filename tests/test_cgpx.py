@@ -254,17 +254,17 @@ class TestCGPXToolchain(unittest.TestCase):
 
         # 4. Compile and Run C test harness
         c_exe = os.path.join(BUILD_DIR, "test_cgpx.exe")
+        import shutil
         env = os.environ.copy()
-        env["PATH"] = "C:\\msys64\\mingw64\\bin;" + env.get("PATH", "")
+        if os.path.exists(r"C:\msys64\mingw64\bin"):
+            env["PATH"] = r"C:\msys64\mingw64\bin" + os.pathsep + env.get("PATH", "")
 
         if not os.path.exists(c_exe):
-            gcc_bin = "C:\\msys64\\mingw64\\bin\\gcc.exe"
-            if not os.path.exists(gcc_bin):
-                gcc_bin = "gcc.exe"
+            gcc_bin = shutil.which("gcc", path=env.get("PATH")) or "gcc"
             harness_src = os.path.join(ROOT_DIR, "tests", "test_harness.c")
             engine_src = os.path.join(ROOT_DIR, "src", "cgpx_engine.c")
             inc_dir = os.path.join(ROOT_DIR, "include")
-            comp_cmd = f'{gcc_bin} -O2 -Wall -Wextra -I"{inc_dir}" "{harness_src}" "{engine_src}" -o "{c_exe}"'
+            comp_cmd = f'{gcc_bin} -O2 -Wall -Wextra -I"{inc_dir}" "{harness_src}" "{engine_src}" -lm -o "{c_exe}"'
             comp_res = subprocess.run(comp_cmd, shell=True, env=env, capture_output=True, text=True)
             self.assertEqual(comp_res.returncode, 0, f"Compilation of test_cgpx.exe failed: {comp_res.stderr}")
 

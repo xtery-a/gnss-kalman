@@ -21,11 +21,11 @@ class MasterSystemVerificationHarness(unittest.TestCase):
 
     @classmethod
     def setUpClass(cls):
+        import shutil
         cls.env = os.environ.copy()
-        cls.env["PATH"] = r"C:\msys64\mingw64\bin;" + cls.env.get("PATH", "")
-        cls.gcc_bin = r"C:\msys64\mingw64\bin\gcc.exe"
-        if not os.path.exists(cls.gcc_bin):
-            cls.gcc_bin = "gcc.exe"
+        if os.path.exists(r"C:\msys64\mingw64\bin"):
+            cls.env["PATH"] = r"C:\msys64\mingw64\bin" + os.pathsep + cls.env.get("PATH", "")
+        cls.gcc_bin = shutil.which("gcc", path=cls.env.get("PATH")) or "gcc"
         cls.root_dir = os.path.abspath(os.path.join(os.path.dirname(__file__), ".."))
         cls.build_dir = os.path.join(cls.root_dir, "build")
         cls.inc_dir = os.path.join(cls.root_dir, "include")
@@ -56,7 +56,7 @@ class MasterSystemVerificationHarness(unittest.TestCase):
         harness_c = os.path.join(self.tests_dir, "test_harness_display.c")
         mip_c = os.path.join(self.src_dir, "mip_display.c")
         chord_c = os.path.join(self.src_dir, "chord_fsm.c")
-        compile_cmd = f'{self.gcc_bin} -O2 -Wall -Wextra -I"{self.inc_dir}" "{harness_c}" "{mip_c}" "{chord_c}" -o "{c_exe}"'
+        compile_cmd = f'{self.gcc_bin} -O2 -Wall -Wextra -I"{self.inc_dir}" "{harness_c}" "{mip_c}" "{chord_c}" -lm -o "{c_exe}"'
         res_comp = subprocess.run(compile_cmd, shell=True, env=self.env, capture_output=True, text=True)
         self.assertEqual(res_comp.returncode, 0, f"Phase 2 compilation error: {res_comp.stderr}")
 
@@ -76,7 +76,7 @@ class MasterSystemVerificationHarness(unittest.TestCase):
         c_exe = os.path.join(self.build_dir, "test_bus.exe")
         harness_c = os.path.join(self.tests_dir, "test_harness_bus.c")
         bus_c = os.path.join(self.src_dir, "split_node_bus.c")
-        compile_cmd = f'{self.gcc_bin} -O2 -Wall -Wextra -I"{self.inc_dir}" "{harness_c}" "{bus_c}" -o "{c_exe}"'
+        compile_cmd = f'{self.gcc_bin} -O2 -Wall -Wextra -I"{self.inc_dir}" "{harness_c}" "{bus_c}" -lm -o "{c_exe}"'
         res_comp = subprocess.run(compile_cmd, shell=True, env=self.env, capture_output=True, text=True)
         self.assertEqual(res_comp.returncode, 0, f"Phase 3 compilation error: {res_comp.stderr}")
 
@@ -99,7 +99,7 @@ class MasterSystemVerificationHarness(unittest.TestCase):
         nmea_c = os.path.join(self.src_dir, "gnss_nmea.c")
         crypto_c = os.path.join(self.src_dir, "crypto_hal.c")
         trn_c = os.path.join(self.src_dir, "trn_validator.c")
-        compile_cmd = f'{self.gcc_bin} -O2 -Wall -Wextra -I"{self.inc_dir}" "{harness_c}" "{nmea_c}" "{crypto_c}" "{trn_c}" -o "{c_exe}"'
+        compile_cmd = f'{self.gcc_bin} -O2 -Wall -Wextra -I"{self.inc_dir}" "{harness_c}" "{nmea_c}" "{crypto_c}" "{trn_c}" -lm -o "{c_exe}"'
         res_comp = subprocess.run(compile_cmd, shell=True, env=self.env, capture_output=True, text=True)
         self.assertEqual(res_comp.returncode, 0, f"Phase 4 compilation error: {res_comp.stderr}")
 
@@ -124,7 +124,7 @@ class MasterSystemVerificationHarness(unittest.TestCase):
         pwr_c = os.path.join(self.src_dir, "power_supervisor.c")
         therm_c = os.path.join(self.src_dir, "thermal_throttle.c")
         wdg_c = os.path.join(self.src_dir, "watchdog_tpl5010.c")
-        compile_cmd = f'{self.gcc_bin} -O2 -Wall -Wextra -I"{self.inc_dir}" "{harness_c}" "{pwr_c}" "{therm_c}" "{wdg_c}" -o "{c_exe}"'
+        compile_cmd = f'{self.gcc_bin} -O2 -Wall -Wextra -I"{self.inc_dir}" "{harness_c}" "{pwr_c}" "{therm_c}" "{wdg_c}" -lm -o "{c_exe}"'
         res_comp = subprocess.run(compile_cmd, shell=True, env=self.env, capture_output=True, text=True)
         self.assertEqual(res_comp.returncode, 0, f"Phase 5 compilation error: {res_comp.stderr}")
 
@@ -166,7 +166,7 @@ class MasterSystemVerificationHarness(unittest.TestCase):
         harness_c = os.path.join(self.tests_dir, "test_harness_hybrid_comms.c")
         comms_c = os.path.join(self.src_dir, "hybrid_comms.c")
         crypto_c = os.path.join(self.src_dir, "crypto_hal.c")
-        compile_cmd = f'{self.gcc_bin} -O2 -Wall -Wextra -I"{self.inc_dir}" "{harness_c}" "{comms_c}" "{crypto_c}" -o "{c_exe}"'
+        compile_cmd = f'{self.gcc_bin} -O2 -Wall -Wextra -I"{self.inc_dir}" "{harness_c}" "{comms_c}" "{crypto_c}" -lm -o "{c_exe}"'
         res_comp = subprocess.run(compile_cmd, shell=True, env=self.env, capture_output=True, text=True)
         self.assertEqual(res_comp.returncode, 0, f"Phase 7 compilation error: {res_comp.stderr}")
 
