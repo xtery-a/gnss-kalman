@@ -81,28 +81,18 @@ jobs:
         with:
           msystem: UCRT64
           update: false
-          install: mingw-w64-ucrt-x86_64-gcc mingw-w64-ucrt-x86_64-make
+          install: mingw-w64-ucrt-x86_64-gcc mingw-w64-ucrt-x86_64-make make
           path-type: inherit
-
-      - name: Add MSYS2 UCRT64 to Windows PATH
-        if: runner.os == 'Windows'
-        shell: cmd
-        run: echo C:\msys64\ucrt64\bin>>%GITHUB_PATH%
 
       - name: Build & Run Complete C Test Suite (Windows)
         if: runner.os == 'Windows'
-        shell: cmd
+        shell: msys2 {0}
         run: |
-          set "PATH=C:\msys64\ucrt64\bin;%PATH%"
-          gcc --version
-          mingw32-make --version
-          mingw32-make CC=gcc all
-          mingw32-make CC=gcc test
+          make CC=gcc all
+          make CC=gcc test
 
       - name: Run Python V&V Verification Suite (Windows)
         if: runner.os == 'Windows'
-        shell: cmd
         run: |
-          set "PATH=C:\msys64\ucrt64\bin;%PATH%"
           python tests/test_phases_all.py
           python tests/test_harness_vnv.py
