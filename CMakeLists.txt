@@ -52,6 +52,7 @@ set(TACTICAL_SOURCES
     src/nlos_filter.c
     src/power_supervisor.c
     src/split_node_bus.c
+    src/squad_bft_mesh.c
     src/sx1262_hal.c
     src/thermal_throttle.c
     src/topo_map.c
@@ -132,6 +133,10 @@ if(BUILD_TESTS)
     # Physical RF Hardware Drivers (SX1262 LoRa SPI & RockBLOCK Iridium SBD AT FSM)
     add_tactical_test(test_harness_radio tests/test_harness_radio.c)
     add_test(NAME test_harness_radio COMMAND test_harness_radio)
+
+    # Squad BFT Mesh & Crevasse Fall Detection Engine
+    add_tactical_test(test_harness_squad tests/test_harness_squad.c)
+    add_test(NAME test_harness_squad COMMAND test_harness_squad)
 endif()
 
 # ==============================================================================

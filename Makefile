@@ -18,7 +18,13 @@ BUILD_DIR = build
 ifeq ($(OS),Windows_NT)
     PYTHON   ?= python
     EXE_EXT  = .exe
-    ifneq ($(MSYSTEM),)
+    ifneq ($(filter %sh %sh.exe,$(SHELL)),)
+        # Shell is sh.exe (e.g. MSYS2 or Git Bash)
+        RUN_CMD  = $(BUILD_DIR)/$(strip $(1))
+        RM_DIR   = rm -rf $(BUILD_DIR)
+        RM_FILES = rm -f *.pbm
+        MKDIR_P  = mkdir -p $(BUILD_DIR)
+    else ifneq ($(MSYSTEM),)
         # Inside MSYS2 / UCRT64 / MINGW64 bash environment
         RUN_CMD  = $(BUILD_DIR)/$(strip $(1))
         RM_DIR   = rm -rf $(BUILD_DIR)
@@ -27,9 +33,9 @@ ifeq ($(OS),Windows_NT)
     else
         # Inside native Windows cmd / PowerShell
         RUN_CMD  = .\\build\\$(strip $(1))
-        RM_DIR   = cmd /C "if exist $(BUILD_DIR) rmdir /s /q $(BUILD_DIR)"
-        RM_FILES = cmd /C "if exist *.pbm del /q /f *.pbm"
-        MKDIR_P  = cmd /C "if not exist $(BUILD_DIR) mkdir $(BUILD_DIR)"
+        RM_DIR   = cmd /C if exist $(BUILD_DIR) rmdir /s /q $(BUILD_DIR)
+        RM_FILES = cmd /C if exist *.pbm del /q /f *.pbm
+        MKDIR_P  = cmd /C if not exist $(BUILD_DIR) mkdir $(BUILD_DIR)
     endif
 else
     PYTHON   ?= python3
@@ -59,7 +65,8 @@ TEST_TARGETS = \
 	$(BUILD_DIR)/test_harness_hybrid_comms$(EXE_EXT) \
 	$(BUILD_DIR)/test_harness_kalman$(EXE_EXT) \
 	$(BUILD_DIR)/test_harness_fdcan$(EXE_EXT) \
-	$(BUILD_DIR)/test_harness_radio$(EXE_EXT)
+	$(BUILD_DIR)/test_harness_radio$(EXE_EXT) \
+	$(BUILD_DIR)/test_harness_squad$(EXE_EXT)
 
 .PHONY: all lib tests test clean help
 
@@ -121,6 +128,9 @@ $(BUILD_DIR)/test_harness_fdcan$(EXE_EXT): $(TESTS_DIR)/test_harness_fdcan.c $(L
 $(BUILD_DIR)/test_harness_radio$(EXE_EXT): $(TESTS_DIR)/test_harness_radio.c $(LIB_TARGET)
 	$(CC) $(CFLAGS) $(INCLUDES) $< $(LIB_TARGET) $(LDLIBS) -o $@
 
+$(BUILD_DIR)/test_harness_squad$(EXE_EXT): $(TESTS_DIR)/test_harness_squad.c $(LIB_TARGET)
+	$(CC) $(CFLAGS) $(INCLUDES) $< $(LIB_TARGET) $(LDLIBS) -o $@
+
 tests: $(TEST_TARGETS)
 
 # Run complete test verification
@@ -139,6 +149,7 @@ test: tests
 	@$(call RUN_CMD, test_harness_kalman$(EXE_EXT))
 	@$(call RUN_CMD, test_harness_fdcan$(EXE_EXT))
 	@$(call RUN_CMD, test_harness_radio$(EXE_EXT))
+	@$(call RUN_CMD, test_harness_squad$(EXE_EXT))
 	@echo "================================================================="
 	@echo " ALL C BARE-METAL TEST HARNESSES PASSED 100% SUCCESS!"
 	@echo "================================================================="
