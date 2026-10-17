@@ -1,0 +1,1599 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Taktik GNSS & Uydu Terminali // Donanım & Parça Tedarik Takip Paneli</title>
+
+  <!-- Google Fonts: Inter & JetBrains Mono -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&family=JetBrains+Mono:wght@400;600;700;800&display=swap" rel="stylesheet">
+
+  <style>
+    :root {
+      --bg-dark: #0a0e17;
+      --bg-card: #111827;
+      --bg-card-hover: #172236;
+      --border: #1f293d;
+      --border-accent: #2d3b55;
+      --text-main: #f1f5f9;
+      --text-muted: #94a3b8;
+      --text-dim: #64748b;
+      --accent-blue: #38bdf8;
+      --accent-cyan: #06b6d4;
+      --accent-orange: #f97316;
+      --accent-green: #10b981;
+      --accent-amber: #f59e0b;
+      --accent-purple: #a855f7;
+      --accent-red: #ef4444;
+      --font-mono: 'JetBrains Mono', Consolas, monospace;
+      --font-sans: 'Inter', -apple-system, sans-serif;
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    body {
+      background-color: var(--bg-dark);
+      color: var(--text-main);
+      font-family: var(--font-sans);
+      min-height: 100vh;
+      padding: 24px 20px 60px 20px;
+      line-height: 1.5;
+    }
+
+    .container {
+      max-width: 1400px;
+      margin: 0 auto;
+    }
+
+    /* Header & Navigation Bar */
+    .top-nav {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding-bottom: 20px;
+      border-bottom: 1px solid var(--border);
+      margin-bottom: 24px;
+      flex-wrap: wrap;
+      gap: 16px;
+    }
+
+    .brand-group {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+
+    .brand-badge {
+      background: rgba(56, 189, 248, 0.1);
+      border: 1px solid rgba(56, 189, 248, 0.3);
+      color: var(--accent-blue);
+      font-family: var(--font-mono);
+      font-size: 11px;
+      font-weight: 700;
+      padding: 4px 8px;
+      border-radius: 4px;
+      letter-spacing: 1px;
+    }
+
+    .brand-title {
+      font-size: 20px;
+      font-weight: 800;
+      letter-spacing: -0.5px;
+      color: #ffffff;
+    }
+
+    .brand-sub {
+      font-size: 12px;
+      color: var(--text-muted);
+    }
+
+    .nav-actions {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      flex-wrap: wrap;
+    }
+
+    .btn {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      background: var(--bg-card);
+      border: 1px solid var(--border-accent);
+      color: var(--text-main);
+      padding: 8px 14px;
+      border-radius: 6px;
+      font-size: 12px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.2s ease;
+      text-decoration: none;
+      font-family: var(--font-sans);
+    }
+
+    .btn:hover {
+      background: var(--bg-card-hover);
+      border-color: var(--accent-blue);
+      color: #ffffff;
+    }
+
+    .btn-primary {
+      background: #0284c7;
+      border-color: #0284c7;
+      color: #ffffff;
+    }
+
+    .btn-primary:hover {
+      background: #0369a1;
+      border-color: #0369a1;
+    }
+
+    .btn-success {
+      background: rgba(16, 185, 129, 0.15);
+      border-color: rgba(16, 185, 129, 0.4);
+      color: var(--accent-green);
+    }
+
+    .btn-success:hover {
+      background: rgba(16, 185, 129, 0.25);
+    }
+
+    /* KPI Summary Cards */
+    .kpi-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(210px, 1fr));
+      gap: 14px;
+      margin-bottom: 24px;
+    }
+
+    .kpi-card {
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 16px 18px;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .kpi-card::before {
+      content: "";
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 4px;
+      height: 100%;
+      background: var(--accent-blue);
+    }
+
+    .kpi-card.kpi-green::before { background: var(--accent-green); }
+    .kpi-card.kpi-amber::before { background: var(--accent-amber); }
+    .kpi-card.kpi-purple::before { background: var(--accent-purple); }
+
+    .kpi-label {
+      font-size: 11px;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.8px;
+      color: var(--text-dim);
+      margin-bottom: 6px;
+    }
+
+    .kpi-val {
+      font-family: var(--font-mono);
+      font-size: 22px;
+      font-weight: 800;
+      color: #ffffff;
+      line-height: 1.1;
+    }
+
+    .kpi-sub {
+      font-size: 11px;
+      color: var(--text-muted);
+      margin-top: 6px;
+    }
+
+    /* Progress Overall Bar */
+    .progress-section {
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 16px 20px;
+      margin-bottom: 24px;
+    }
+
+    .progress-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 10px;
+      font-size: 13px;
+      font-weight: 700;
+    }
+
+    .progress-bar-bg {
+      width: 100%;
+      height: 10px;
+      background: #1e293b;
+      border-radius: 5px;
+      overflow: hidden;
+      display: flex;
+    }
+
+    .progress-segment {
+      height: 100%;
+      transition: width 0.3s ease;
+    }
+
+    .seg-tested { background: var(--accent-green); }
+    .seg-delivered { background: var(--accent-cyan); }
+    .seg-shipping { background: var(--accent-amber); }
+    .seg-cart { background: var(--accent-orange); }
+    .seg-planned { background: #334155; }
+
+    .progress-legend {
+      display: flex;
+      gap: 16px;
+      margin-top: 10px;
+      flex-wrap: wrap;
+      font-size: 11px;
+      color: var(--text-muted);
+    }
+
+    .legend-item {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .legend-dot {
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+    }
+
+    /* Filters & Controls Toolbar */
+    .toolbar {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 14px;
+      margin-bottom: 18px;
+      flex-wrap: wrap;
+      background: #0f1623;
+      padding: 12px 16px;
+      border-radius: 8px;
+      border: 1px solid var(--border);
+    }
+
+    .search-box {
+      flex: 1;
+      min-width: 240px;
+      position: relative;
+    }
+
+    .search-input {
+      width: 100%;
+      background: var(--bg-card);
+      border: 1px solid var(--border-accent);
+      color: #ffffff;
+      padding: 8px 12px 8px 32px;
+      border-radius: 6px;
+      font-size: 12px;
+      font-family: var(--font-sans);
+      outline: none;
+    }
+
+    .search-input:focus {
+      border-color: var(--accent-blue);
+    }
+
+    .search-icon {
+      position: absolute;
+      left: 10px;
+      top: 50%;
+      transform: translateY(-50%);
+      color: var(--text-dim);
+      font-size: 12px;
+    }
+
+    .filter-pills {
+      display: flex;
+      gap: 6px;
+      flex-wrap: wrap;
+    }
+
+    .filter-pill {
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      color: var(--text-muted);
+      font-size: 11.5px;
+      font-weight: 600;
+      padding: 6px 12px;
+      border-radius: 20px;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+
+    .filter-pill:hover {
+      color: #ffffff;
+      border-color: var(--border-accent);
+    }
+
+    .filter-pill.active {
+      background: rgba(56, 189, 248, 0.15);
+      border-color: var(--accent-blue);
+      color: var(--accent-blue);
+    }
+
+    /* Category Group Box */
+    .group-container {
+      margin-bottom: 28px;
+    }
+
+    .group-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 12px;
+      padding-bottom: 8px;
+      border-bottom: 1.5px solid var(--border-accent);
+    }
+
+    .group-title-wrap {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .group-icon {
+      width: 28px;
+      height: 28px;
+      border-radius: 6px;
+      background: rgba(56, 189, 248, 0.1);
+      color: var(--accent-blue);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 14px;
+    }
+
+    .group-title {
+      font-size: 15px;
+      font-weight: 800;
+      color: #ffffff;
+    }
+
+    .group-stats {
+      font-family: var(--font-mono);
+      font-size: 12px;
+      color: var(--text-muted);
+    }
+
+    /* Table Styling */
+    .table-card {
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      overflow: hidden;
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+    }
+
+    table.items-table {
+      width: 100%;
+      border-collapse: collapse;
+      text-align: left;
+      font-size: 12px;
+    }
+
+    table.items-table thead tr {
+      background: #0f172a;
+      border-bottom: 1px solid var(--border);
+    }
+
+    table.items-table th {
+      padding: 10px 14px;
+      font-weight: 700;
+      color: var(--text-muted);
+      font-size: 11px;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+
+    table.items-table tbody tr {
+      border-bottom: 1px solid var(--border);
+      transition: background 0.15s;
+    }
+
+    table.items-table tbody tr:hover {
+      background: var(--bg-card-hover);
+    }
+
+    table.items-table td {
+      padding: 12px 14px;
+      vertical-align: middle;
+    }
+
+    .item-ref {
+      font-family: var(--font-mono);
+      font-weight: 700;
+      color: var(--accent-blue);
+      font-size: 11.5px;
+    }
+
+    .item-name {
+      font-weight: 700;
+      color: #ffffff;
+      font-size: 13px;
+      display: block;
+    }
+
+    .item-desc {
+      font-size: 11px;
+      color: var(--text-muted);
+      line-height: 1.35;
+      margin-top: 2px;
+    }
+
+    .item-mpn {
+      font-family: var(--font-mono);
+      font-size: 11px;
+      background: #090e18;
+      border: 1px solid #1f293d;
+      padding: 2px 6px;
+      border-radius: 4px;
+      color: #cbd5e1;
+      display: inline-block;
+      margin-top: 4px;
+    }
+
+    .vendor-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+      font-weight: 600;
+      color: #e2e8f0;
+      font-size: 11px;
+    }
+
+    .price-tag {
+      font-family: var(--font-mono);
+      font-weight: 700;
+      font-size: 13px;
+      color: #ffffff;
+    }
+
+    .price-try {
+      font-size: 10px;
+      color: var(--text-dim);
+      display: block;
+    }
+
+    /* Status Selector Dropdown / Pill */
+    .status-select {
+      appearance: none;
+      -webkit-appearance: none;
+      background-color: transparent;
+      border: 1px solid transparent;
+      padding: 5px 24px 5px 10px;
+      border-radius: 6px;
+      font-size: 11.5px;
+      font-weight: 700;
+      cursor: pointer;
+      font-family: var(--font-sans);
+      position: relative;
+      background-image: url("data:image/svg+xml;charset=US-ASCII,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20width%3D%2212%22%20height%3D%2212%22%20viewBox%3D%220%200%2024%2024%22%20fill%3D%22none%22%20stroke%3D%22%2394a3b8%22%20stroke-width%3D%222%22%20stroke-linecap%3D%22round%22%20stroke-linejoin%3D%22round%22%3E%3Cpolyline%20points%3D%226%209%2012%2015%2018%209%22%3E%3C%2F%polyline%3E%3C%2Fsvg%3E");
+      background-repeat: no-repeat;
+      background-position: right 8px center;
+      outline: none;
+      transition: all 0.2s;
+    }
+
+    .st-planned { background-color: rgba(100, 116, 139, 0.15); color: #94a3b8; border-color: rgba(100, 116, 139, 0.3); }
+    .st-cart { background-color: rgba(249, 115, 22, 0.15); color: #fb923c; border-color: rgba(249, 115, 22, 0.35); }
+    .st-shipping { background-color: rgba(245, 158, 11, 0.15); color: #fcd34d; border-color: rgba(245, 158, 11, 0.35); }
+    .st-delivered { background-color: rgba(6, 182, 212, 0.15); color: #67e8f9; border-color: rgba(6, 182, 212, 0.35); }
+    .st-tested { background-color: rgba(16, 185, 129, 0.18); color: #6ee7b7; border-color: rgba(16, 185, 129, 0.4); }
+
+    .action-links {
+      display: flex;
+      gap: 6px;
+      align-items: center;
+    }
+
+    .link-icon-btn {
+      width: 26px;
+      height: 26px;
+      border-radius: 4px;
+      background: #1e293b;
+      border: 1px solid var(--border);
+      color: var(--text-muted);
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      text-decoration: none;
+      font-size: 11px;
+      transition: all 0.15s;
+    }
+
+    .link-icon-btn:hover {
+      background: #0284c7;
+      color: #ffffff;
+      border-color: #0284c7;
+    }
+
+    .note-btn {
+      background: transparent;
+      border: 1px dashed var(--border-accent);
+      color: var(--text-dim);
+      font-size: 11px;
+      padding: 3px 8px;
+      border-radius: 4px;
+      cursor: pointer;
+    }
+    .note-btn:hover, .note-btn.has-note {
+      border-color: var(--accent-cyan);
+      color: var(--accent-cyan);
+      border-style: solid;
+    }
+
+    /* Modal for Notes */
+    .modal-overlay {
+      display: none;
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100vw;
+      height: 100vh;
+      background: rgba(0, 0, 0, 0.7);
+      z-index: 999;
+      align-items: center;
+      justify-content: center;
+      backdrop-filter: blur(4px);
+    }
+
+    .modal-overlay.active {
+      display: flex;
+    }
+
+    .modal-card {
+      background: var(--bg-card);
+      border: 1px solid var(--border-accent);
+      border-radius: 10px;
+      width: 90%;
+      max-width: 500px;
+      padding: 20px;
+      box-shadow: 0 20px 40px rgba(0,0,0,0.8);
+    }
+
+    .modal-title {
+      font-size: 16px;
+      font-weight: 800;
+      margin-bottom: 12px;
+      color: #ffffff;
+    }
+
+    .modal-textarea {
+      width: 100%;
+      height: 110px;
+      background: #090e18;
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      color: #ffffff;
+      padding: 10px;
+      font-family: var(--font-sans);
+      font-size: 12px;
+      outline: none;
+      resize: vertical;
+      margin-bottom: 14px;
+    }
+
+    .modal-textarea:focus {
+      border-color: var(--accent-blue);
+    }
+
+    .modal-actions {
+      display: flex;
+      justify-content: flex-end;
+      gap: 10px;
+    }
+
+    /* Currency Toggle */
+    .currency-tag {
+      font-family: var(--font-mono);
+      font-size: 11px;
+      background: #1e293b;
+      padding: 4px 8px;
+      border-radius: 4px;
+      color: var(--accent-cyan);
+      border: 1px solid var(--border);
+    }
+
+    /* Toast Notification */
+    .toast {
+      position: fixed;
+      bottom: 24px;
+      right: 24px;
+      background: #0f172a;
+      border: 1px solid var(--accent-blue);
+      color: #ffffff;
+      padding: 10px 18px;
+      border-radius: 6px;
+      box-shadow: 0 10px 25px rgba(0,0,0,0.6);
+      font-size: 12px;
+      font-weight: 600;
+      transform: translateY(100px);
+      opacity: 0;
+      transition: all 0.3s ease;
+      z-index: 1000;
+    }
+    .toast.show {
+      transform: translateY(0);
+      opacity: 1;
+    }
+
+    @media (max-width: 768px) {
+      body { padding: 12px 10px 40px 10px; }
+      .kpi-grid { grid-template-columns: 1fr 1fr; }
+      .brand-title { font-size: 17px; }
+      table.items-table { font-size: 11px; }
+      table.items-table th, table.items-table td { padding: 8px 10px; }
+    }
+  </style>
+</head>
+<body>
+
+<div class="container">
+
+  <!-- Top Navigation & Brand -->
+  <header class="top-nav">
+    <div class="brand-group">
+      <span class="brand-badge">EXT-GNSS-HW</span>
+      <div>
+        <h1 class="brand-title">Donanım & Komponent Tedarik Takip Paneli</h1>
+        <p class="brand-sub">Ekstrem Koşul Ayrık (Split-Node) GNSS & Uydu Terminali BOM Yönetimi</p>
+      </div>
+    </div>
+
+    <div class="nav-actions">
+      <a href="tactical_terminal.html" class="btn" title="Taktik El Terminali Ekranına Git">
+        <span>📱</span> Taktik Terminal
+      </a>
+      <a href="../docs/SPONSORLUK_MALZEME_LISTESI_VE_BUTCESI.pdf" target="_blank" class="btn" title="Resmi BOM PDF İndir">
+        <span>📄</span> Şartname PDF
+      </a>
+      <button class="btn" onclick="exportData()" title="Verileri JSON Olarak Yedekle">
+        <span>💾</span> Yedekle (JSON)
+      </button>
+      <label class="btn" style="margin:0; cursor:pointer;" title="JSON Yedeğini Yükle">
+        <span>📥</span> Geri Yükle
+        <input type="file" id="importInput" style="display:none;" onchange="importData(event)" accept=".json">
+      </label>
+      <button class="btn btn-primary" onclick="resetToDefaults()" title="Varsayılan Fabrika BOM Listesini Geri Getir">
+        <span>🔄</span> Varsayılana Sıfırla
+      </button>
+    </div>
+  </header>
+
+  <!-- KPI Metrics Grid -->
+  <section class="kpi-grid">
+    <div class="kpi-card">
+      <div class="kpi-label">Toplam Komponent</div>
+      <div class="kpi-val" id="kpiTotalCount">32 Adet</div>
+      <div class="kpi-sub" id="kpiGroupCount">4 Ana Sistem Grubu</div>
+    </div>
+
+    <div class="kpi-card kpi-green">
+      <div class="kpi-label">Hazır / Tedarik Edilen</div>
+      <div class="kpi-val" id="kpiReadyCount">0 / 32</div>
+      <div class="kpi-sub" id="kpiReadyPct">%0 Tamamlandı</div>
+    </div>
+
+    <div class="kpi-card kpi-amber">
+      <div class="kpi-label">Toplam Tahmini Bütçe</div>
+      <div class="kpi-val" id="kpiTotalCost">$720.00</div>
+      <div class="kpi-sub" id="kpiTotalCostTry">~27,360 ₺ (1 USD = 38.0 ₺)</div>
+    </div>
+
+    <div class="kpi-card kpi-purple">
+      <div class="kpi-label">Harcanan / Kalan Bütçe</div>
+      <div class="kpi-val" id="kpiSpentCost">$0.00</div>
+      <div class="kpi-sub" id="kpiRemainCost">Kalan İhtiyaç: $720.00</div>
+    </div>
+  </section>
+
+  <!-- Progress Breakdown Bar -->
+  <section class="progress-section">
+    <div class="progress-header">
+      <span>Tedarik Süreci İlerleme Durumu</span>
+      <span id="progressSummaryText" style="color:var(--accent-blue); font-family:var(--font-mono);">0 / 32 Parça Hazır</span>
+    </div>
+    <div class="progress-bar-bg" id="progressBar">
+      <div class="progress-segment seg-tested" style="width: 0%" title="Test Edildi"></div>
+      <div class="progress-segment seg-delivered" style="width: 0%" title="Teslim Alındı"></div>
+      <div class="progress-segment seg-shipping" style="width: 0%" title="Kargoda"></div>
+      <div class="progress-segment seg-cart" style="width: 0%" title="Sepette"></div>
+      <div class="progress-segment seg-planned" style="width: 100%" title="Planlandı"></div>
+    </div>
+    <div class="progress-legend">
+      <div class="legend-item"><span class="legend-dot" style="background:var(--accent-green);"></span> Test Edildi / Montaja Hazır</div>
+      <div class="legend-item"><span class="legend-dot" style="background:var(--accent-cyan);"></span> Teslim Alındı / Stokta</div>
+      <div class="legend-item"><span class="legend-dot" style="background:var(--accent-amber);"></span> Sipariş Verildi / Kargoda</div>
+      <div class="legend-item"><span class="legend-dot" style="background:var(--accent-orange);"></span> Sepette / Sipariş Bekliyor</div>
+      <div class="legend-item"><span class="legend-dot" style="background:#334155;"></span> Planlandı / İnceleniyor</div>
+    </div>
+  </section>
+
+  <!-- Controls & Search Toolbar -->
+  <section class="toolbar">
+    <div class="search-box">
+      <span class="search-icon">🔍</span>
+      <input type="text" id="searchInput" class="search-input" placeholder="Parça adı, MPN kodu veya satıcı ara..." oninput="renderApp()">
+    </div>
+
+    <div class="filter-pills" id="categoryFilters">
+      <button class="filter-pill active" onclick="setCategoryFilter('all')">Tüm Gruplar</button>
+      <button class="filter-pill" onclick="setCategoryFilter('A')">Göğüs HMI Podu</button>
+      <button class="filter-pill" onclick="setCategoryFilter('B')">Çanta RF & Ana İşlemci</button>
+      <button class="filter-pill" onclick="setCategoryFilter('C')">Sub-Zero Güç & Pil</button>
+      <button class="filter-pill" onclick="setCategoryFilter('D')">Mekanik, Kablo & PCB</button>
+    </div>
+
+    <div class="filter-pills" id="statusFilters">
+      <button class="filter-pill active" onclick="setStatusFilter('all')">Tüm Durumlar</button>
+      <button class="filter-pill" onclick="setStatusFilter('missing')">Sadece Eksikler</button>
+      <button class="filter-pill" onclick="setStatusFilter('ready')">Sadece Hazırlar</button>
+    </div>
+  </section>
+
+  <!-- Dynamic Content Container -->
+  <main id="groupsContainer"></main>
+
+</div>
+
+<!-- Note Modal -->
+<div class="modal-overlay" id="noteModal" onclick="closeModalOnBg(event)">
+  <div class="modal-card">
+    <h3 class="modal-title" id="modalItemTitle">Not & Sipariş Takip Bilgisi</h3>
+    <textarea class="modal-textarea" id="modalNoteText" placeholder="Kargo takip no, sipariş numarası, satıcı notu veya alternatif parça bağlantısı girin..."></textarea>
+    <div class="modal-actions">
+      <button class="btn" onclick="closeNoteModal()">İptal</button>
+      <button class="btn btn-primary" onclick="saveNoteModal()">Kaydet</button>
+    </div>
+  </div>
+</div>
+
+<!-- Toast -->
+<div class="toast" id="toast">İşlem kaydedildi</div>
+
+<script>
+/* -------------------------------------------------------------------------- */
+/* Master Hardware BOM Database                                              */
+/* -------------------------------------------------------------------------- */
+const DEFAULT_ITEMS = [
+  // GRUP A: GÖĞÜS HMI PODU (CHEST HMI POD)
+  {
+    id: "A1",
+    group: "A",
+    groupName: "1. Göğüs HMI & Kullanıcı Arayüzü Podu",
+    ref: "DISP-1",
+    name: "Sharp 2.7\" Memory-in-Pixel (MIP) 400x240 LCD",
+    desc: "1-Bit Monokrom, 50 µW statik güç tüketimi, -30°C donmaz katı-hal bellekli ekran.",
+    mpn: "LS027B7DH01A",
+    vendor: "Mouser / DigiKey",
+    qty: 1,
+    unitPrice: 48.00,
+    status: "planned", // planned | cart | shipping | delivered | tested
+    note: "Sharp resmi distribütöründen temin edilecek.",
+    searchQuery: "LS027B7DH01A Sharp Memory LCD"
+  },
+  {
+    id: "A2",
+    group: "A",
+    groupName: "1. Göğüs HMI & Kullanıcı Arayüzü Podu",
+    ref: "CONN-1",
+    name: "10-Pin 0.5mm R/A Kilitli FPC Ekran Konnektörü",
+    desc: "Alt kontak, altın kaplama, -40°C ... +85°C çalışma sıcaklığı.",
+    mpn: "0545501071 (Molex)",
+    vendor: "Özdisan / Mouser",
+    qty: 1,
+    unitPrice: 1.80,
+    status: "planned",
+    note: "",
+    searchQuery: "Molex 0545501071 FPC 10 pin 0.5mm"
+  },
+  {
+    id: "A3",
+    group: "A",
+    groupName: "1. Göğüs HMI & Kullanıcı Arayüzü Podu",
+    ref: "SW-1..4",
+    name: "Omron Taktik Eldiven Butonları (4 Adet)",
+    desc: "IP67 sızdırmaz, kalın eldivenle yanlış basmayı önleyen 650 gf yay sertliği.",
+    mpn: "B3F-4055 (Omron)",
+    vendor: "Direnç.net / Özdisan",
+    qty: 4,
+    unitPrice: 1.20,
+    status: "planned",
+    note: "Up, Down, Enter, Back / Chord SOS için 4 adet.",
+    searchQuery: "Omron B3F-4055 tact switch"
+  },
+  {
+    id: "A4",
+    group: "A",
+    groupName: "1. Göğüs HMI & Kullanıcı Arayüzü Podu",
+    ref: "MCU-CHEST",
+    name: "Göğüs Companion MCU: STM32G0B1 / XIAO ESP32-S3",
+    desc: "Düşük güç tüketimi, ekran SPI DMA ve FDCAN veriyolu yönetimi.",
+    mpn: "STM32G0B1CEU6 / XIAO-S3",
+    vendor: "Robotistan / Samm",
+    qty: 1,
+    unitPrice: 7.50,
+    status: "planned",
+    note: "Prototipe XIAO ESP32-S3 veya STM32G0 geliştirme kartı ile başlanabilir.",
+    searchQuery: "Seeed Studio XIAO ESP32-S3"
+  },
+  {
+    id: "A5",
+    group: "A",
+    groupName: "1. Göğüs HMI & Kullanıcı Arayüzü Podu",
+    ref: "BARO-1",
+    name: "Bosch BMP390 Yüksek Hassasiyetli Barometre",
+    desc: "±0.03 hPa hassasiyet (~25 cm dikey çözünürlük), buzul yarığı düşüş tespiti.",
+    mpn: "BMP390 (LGA-10)",
+    vendor: "DigiKey / LCSC",
+    qty: 1,
+    unitPrice: 6.20,
+    status: "planned",
+    note: "I2C/SPI üzerinden companion MCU'ya bağlı.",
+    searchQuery: "BMP390 Bosch barometer sensor"
+  },
+  {
+    id: "A6",
+    group: "A",
+    groupName: "1. Göğüs HMI & Kullanıcı Arayüzü Podu",
+    ref: "IMU-1",
+    name: "ST LSM6DSOX 6-Eksen IMU / İvmeölçer",
+    desc: "Serbest düşüş (|a| < 0.35g) ve zemin darbe şokunu (> 4.5g) yakalar.",
+    mpn: "LSM6DSOXTR (LGA-14)",
+    vendor: "Mouser / LCSC",
+    qty: 1,
+    unitPrice: 4.90,
+    status: "planned",
+    note: "Çığ ve buzul yarığı düşüş durum makinesi için zorunlu.",
+    searchQuery: "LSM6DSOXTR STMicroelectronics"
+  },
+  {
+    id: "A7",
+    group: "A",
+    groupName: "1. Göğüs HMI & Kullanıcı Arayüzü Podu",
+    ref: "CAN-CHEST",
+    name: "TI TCAN337G 3.3V CAN-FD Transceiver",
+    desc: "5 Mbps diferansiyel haberleşme, ±14V bara koruması.",
+    mpn: "TCAN337GDCNT (SOT-23-8)",
+    vendor: "Mouser / LCSC",
+    qty: 1,
+    unitPrice: 2.40,
+    status: "planned",
+    note: "120 Ohm terminasyon direnci ile.",
+    searchQuery: "TCAN337GDCNT Texas Instruments"
+  },
+  {
+    id: "A8",
+    group: "A",
+    groupName: "1. Göğüs HMI & Kullanıcı Arayüzü Podu",
+    ref: "CHEST-PCB",
+    name: "Göğüs HMI Podu 4-Katmanlı Özel PCB",
+    desc: "JLCPCB JLC2313 FR4, 1.6mm, mat siyah lehim maskesi, altın kaplama padler.",
+    mpn: "CUSTOM-CHEST-V1",
+    vendor: "JLCPCB / PCBWay",
+    qty: 5,
+    unitPrice: 2.40,
+    status: "planned",
+    note: "5 adet minimum sipariş paketi ($12.00 toplam).",
+    searchQuery: "JLCPCB 4 layer PCB order"
+  },
+
+  // GRUP B: ÇANTA ANA İŞLEMCİ & HASSAS RF (BACKPACK POD)
+  {
+    id: "B1",
+    group: "B",
+    groupName: "2. Çanta Ana İşlemci & Hassas RF Podu",
+    ref: "MCU-MAIN",
+    name: "STM32U575CIT6 160MHz Cortex-M33 Ana İşlemci",
+    desc: "2MB Dahili Dual-Bank Flash (DEM Haritası & Kalman), 786KB RAM, 2x FDCAN.",
+    mpn: "STM32U575CIT6 (LQFP-48)",
+    vendor: "Mouser / DigiKey / LCSC",
+    qty: 1,
+    unitPrice: 14.50,
+    status: "planned",
+    note: "Prototip için Nucleo-U575ZI kartı da kullanılabilir.",
+    searchQuery: "STM32U575CIT6 STMicroelectronics"
+  },
+  {
+    id: "B2",
+    group: "B",
+    groupName: "2. Çanta Ana İşlemci & Hassas RF Podu",
+    ref: "GNSS-1",
+    name: "Quectel LC29H(DA) / TBS M10Q Çift Frekans (L1/L5) GNSS",
+    desc: "Kanyonlarda kaya multipath yansımalarını donanımsal süzen RTK/DR alıcı.",
+    mpn: "LC29HDA / TBS-M10Q",
+    vendor: "Robotistan / Samm / RoboCombo",
+    qty: 1,
+    unitPrice: 42.00,
+    status: "planned",
+    note: "Öncelikli tercih L1/L5 Quectel veya TBS M10Q.",
+    searchQuery: "TBS M10Q GPS or Quectel LC29H"
+  },
+  {
+    id: "B3",
+    group: "B",
+    groupName: "2. Çanta Ana İşlemci & Hassas RF Podu",
+    ref: "ANT-GNSS",
+    name: "Aktif Dairesel Polarizasyonlu (RHCP) Çift Bant Helisel Anten",
+    desc: "Çanta tepesine dik montaj, 360° engelsiz görüş, gövde zayıflatmasını sıfırlar.",
+    mpn: "GEO-HELICAL-L1L5",
+    vendor: "RoboCombo / AliExpress",
+    qty: 1,
+    unitPrice: 28.00,
+    status: "planned",
+    note: "U.FL to SMA adaptör kablosu ile.",
+    searchQuery: "Active Helical GNSS Antenna L1 L5 SMA"
+  },
+  {
+    id: "B4",
+    group: "B",
+    groupName: "2. Çanta Ana İşlemci & Hassas RF Podu",
+    ref: "LORA-1",
+    name: "Semtech SX1262 LoRa Modülü (Ebyte E22-900M22S)",
+    desc: "+22 dBm (160 mW) 868 MHz ISM, dahili TCXO kristalli sertifikalı SMD modül.",
+    mpn: "E22-900M22S (Ebyte)",
+    vendor: "RoboCombo / AliExpress / Robotistan",
+    qty: 1,
+    unitPrice: 9.80,
+    status: "planned",
+    note: "16-baytlık ultra-kısa hava paketiyle 41 ms havada kalma süresi.",
+    searchQuery: "Ebyte E22-900M22S SX1262 868MHz"
+  },
+  {
+    id: "B5",
+    group: "B",
+    groupName: "2. Çanta Ana İşlemci & Hassas RF Podu",
+    ref: "ANT-LORA",
+    name: "868 MHz 1/2 Dalga Taktik Esnek SMA Anten",
+    desc: "Çantaya takılan darbe ve kırılmaya dayanıklı esnek telsiz anteni.",
+    mpn: "ANT-868-FLEX-SMA",
+    vendor: "Robotistan / Direnç.net",
+    qty: 1,
+    unitPrice: 7.50,
+    status: "planned",
+    note: "",
+    searchQuery: "868 MHz SMA flexible antenna"
+  },
+  {
+    id: "B6",
+    group: "B",
+    groupName: "2. Çanta Ana İşlemci & Hassas RF Podu",
+    ref: "SAT-IRIDIUM",
+    name: "RockBLOCK 9603 Iridium SBD Uydu İletişim Modülü",
+    desc: "1621 MHz küresel LEO uydu şebekesi (Kutup ve buzulda sıfır kör nokta).",
+    mpn: "RockBLOCK 9603",
+    vendor: "Ground Control / Robotistan",
+    qty: 1,
+    unitPrice: 295.00,
+    status: "planned",
+    note: "En kritik bütçe kalemi. Sponsorluk veya ayni bağış için öncelikli.",
+    searchQuery: "RockBLOCK 9603 Iridium SBD satellite modem"
+  },
+  {
+    id: "B7",
+    group: "B",
+    groupName: "2. Çanta Ana İşlemci & Hassas RF Podu",
+    ref: "MOSFET-SAT",
+    name: "Si2301CDS P-Kanallı Güç Kesme MOSFET'i",
+    desc: "Iridium modülünü beklemede 0.0 µA kaçak akımla tamamen kapatır.",
+    mpn: "Si2301CDS (SOT-23)",
+    vendor: "Özdisan / LCSC",
+    qty: 1,
+    unitPrice: 0.45,
+    status: "planned",
+    note: "Batarya tasarrufunun anahtarı.",
+    searchQuery: "Si2301CDS Vishay P-channel MOSFET"
+  },
+  {
+    id: "B8",
+    group: "B",
+    groupName: "2. Çanta Ana İşlemci & Hassas RF Podu",
+    ref: "WDT-1",
+    name: "TI TPL5010 Nano-Power Harici Donanımsal Bekçi",
+    desc: "35 nA ultra düşük akım. Yazılım veya kristal donarsa karta soğuk reset atar.",
+    mpn: "TPL5010DDCR (SOT-23-6)",
+    vendor: "Mouser / LCSC",
+    qty: 1,
+    unitPrice: 1.60,
+    status: "planned",
+    note: "30 saniyelik periyodik sinyal.",
+    searchQuery: "TPL5010DDCR Texas Instruments"
+  },
+  {
+    id: "B9",
+    group: "B",
+    groupName: "2. Çanta Ana İşlemci & Hassas RF Podu",
+    ref: "BACK-PCB",
+    name: "Çanta RF & Ana Düğüm 4-Katmanlı Özel PCB",
+    desc: "50 Ohm empedans kontrollü RF mikroşerit hatları, kesintisiz GND kalkanı.",
+    mpn: "CUSTOM-BACKPACK-V1",
+    vendor: "JLCPCB / PCBWay",
+    qty: 5,
+    unitPrice: 3.60,
+    status: "planned",
+    note: "5 adet minimum sipariş paketi ($18.00 toplam).",
+    searchQuery: "JLCPCB 4-layer impedance control PCB"
+  },
+
+  // GRUP C: SUB-ZERO GÜÇ SANTRALİ & PİL (POWER & CRYO)
+  {
+    id: "C1",
+    group: "C",
+    groupName: "3. Sub-Zero Güç Santrali & Batarya",
+    ref: "CAP-SUP1..2",
+    name: "2x 5.0F / 2.7V Düşük ESR Süperkapasitör",
+    desc: "-20°C'de lityum pilin iç direnci fırladığında 500mA LoRa darbesini emer, resetletmez.",
+    mpn: "XV3560-2R7505-R (Eaton)",
+    vendor: "Mouser / DigiKey",
+    qty: 2,
+    unitPrice: 5.50,
+    status: "planned",
+    note: "Seri bağlı: 2.5F / 5.4V eşdeğer.",
+    searchQuery: "Eaton 5F 2.7V supercapacitor XV3560"
+  },
+  {
+    id: "C2",
+    group: "C",
+    groupName: "3. Sub-Zero Güç Santrali & Batarya",
+    ref: "PWR-BUCK",
+    name: "TI TPS63020 Senkron Buck-Boost DC-DC Regülatör",
+    desc: "Bataryanın 3.0V-4.2V geriliminden sabit 3.3V VDD_DIG üretir (%96 verim).",
+    mpn: "TPS63020DSJR (VSON-14)",
+    vendor: "Mouser / LCSC",
+    qty: 1,
+    unitPrice: 3.80,
+    status: "planned",
+    note: "2A çıkış kabiliyeti, 2.4 MHz anahtarlama frekansı.",
+    searchQuery: "TPS63020DSJR Texas Instruments"
+  },
+  {
+    id: "C3",
+    group: "C",
+    groupName: "3. Sub-Zero Güç Santrali & Batarya",
+    ref: "PWR-LDO",
+    name: "TI TPS7A2030 Ultra-High PSRR RF LDO",
+    desc: "95 dB PSRR, < 7 uV gürültü. GNSS LNA'sını buck gürültüsünden tamamen yalıtır.",
+    mpn: "TPS7A2030PDBVR (SOT-23-5)",
+    vendor: "Mouser / LCSC",
+    qty: 1,
+    unitPrice: 1.90,
+    status: "planned",
+    note: "GNSS alıcısında 0 dB sağırlık kaybı sağlar.",
+    searchQuery: "TPS7A2030PDBVR Texas Instruments"
+  },
+  {
+    id: "C4",
+    group: "C",
+    groupName: "3. Sub-Zero Güç Santrali & Batarya",
+    ref: "FERRITE-PI",
+    name: "Murata 0603 RF Pi-Filtre Ferrit Boncuk",
+    desc: "Buck gürültüsünü RF LDO girişinden önce 18.2 dB bastırır.",
+    mpn: "BLM18HE152SN1D",
+    vendor: "Özdisan / LCSC",
+    qty: 2,
+    unitPrice: 0.15,
+    status: "planned",
+    note: "",
+    searchQuery: "BLM18HE152SN1D Murata ferrite bead"
+  },
+  {
+    id: "C5",
+    group: "C",
+    groupName: "3. Sub-Zero Güç Santrali & Batarya",
+    ref: "BATT-1",
+    name: "Molicel INR-21700-P42A 4200mAh 45A Hücre",
+    desc: "-40°C soğuk deşarj kabiliyeti olan askeri sınıf lityum hücre.",
+    mpn: "INR-21700-P42A",
+    vendor: "Pilburada / Nkon / RoboCombo",
+    qty: 1,
+    unitPrice: 8.50,
+    status: "planned",
+    note: "1 adet 21700 ile 25+ gün pil ömrü.",
+    searchQuery: "Molicel INR21700 P42A battery"
+  },
+  {
+    id: "C6",
+    group: "C",
+    groupName: "3. Sub-Zero Güç Santrali & Batarya",
+    ref: "HEATER-PTC",
+    name: "3.5W Esnek Poliimid PTC Isıtıcı Ceket",
+    desc: "0°C altı lityum kaplama patlamasını önlemek için şarjdan önce pili +5°C'ye ısıtır.",
+    mpn: "PTC-FLEX-POLYIMIDE",
+    vendor: "AliExpress / Özdisan",
+    qty: 1,
+    unitPrice: 4.20,
+    status: "planned",
+    note: "Batarya çevresine sarılır.",
+    searchQuery: "Polyimide flexible heater film 5V"
+  },
+
+  // GRUP D: MEKANİK, KABLO, PCB & BAĞLANTI (MECHANICAL & WIRING)
+  {
+    id: "D1",
+    group: "D",
+    groupName: "4. Mekanik Gövde, Endüstriyel Kablo & Koruma",
+    ref: "CABLE-PUR",
+    name: "1.2m Çift Korumalı Poliüretan (PUR) 4-Damarlı Kablo",
+    desc: "-40°C esnekliğini koruyan, kırılmayan bükümlü çift endüstriyel kablo.",
+    mpn: "PUR-4X0.25-SHIELDED",
+    vendor: "Özdisan / KabloMarket",
+    qty: 1,
+    unitPrice: 9.00,
+    status: "planned",
+    note: "[12V VBUS, GND, CAN_H, CAN_L].",
+    searchQuery: "PUR shielded twisted pair 4 core cable"
+  },
+  {
+    id: "D2",
+    group: "D",
+    groupName: "4. Mekanik Gövde, Endüstriyel Kablo & Koruma",
+    ref: "CONN-M8",
+    name: "M8 4-Pin IP68 Metal Vidalı Konnektör Seti",
+    desc: "Göğüs ile çanta arasına kilitli, su geçirmez endüstriyel soket bağlantısı.",
+    mpn: "M8-4PIN-METAL-IP68",
+    vendor: "Direnç.net / AliExpress",
+    qty: 2,
+    unitPrice: 4.20,
+    status: "planned",
+    note: "Erkek panel ve dişi kablo tipi.",
+    searchQuery: "M8 4 pin metal connector IP68"
+  },
+  {
+    id: "D3",
+    group: "D",
+    groupName: "4. Mekanik Gövde, Endüstriyel Kablo & Koruma",
+    ref: "VENT-GORE",
+    name: "ePTFE Gore GAW102 Basınç Dengeleme Menfezi",
+    desc: "Dağda 4000m irtifa basınç farkında contanın patlamasını ve buğulanmayı önler.",
+    mpn: "GORE-GAW102",
+    vendor: "Gore Dağıtım / DigiKey",
+    qty: 1,
+    unitPrice: 6.50,
+    status: "planned",
+    note: "Kasa duvarına vidalanır.",
+    searchQuery: "Gore vent membrane protective vent GAW"
+  },
+  {
+    id: "D4",
+    group: "D",
+    groupName: "4. Mekanik Gövde, Endüstriyel Kablo & Koruma",
+    ref: "CASE-PROTOTYPE",
+    name: "Taktik Göğüs & Çanta Podu Korumalı Kasalar",
+    desc: "Darbeye dayanıklı SLA reçine / CNC polimer kasa, eldiven kordon askıları.",
+    mpn: "TACTICAL-ENCLOSURE-SET",
+    vendor: "3D Baskı / Sanayi",
+    qty: 1,
+    unitPrice: 35.00,
+    status: "planned",
+    note: "İlk prototip SLA reçine veya PETG baskı ile üretilebilir.",
+    searchQuery: "Custom 3D printing enclosure"
+  }
+];
+
+const USD_TO_TRY = 38.0;
+
+/* -------------------------------------------------------------------------- */
+/* State Management (LocalStorage Integration)                                */
+/* -------------------------------------------------------------------------- */
+const STORAGE_KEY = "EXT_GNSS_BOM_TRACKER_V1";
+let currentItems = [];
+let currentCategoryFilter = "all";
+let currentStatusFilter = "all";
+let activeEditingId = null;
+
+function loadState() {
+  const saved = localStorage.getItem(STORAGE_KEY);
+  if (saved) {
+    try {
+      currentItems = JSON.parse(saved);
+    } catch (e) {
+      console.error("Storage parse error, resetting:", e);
+      currentItems = JSON.parse(JSON.stringify(DEFAULT_ITEMS));
+    }
+  } else {
+    currentItems = JSON.parse(JSON.stringify(DEFAULT_ITEMS));
+  }
+}
+
+function saveState() {
+  localStorage.setItem(STORAGE_KEY, JSON.stringify(currentItems));
+  renderApp();
+}
+
+function resetToDefaults() {
+  if (confirm("Tüm parçaları ve notları fabrika ayarlarına döndürmek istediğinize emin misiniz?")) {
+    currentItems = JSON.parse(JSON.stringify(DEFAULT_ITEMS));
+    saveState();
+    showToast("Fabrika malzeme listesi geri yüklendi!");
+  }
+}
+
+/* -------------------------------------------------------------------------- */
+/* Status Update & Note Modals                                                */
+/* -------------------------------------------------------------------------- */
+function updateItemStatus(itemId, newStatus) {
+  const item = currentItems.find(x => x.id === itemId);
+  if (item) {
+    item.status = newStatus;
+    saveState();
+    showToast(`${item.ref} durumu güncellendi: ${getStatusLabel(newStatus)}`);
+  }
+}
+
+function getStatusLabel(st) {
+  switch(st) {
+    case 'tested': return 'Test Edildi';
+    case 'delivered': return 'Teslim Alındı';
+    case 'shipping': return 'Kargoda';
+    case 'cart': return 'Sepette';
+    default: return 'Planlandı';
+  }
+}
+
+function openNoteModal(itemId) {
+  const item = currentItems.find(x => x.id === itemId);
+  if (!item) return;
+  activeEditingId = itemId;
+  document.getElementById("modalItemTitle").innerText = `${item.ref}: ${item.name} - Not & Takip`;
+  document.getElementById("modalNoteText").value = item.note || "";
+  document.getElementById("noteModal").classList.add("active");
+  document.getElementById("modalNoteText").focus();
+}
+
+function closeNoteModal() {
+  document.getElementById("noteModal").classList.remove("active");
+  activeEditingId = null;
+}
+
+function closeModalOnBg(e) {
+  if (e.target.id === "noteModal") closeNoteModal();
+}
+
+function saveNoteModal() {
+  if (!activeEditingId) return;
+  const item = currentItems.find(x => x.id === activeEditingId);
+  if (item) {
+    item.note = document.getElementById("modalNoteText").value.trim();
+    saveState();
+    showToast("Not kaydedildi!");
+  }
+  closeNoteModal();
+}
+
+function showToast(msg) {
+  const t = document.getElementById("toast");
+  t.innerText = msg;
+  t.classList.add("show");
+  setTimeout(() => t.classList.remove("show"), 2800);
+}
+
+/* -------------------------------------------------------------------------- */
+/* Filter Handlers                                                            */
+/* -------------------------------------------------------------------------- */
+function setCategoryFilter(cat) {
+  currentCategoryFilter = cat;
+  document.querySelectorAll("#categoryFilters .filter-pill").forEach(el => el.classList.remove("active"));
+  event.target.classList.add("active");
+  renderApp();
+}
+
+function setStatusFilter(st) {
+  currentStatusFilter = st;
+  document.querySelectorAll("#statusFilters .filter-pill").forEach(el => el.classList.remove("active"));
+  event.target.classList.add("active");
+  renderApp();
+}
+
+/* -------------------------------------------------------------------------- */
+/* Search & Google Link Helper                                                */
+/* -------------------------------------------------------------------------- */
+function searchGoogle(query) {
+  window.open(`https://www.google.com/search?q=${encodeURIComponent(query)}`, '_blank');
+}
+
+function searchSupplier(vendor, mpn) {
+  let url = `https://www.google.com/search?q=${encodeURIComponent(vendor + " " + mpn)}`;
+  if (vendor.toLowerCase().includes("mouser")) {
+    url = `https://www.mouser.com.tr/c/?q=${encodeURIComponent(mpn)}`;
+  } else if (vendor.toLowerCase().includes("digikey")) {
+    url = `https://www.digikey.com.tr/tr/products/result?keywords=${encodeURIComponent(mpn)}`;
+  } else if (vendor.toLowerCase().includes("robotistan")) {
+    url = `https://www.robotistan.com/arama?q=${encodeURIComponent(mpn)}`;
+  } else if (vendor.toLowerCase().includes("direnc")) {
+    url = `https://www.direnc.net/arama?q=${encodeURIComponent(mpn)}`;
+  } else if (vendor.toLowerCase().includes("ozdisan")) {
+    url = `https://ozdisan.com/arama?q=${encodeURIComponent(mpn)}`;
+  }
+  window.open(url, '_blank');
+}
+
+/* -------------------------------------------------------------------------- */
+/* Render Engine                                                              */
+/* -------------------------------------------------------------------------- */
+function renderApp() {
+  const searchTerm = (document.getElementById("searchInput").value || "").toLowerCase().trim();
+
+  // Filter items
+  const filtered = currentItems.filter(item => {
+    // Category filter
+    if (currentCategoryFilter !== 'all' && item.group !== currentCategoryFilter) return false;
+
+    // Status filter
+    if (currentStatusFilter === 'missing') {
+      if (item.status === 'delivered' || item.status === 'tested') return false;
+    } else if (currentStatusFilter === 'ready') {
+      if (item.status !== 'delivered' && item.status !== 'tested') return false;
+    }
+
+    // Search filter
+    if (searchTerm) {
+      const matchName = item.name.toLowerCase().includes(searchTerm);
+      const matchMpn = item.mpn.toLowerCase().includes(searchTerm);
+      const matchRef = item.ref.toLowerCase().includes(searchTerm);
+      const matchVendor = item.vendor.toLowerCase().includes(searchTerm);
+      const matchDesc = item.desc.toLowerCase().includes(searchTerm);
+      const matchNote = (item.note || "").toLowerCase().includes(searchTerm);
+      if (!matchName && !matchMpn && !matchRef && !matchVendor && !matchDesc && !matchNote) return false;
+    }
+
+    return true;
+  });
+
+  // Calculate Metrics
+  const totalCount = currentItems.length;
+  let readyCount = 0;
+  let totalCost = 0;
+  let spentCost = 0;
+
+  let countTested = 0;
+  let countDelivered = 0;
+  let countShipping = 0;
+  let countCart = 0;
+  let countPlanned = 0;
+
+  currentItems.forEach(it => {
+    const cost = it.unitPrice * it.qty;
+    totalCost += cost;
+
+    if (it.status === 'tested') {
+      countTested++;
+      readyCount++;
+      spentCost += cost;
+    } else if (it.status === 'delivered') {
+      countDelivered++;
+      readyCount++;
+      spentCost += cost;
+    } else if (it.status === 'shipping') {
+      countShipping++;
+      spentCost += cost;
+    } else if (it.status === 'cart') {
+      countCart++;
+    } else {
+      countPlanned++;
+    }
+  });
+
+  const readyPct = totalCount > 0 ? Math.round((readyCount / totalCount) * 100) : 0;
+  const remainCost = Math.max(0, totalCost - spentCost);
+
+  // Update KPI Cards
+  document.getElementById("kpiTotalCount").innerText = `${totalCount} Kalem`;
+  document.getElementById("kpiReadyCount").innerText = `${readyCount} / ${totalCount}`;
+  document.getElementById("kpiReadyPct").innerText = `%${readyPct} Hazır & Doğrulandı`;
+
+  document.getElementById("kpiTotalCost").innerText = `$${totalCost.toFixed(2)}`;
+  document.getElementById("kpiTotalCostTry").innerText = `~${(totalCost * USD_TO_TRY).toLocaleString('tr-TR', {maximumFractionDigits:0})} ₺ (1 USD = ${USD_TO_TRY.toFixed(1)} ₺)`;
+
+  document.getElementById("kpiSpentCost").innerText = `$${spentCost.toFixed(2)}`;
+  document.getElementById("kpiRemainCost").innerText = `Kalan İhtiyaç: $${remainCost.toFixed(2)} (~${(remainCost * USD_TO_TRY).toLocaleString('tr-TR', {maximumFractionDigits:0})} ₺)`;
+
+  // Update Progress Bar
+  const pctTested = (countTested / totalCount) * 100;
+  const pctDelivered = (countDelivered / totalCount) * 100;
+  const pctShipping = (countShipping / totalCount) * 100;
+  const pctCart = (countCart / totalCount) * 100;
+  const pctPlanned = 100 - (pctTested + pctDelivered + pctShipping + pctCart);
+
+  const barSegments = document.getElementById("progressBar").children;
+  barSegments[0].style.width = pctTested + "%";
+  barSegments[1].style.width = pctDelivered + "%";
+  barSegments[2].style.width = pctShipping + "%";
+  barSegments[3].style.width = pctCart + "%";
+  barSegments[4].style.width = Math.max(0, pctPlanned) + "%";
+
+  document.getElementById("progressSummaryText").innerText = `${readyCount} / ${totalCount} Parça Hazır (%${readyPct})`;
+
+  // Render Groups & Tables
+  const container = document.getElementById("groupsContainer");
+  container.innerHTML = "";
+
+  if (filtered.length === 0) {
+    container.innerHTML = `
+      <div style="text-align:center; padding:50px 20px; background:var(--bg-card); border-radius:8px; border:1px dashed var(--border);">
+        <p style="font-size:16px; font-weight:700; color:var(--text-muted);">Arama kriterine uygun komponent bulunamadı.</p>
+        <p style="font-size:12px; color:var(--text-dim); margin-top:6px;">Filtreleri veya arama kelimesini değiştirmeyi deneyin.</p>
+      </div>`;
+    return;
+  }
+
+  // Group by category
+  const groups = {};
+  filtered.forEach(it => {
+    if (!groups[it.group]) {
+      groups[it.group] = {
+        name: it.groupName,
+        items: []
+      };
+    }
+    groups[it.group].items.push(it);
+  });
+
+  for (const gKey in groups) {
+    const grp = groups[gKey];
+    const grpTotal = grp.items.reduce((acc, x) => acc + (x.unitPrice * x.qty), 0);
+    const grpReady = grp.items.filter(x => x.status === 'delivered' || x.status === 'tested').length;
+
+    let groupHtml = `
+      <div class="group-container">
+        <div class="group-header">
+          <div class="group-title-wrap">
+            <span class="group-icon">${getGroupIcon(gKey)}</span>
+            <h2 class="group-title">${grp.name}</h2>
+          </div>
+          <div class="group-stats">
+            <span>${grpReady}/${grp.items.length} Hazır</span> &bull; 
+            <span style="color:#ffffff;">$${grpTotal.toFixed(2)}</span>
+          </div>
+        </div>
+
+        <div class="table-card">
+          <table class="items-table">
+            <thead>
+              <tr>
+                <th style="width:7%;">Ref</th>
+                <th style="width:34%;">Komponent & Fonksiyonel Açıklama</th>
+                <th style="width:18%;">Tedarik Kanalı & MPN</th>
+                <th style="width:8%; text-align:center;">Adet</th>
+                <th style="width:11%; text-align:right;">Birim ($)</th>
+                <th style="width:14%; text-align:center;">Tedarik Durumu</th>
+                <th style="width:8%; text-align:right;">İşlem</th>
+              </tr>
+            </thead>
+            <tbody>`;
+
+    grp.items.forEach(it => {
+      const lineCost = (it.unitPrice * it.qty).toFixed(2);
+      const lineCostTry = Math.round(it.unitPrice * it.qty * USD_TO_TRY).toLocaleString('tr-TR');
+      const hasNote = Boolean(it.note && it.note.trim().length > 0);
+
+      groupHtml += `
+        <tr>
+          <td>
+            <span class="item-ref">${it.ref}</span>
+          </td>
+          <td>
+            <span class="item-name">${it.name}</span>
+            <span class="item-desc">${it.desc}</span>
+            ${hasNote ? `<div style="margin-top:4px; font-size:10.5px; color:var(--accent-cyan);">📝 <i>${it.note}</i></div>` : ''}
+          </td>
+          <td>
+            <div class="vendor-badge">🛒 ${it.vendor}</div>
+            <div class="item-mpn">${it.mpn}</div>
+          </td>
+          <td style="text-align:center; font-family:var(--font-mono); font-weight:700;">
+            ${it.qty}
+          </td>
+          <td style="text-align:right;">
+            <div class="price-tag">$${it.unitPrice.toFixed(2)}</div>
+            <span class="price-try">${lineCostTry} ₺</span>
+          </td>
+          <td style="text-align:center;">
+            <select class="status-select st-${it.status}" onchange="updateItemStatus('${it.id}', this.value)">
+              <option value="planned" ${it.status==='planned'?'selected':''}>⚪ Planlandı</option>
+              <option value="cart" ${it.status==='cart'?'selected':''}>🛒 Sepette</option>
+              <option value="shipping" ${it.status==='shipping'?'selected':''}>🚚 Kargoda</option>
+              <option value="delivered" ${it.status==='delivered'?'selected':''}>📦 Teslim Alındı</option>
+              <option value="tested" ${it.status==='tested'?'selected':''}>🔬 Test Edildi</option>
+            </select>
+          </td>
+          <td style="text-align:right;">
+            <div class="action-links" style="justify-content:flex-end;">
+              <button class="note-btn ${hasNote ? 'has-note' : ''}" onclick="openNoteModal('${it.id}')" title="Not / Takip Kodu Ekle">
+                ${hasNote ? 'Not ✓' : '+ Not'}
+              </button>
+              <a href="javascript:void(0)" class="link-icon-btn" onclick="searchSupplier('${it.vendor}', '${it.mpn}')" title="Satıcıda veya Google'da Parça Ara">
+                🔍
+              </a>
+            </div>
+          </td>
+        </tr>`;
+    });
+
+    groupHtml += `
+            </tbody>
+          </table>
+        </div>
+      </div>`;
+
+    container.innerHTML += groupHtml;
+  }
+}
+
+function getGroupIcon(g) {
+  switch(g) {
+    case 'A': return '📟';
+    case 'B': return '🛰️';
+    case 'C': return '⚡';
+    case 'D': return '🛠️';
+    default: return '📦';
+  }
+}
+
+/* -------------------------------------------------------------------------- */
+/* Backup & Restore                                                           */
+/* -------------------------------------------------------------------------- */
+function exportData() {
+  const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(currentItems, null, 2));
+  const dlAnchor = document.createElement('a');
+  dlAnchor.setAttribute("href", dataStr);
+  dlAnchor.setAttribute("download", `GNSS_Terminal_BOM_Tracker_${new Date().toISOString().slice(0,10)}.json`);
+  document.body.appendChild(dlAnchor);
+  dlAnchor.click();
+  dlAnchor.remove();
+  showToast("Yedek JSON dosyası indirildi!");
+}
+
+function importData(evt) {
+  const file = evt.target.files[0];
+  if (!file) return;
+
+  const reader = new FileReader();
+  reader.onload = function(e) {
+    try {
+      const imported = JSON.parse(e.target.result);
+      if (Array.isArray(imported) && imported.length > 0 && imported[0].id) {
+        currentItems = imported;
+        saveState();
+        showToast("Yedek başarıyla yüklendi!");
+      } else {
+        alert("Geçersiz yedek dosyası formatı!");
+      }
+    } catch (err) {
+      alert("JSON okuma hatası: " + err);
+    }
+  };
+  reader.readAsText(file);
+  evt.target.value = "";
+}
+
+/* -------------------------------------------------------------------------- */
+/* Initialization                                                             */
+/* -------------------------------------------------------------------------- */
+window.addEventListener("DOMContentLoaded", () => {
+  loadState();
+  renderApp();
+});
+</script>
+
+</body>
+</html>
