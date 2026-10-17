@@ -40,6 +40,10 @@ diagnose_map.*
 *.credentials
 secrets/
 
+# Personal presentation, budget, and PDF documents
+*.pdf
+docs/*.html
+
 # Editor & OS artifacts
 .vscode/
 .idea/
